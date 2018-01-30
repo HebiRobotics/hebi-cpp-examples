@@ -1,0 +1,1 @@
+Full documentation of the Command structure is available at docs.hebi.us, but various samples are provided in his directory showing different ways to command and information that can be sent to the modules.
