@@ -1,6 +1,8 @@
-#include <iostream>
 #include <chrono>
+#include <iostream>
+#include <string>
 #include <thread>
+
 #include "lookup.hpp"
 
 using namespace hebi;
