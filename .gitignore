@@ -1,0 +1,6 @@
+projects/visual_studio/.vs
+projects/**/Debug
+projects/**/Release
+projects/**/x64
+projects/**/*.user
+
