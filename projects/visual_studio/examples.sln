@@ -5,6 +5,11 @@ VisualStudioVersion = 15.0.27004.2002
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hebicpp", "hebicpp\hebicpp.vcxproj", "{270FA69E-28BD-4A1E-AE5F-313298C5B8DF}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "01_lookup", "01_lookup\01_lookup.vcxproj", "{0738ABEB-35C3-4E60-9355-EB4AB847D33F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{270FA69E-28BD-4A1E-AE5F-313298C5B8DF} = {270FA69E-28BD-4A1E-AE5F-313298C5B8DF}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +26,14 @@ Global
 		{270FA69E-28BD-4A1E-AE5F-313298C5B8DF}.Release|x64.Build.0 = Release|x64
 		{270FA69E-28BD-4A1E-AE5F-313298C5B8DF}.Release|x86.ActiveCfg = Release|Win32
 		{270FA69E-28BD-4A1E-AE5F-313298C5B8DF}.Release|x86.Build.0 = Release|Win32
+		{0738ABEB-35C3-4E60-9355-EB4AB847D33F}.Debug|x64.ActiveCfg = Debug|x64
+		{0738ABEB-35C3-4E60-9355-EB4AB847D33F}.Debug|x64.Build.0 = Debug|x64
+		{0738ABEB-35C3-4E60-9355-EB4AB847D33F}.Debug|x86.ActiveCfg = Debug|Win32
+		{0738ABEB-35C3-4E60-9355-EB4AB847D33F}.Debug|x86.Build.0 = Debug|Win32
+		{0738ABEB-35C3-4E60-9355-EB4AB847D33F}.Release|x64.ActiveCfg = Release|x64
+		{0738ABEB-35C3-4E60-9355-EB4AB847D33F}.Release|x64.Build.0 = Release|x64
+		{0738ABEB-35C3-4E60-9355-EB4AB847D33F}.Release|x86.ActiveCfg = Release|Win32
+		{0738ABEB-35C3-4E60-9355-EB4AB847D33F}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
