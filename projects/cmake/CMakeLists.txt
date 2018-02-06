@@ -56,7 +56,7 @@ set(HEBI_CPP_SOURCES
 set(HEBI_CPP_LINK_DIRECTORIES ${HEBI_DIR}/${HEBI_C_LIB_SUBDIR})
 set(HEBI_CPP_LIB_DIRECTORY ${HEBI_DIR}/${HEBI_C_LIB_SUBDIR})
 
-include_directories(${HEBI_CPP_INCLUDE_DIRECTORIES})
+include_directories(${HEBI_CPP_INCLUDE_DIRECTORIES} ${ROOT_DIR})
 link_directories(${HEBI_CPP_LINK_DIRECTORIES})
 
 # Packaging sources into object library allows reuse if you have multiple targets
@@ -92,6 +92,7 @@ SET(EXAMPLES_SOURCES
   ${ROOT_DIR}/advanced/demos/master_slave_async_example.cpp
   ${ROOT_DIR}/advanced/demos/arm_teach_repeat.cpp
 
+  ${ROOT_DIR}/kits/arm/gravity_compensation.cpp
 )
 
 # Make one metatarget for all examples
