@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
   Eigen::Vector3d gravity(0, 0, -1);
  
   // Respond to every feedback packet with an effort command to cancel the
-  // force to to gravity at this pose.
+  // force due to gravity at this pose.
   arm->getGroup().addFeedbackHandler(
     [&arm, &gravity, &cmd](const hebi::GroupFeedback& feedback)->void
       {

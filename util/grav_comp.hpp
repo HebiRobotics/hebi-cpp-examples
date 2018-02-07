@@ -17,8 +17,8 @@ Eigen::VectorXd getGravCompEfforts(
   normed_gravity /= normed_gravity.norm();
   normed_gravity *= 9.81;
 
-  int num_dof = model.getDoFCount();
-  int num_frames = model.getFrameCount(HebiFrameTypeCenterOfMass);
+  size_t num_dof = model.getDoFCount();
+  size_t num_frames = model.getFrameCount(HebiFrameTypeCenterOfMass);
 
   hebi::robot_model::MatrixXdVector jacobians;
   model.getJ(HebiFrameTypeCenterOfMass, angles, jacobians);
@@ -32,10 +32,10 @@ Eigen::VectorXd getGravCompEfforts(
   // Wrench vector
   Eigen::VectorXd wrench_vec(6); // For a single frame; this is (Fx/y/z, tau x/y/z)
   wrench_vec.setZero();
-  for (int i = 0; i < num_frames; ++i)
+  for (size_t i = 0; i < num_frames; ++i)
   {
     // Set translational part
-    for (int j = 0; j < 3; ++j)
+    for (size_t j = 0; j < 3; ++j)
     {
       wrench_vec[j] = -normed_gravity[j] * masses[i];
     }
