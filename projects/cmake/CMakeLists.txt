@@ -90,9 +90,9 @@ SET(EXAMPLES_SOURCES
   ${ROOT_DIR}/advanced/commands/command_settings_example.cpp
 
   ${ROOT_DIR}/advanced/demos/master_slave_async_example.cpp
-  ${ROOT_DIR}/advanced/demos/arm_teach_repeat.cpp
 
   ${ROOT_DIR}/kits/arm/gravity_compensation.cpp
+  ${ROOT_DIR}/kits/arm/teach_repeat.cpp
 )
 
 # Make one metatarget for all examples
