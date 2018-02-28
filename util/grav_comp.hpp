@@ -1,6 +1,10 @@
 #pragma once
 #include "robot_model.hpp"
+#include "group_feedback.hpp"
 #include "Eigen/Dense"
+
+namespace hebi {
+namespace util {
 
 /**
  * A helper function to get the torques which approximately balance out the
@@ -9,9 +13,15 @@
 Eigen::VectorXd getGravCompEfforts(
   const hebi::robot_model::RobotModel& model,
   const Eigen::VectorXd& masses,
-  const Eigen::VectorXd& angles,
-  const Eigen::Vector3d& gravity)
+  const hebi::GroupFeedback& feedback)
 {
+
+  // Update gravity from base module:
+  auto base_accel = feedback[0].imu().accelerometer().get();
+  Vector3d gravity(-base_accel.getX(),
+                   -base_accel.getY(),
+                   -base_accel.getZ());
+
   // Normalize gravity vector (to 1g, or 9.8 m/s^2)
   Eigen::Vector3d normed_gravity = gravity;
   normed_gravity /= normed_gravity.norm();
@@ -21,7 +31,7 @@ Eigen::VectorXd getGravCompEfforts(
   size_t num_frames = model.getFrameCount(HebiFrameTypeCenterOfMass);
 
   hebi::robot_model::MatrixXdVector jacobians;
-  model.getJ(HebiFrameTypeCenterOfMass, angles, jacobians);
+  model.getJ(HebiFrameTypeCenterOfMass, feedback.getPosition(), jacobians);
 
   // Get torque for each module
   // comp_torque = J' * wrench_vector
@@ -46,3 +56,7 @@ Eigen::VectorXd getGravCompEfforts(
 
   return comp_torque;
 }
+
+} // namespace util
+} // namespace hebi
+
