@@ -71,7 +71,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 SET(EXAMPLES_SOURCES
 
   ${ROOT_DIR}/basic/01_lookup.cpp
-  ${ROOT_DIR}/basic/02_feedback.cpp
+  ${ROOT_DIR}/basic/02a_feedback_foreground.cpp
+  ${ROOT_DIR}/basic/02b_feedback_background.cpp
   ${ROOT_DIR}/basic/03_command.cpp
   ${ROOT_DIR}/basic/04_kinematics.cpp
   ${ROOT_DIR}/basic/05_ik.cpp
