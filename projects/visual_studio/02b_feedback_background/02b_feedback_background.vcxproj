@@ -20,8 +20,8 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{B7DB2C42-F6CE-4331-8980-5F43E5D4CAD1}</ProjectGuid>
-    <RootNamespace>My02feedback</RootNamespace>
+    <ProjectGuid>{3FF82B57-1368-4FCC-894F-41A3C5BCFD25}</ProjectGuid>
+    <RootNamespace>My02bfeedbackbackground</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -140,7 +140,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\basic\02_feedback.cpp" />
+    <ClCompile Include="..\..\..\basic\02b_feedback_background.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\hebicpp\hebicpp.vcxproj">

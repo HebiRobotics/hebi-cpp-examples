@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\basic\02_feedback.cpp">
+    <ClCompile Include="..\..\..\basic\02b_feedback_background.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
