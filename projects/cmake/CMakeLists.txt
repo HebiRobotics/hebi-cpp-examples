@@ -86,6 +86,7 @@ SET(EXAMPLES_SOURCES
   ${ROOT_DIR}/advanced/feedback/led_feedback_example.cpp
 
   ${ROOT_DIR}/advanced/commands/command_control_strategy_example.cpp
+  ${ROOT_DIR}/advanced/commands/command_gains.cpp
   ${ROOT_DIR}/advanced/commands/command_position_example.cpp
   ${ROOT_DIR}/advanced/commands/command_persist_settings_example.cpp
   ${ROOT_DIR}/advanced/commands/command_settings_example.cpp
