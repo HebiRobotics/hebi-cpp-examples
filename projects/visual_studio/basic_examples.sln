@@ -7,7 +7,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hebicpp", "hebicpp\hebicpp.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "01_lookup", "01_lookup\01_lookup.vcxproj", "{0738ABEB-35C3-4E60-9355-EB4AB847D33F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "02_feedback", "02_feedback\02_feedback.vcxproj", "{B7DB2C42-F6CE-4331-8980-5F43E5D4CAD1}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "02a_feedback_foreground", "02a_feedback_foreground\02a_feedback_foreground.vcxproj", "{B7DB2C42-F6CE-4331-8980-5F43E5D4CAD1}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "03_command", "03_command\03_command.vcxproj", "{7E24AEEB-3A9F-4C6F-84DA-504D14F52D1B}"
 EndProject
@@ -16,6 +16,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "05_ik", "05_ik\05_ik.vcxproj", "{71687497-F336-4B87-8573-944DF6690616}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "06_trajectory", "06_trajectory\06_trajectory.vcxproj", "{8A11E5EE-92CF-4F17-B5FE-BA0BCA3F7D76}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "02b_feedback_background", "02b_feedback_background\02b_feedback_background.vcxproj", "{3FF82B57-1368-4FCC-894F-41A3C5BCFD25}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -81,6 +83,14 @@ Global
 		{8A11E5EE-92CF-4F17-B5FE-BA0BCA3F7D76}.Release|x64.Build.0 = Release|x64
 		{8A11E5EE-92CF-4F17-B5FE-BA0BCA3F7D76}.Release|x86.ActiveCfg = Release|Win32
 		{8A11E5EE-92CF-4F17-B5FE-BA0BCA3F7D76}.Release|x86.Build.0 = Release|Win32
+		{3FF82B57-1368-4FCC-894F-41A3C5BCFD25}.Debug|x64.ActiveCfg = Debug|x64
+		{3FF82B57-1368-4FCC-894F-41A3C5BCFD25}.Debug|x64.Build.0 = Debug|x64
+		{3FF82B57-1368-4FCC-894F-41A3C5BCFD25}.Debug|x86.ActiveCfg = Debug|Win32
+		{3FF82B57-1368-4FCC-894F-41A3C5BCFD25}.Debug|x86.Build.0 = Debug|Win32
+		{3FF82B57-1368-4FCC-894F-41A3C5BCFD25}.Release|x64.ActiveCfg = Release|x64
+		{3FF82B57-1368-4FCC-894F-41A3C5BCFD25}.Release|x64.Build.0 = Release|x64
+		{3FF82B57-1368-4FCC-894F-41A3C5BCFD25}.Release|x86.ActiveCfg = Release|Win32
+		{3FF82B57-1368-4FCC-894F-41A3C5BCFD25}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
