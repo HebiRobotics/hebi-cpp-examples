@@ -72,7 +72,7 @@ std::shared_ptr<hebi::trajectory::Trajectory> buildTrajectory(State& state)
     velocities.col(i) = waypoint._velocity;
     accelerations.col(i) = waypoint._acceleration;
   }
-  VectorXd time_vector = getTimesForTrajectory(positions, velocities, accelerations);
+  VectorXd time_vector = TrajectoryTimeHeuristic::getTimes(positions, velocities, accelerations);
   return hebi::trajectory::Trajectory::createUnconstrainedQp(time_vector, positions, &velocities, &accelerations);
 }
 
@@ -105,7 +105,7 @@ static void commandProc(State* state)
 
     // Add gravity compensation no matter what
     state->_current_position = feedback.getPosition();
-    VectorXd effort = getGravCompEfforts(
+    VectorXd effort = GravityCompensation::getEfforts(
       state->_arm.getRobotModel(),
       state->_arm.getMasses(),
       feedback);

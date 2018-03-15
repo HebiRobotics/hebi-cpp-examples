@@ -32,7 +32,7 @@ int main(int argc, char* argv[])
   arm->getGroup().addFeedbackHandler(
     [&arm, &gravity, &cmd](const hebi::GroupFeedback& feedback)->void
       {
-        Eigen::VectorXd effort = hebi::util::getGravCompEfforts(
+        Eigen::VectorXd effort = hebi::util::GravityCompensation::getEfforts(
           arm->getRobotModel(),
           arm->getMasses(),
           feedback);
