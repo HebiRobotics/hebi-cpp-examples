@@ -31,8 +31,10 @@ namespace hebi {
     robot_model::RobotModel& getRobotModel() { return *robot_model_; }
     Eigen::VectorXd& getMasses() { return masses_; }
 
-    // This static factory method creates an ArmContainer describing a 3 DOF
-    // robot arm.
+    /*
+     * This static factory method creates an ArmContainer describing a 3 DOF
+     * robot arm.
+     */
     static std::unique_ptr<ArmContainer> create3Dof()
     {
       // Look on the network for the requested modules
@@ -65,8 +67,11 @@ namespace hebi {
         new ArmContainer(arm, std::move(model)));
     }
 
-  private:
-
+    /**
+     * Create an ArmContainer from your own group and robot model object.
+     * Note -- this takes ownership of the RobotModel pointer.  See example
+     * "create" functions above for example usage.
+     */
     ArmContainer(std::shared_ptr<Group> group, std::unique_ptr<robot_model::RobotModel> robot_model)
       : group_(group), robot_model_(std::move(robot_model))
     {
@@ -74,6 +79,8 @@ namespace hebi {
       masses_.resize(robot_model_->getFrameCount(HebiFrameTypeCenterOfMass));
       robot_model_->getMasses(masses_);
     }
+
+  private:
 
     std::shared_ptr<Group> group_;
     std::unique_ptr<robot_model::RobotModel> robot_model_;
