@@ -58,6 +58,8 @@ public:
 
     return comp_torque;
   }
+private:
+  GravityCompensation() = delete;
 };
 
 } // namespace util

@@ -23,6 +23,8 @@ public:
       times(i) = i * 2;
     return times;
   }
+private:
+  TrajectoryTimeHeuristic() = delete;
 };
 
 } // namespace util
