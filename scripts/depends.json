@@ -2,7 +2,7 @@
   {
     "asset_url": "http://docs.hebi.us/download/cpp/{0}",
     "major_version" : 1,
-    "minor_version" : 0,
+    "minor_version" : 1,
     "revision_version" : 0,
     "asset" : {
       "name": "hebi-cpp-{0}.{1}.{2}.tar.gz",
