@@ -1,1 +1,1 @@
-The basic examples provide a walkthrough for basic API usage.  For more complete reference on each of these topics, explore the advanced examples as well as the doxygen documentation available at docs.hebi.us.
+The basic examples provide a walkthrough for basic API usage.  For more complete reference on each of these topics, explore the advanced examples as well as the doxygen documentation available at http://docs.hebi.us/tools.html#cpp-api.
