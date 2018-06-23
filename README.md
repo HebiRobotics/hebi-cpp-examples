@@ -9,7 +9,13 @@ network.
 ## Downloading Dependencies
 
 If cloning the repo directly, you will need to download the C++ API to build the
-examples.  Running `python scripts/download_depends.py` will download and
+examples.  Running
+
+```
+python scripts/download_depends.py
+```
+
+will download and
 extract the API and associated binaries.
 
 If you have downloaded a tagged release, this step is unnecessary.
@@ -55,7 +61,11 @@ cmake -DARCH=x86_64 ../projects/cmake/
 ```
 
 If CMake is configured to create a Makefile project (the default for Linux), you
-can then run `make` to compile the examples.
+can then run
+
+```make```
+
+to compile the examples.
 
 ## Directory Layout
 
