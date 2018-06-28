@@ -1,4 +1,4 @@
-#include "joystick.h"
+#include "joystick_internal.h"
 
 #include <iostream>
 #include <stdexcept>
@@ -14,14 +14,18 @@ class JoystickMapper {
 public:
 
   static void map_joystick(std::shared_ptr<Joystick> const& joy) {
-    auto game_controller = joy->game_controller_;
+    auto joy_impl = joy->impl_;
+    auto game_controller = joy->impl_->game_controller_;
 
     // See if the game controller has a mapping
     char* str_mapping = SDL_GameControllerMapping(game_controller);
     if (str_mapping == nullptr) {
-      std::string msg = "No mapping exists for controller " + joy->name();
-      std::cerr << msg << "\n";
-      throw std::runtime_error(msg);
+      if (getenv("HEBI_DEBUG")) {
+        printf("No mapping exists for controller %s at index %zu (GUID: %s)\n",
+               joy->name().c_str(), joy->index(), joy->guid().c_str());
+      }
+
+      return;
     }
 
     SDL_free(str_mapping);
@@ -42,47 +46,51 @@ public:
     int btn_dpad_left_index = SDL_GameControllerGetBindForButton(game_controller, SDL_CONTROLLER_BUTTON_DPAD_LEFT).value.button;
     int btn_dpad_right_index = SDL_GameControllerGetBindForButton(game_controller, SDL_CONTROLLER_BUTTON_DPAD_RIGHT).value.button;
 
-    int axs_left_x_index = SDL_GameControllerGetAxis(game_controller, SDL_CONTROLLER_AXIS_LEFTX);
-    int axs_left_y_index = SDL_GameControllerGetAxis(game_controller, SDL_CONTROLLER_AXIS_LEFTY);
-    int axs_right_x_index = SDL_GameControllerGetAxis(game_controller, SDL_CONTROLLER_AXIS_RIGHTX);
-    int axs_right_y_index = SDL_GameControllerGetAxis(game_controller, SDL_CONTROLLER_AXIS_RIGHTY);
-    int axs_left_trigger_index = SDL_GameControllerGetAxis(game_controller, SDL_CONTROLLER_AXIS_TRIGGERLEFT);
-    int axs_right_trigger_index = SDL_GameControllerGetAxis(game_controller, SDL_CONTROLLER_AXIS_TRIGGERRIGHT);
+    int axs_left_x_index = SDL_GameControllerGetBindForAxis(game_controller, SDL_CONTROLLER_AXIS_LEFTX).value.axis;
+    int axs_left_y_index = SDL_GameControllerGetBindForAxis(game_controller, SDL_CONTROLLER_AXIS_LEFTY).value.axis;
+    int axs_right_x_index = SDL_GameControllerGetBindForAxis(game_controller, SDL_CONTROLLER_AXIS_RIGHTX).value.axis;
+    int axs_right_y_index = SDL_GameControllerGetBindForAxis(game_controller, SDL_CONTROLLER_AXIS_RIGHTY).value.axis;
+    int axs_left_trigger_index = SDL_GameControllerGetBindForAxis(game_controller, SDL_CONTROLLER_AXIS_TRIGGERLEFT).value.axis;
+    int axs_right_trigger_index = SDL_GameControllerGetBindForAxis(game_controller, SDL_CONTROLLER_AXIS_TRIGGERRIGHT).value.axis;
 
-    joy->add_axis_alias("LEFT_STICK_X", axs_left_x_index);
-    joy->add_axis_alias("LEFT_STICK_Y", axs_left_y_index);
-    joy->add_axis_alias("RIGHT_STICK_X", axs_right_x_index);
-    joy->add_axis_alias("RIGHT_STICK_Y", axs_right_y_index);
-    joy->add_axis_alias("LEFT_TRIGGER", axs_left_trigger_index);
-    joy->add_axis_alias("RIGHT_TRIGGER", axs_right_trigger_index);
+    joy_impl->add_axis_alias("LEFT_STICK_X", axs_left_x_index);
+    joy_impl->add_axis_alias("LEFT_STICK_Y", axs_left_y_index);
+    joy_impl->add_axis_alias("RIGHT_STICK_X", axs_right_x_index);
+    joy_impl->add_axis_alias("RIGHT_STICK_Y", axs_right_y_index);
+    joy_impl->add_axis_alias("LEFT_TRIGGER", axs_left_trigger_index);
+    joy_impl->add_axis_alias("RIGHT_TRIGGER", axs_right_trigger_index);
     // other common names for axes
-    joy->add_axis_alias("L2", axs_left_trigger_index);  // Xbox/PS3/PS4
-    joy->add_axis_alias("R2", axs_right_trigger_index); // Xbox/PS3/PS4
+    joy_impl->add_axis_alias("L2", axs_left_trigger_index);  // Xbox/PS3/PS4
+    joy_impl->add_axis_alias("R2", axs_right_trigger_index); // Xbox/PS3/PS4
 
-    joy->add_button_alias("A", btn_a_index);
-    joy->add_button_alias("B", btn_b_index);
-    joy->add_button_alias("X", btn_x_index);
-    joy->add_button_alias("Y", btn_y_index);
-    joy->add_button_alias("BACK", btn_back_index);
-    joy->add_button_alias("GUIDE", btn_guide_index);
-    joy->add_button_alias("START", btn_start_index);
-    joy->add_button_alias("LEFT_STICK", btn_leftstick_index);
-    joy->add_button_alias("RIGHT_STICK", btn_rightstick_index);
-    joy->add_button_alias("LEFT_SHOULDER", btn_leftshoulder_index);
-    joy->add_button_alias("RIGHT_SHOULDER", btn_rightshoulder_index);
-    joy->add_button_alias("DPAD_UP", btn_dpad_up_index);
-    joy->add_button_alias("DPAD_DOWN", btn_dpad_down_index);
-    joy->add_button_alias("DPAD_LEFT", btn_dpad_left_index);
-    joy->add_button_alias("DPAD_RIGHT", btn_dpad_right_index);
+    joy_impl->add_button_alias("A", btn_a_index);
+    joy_impl->add_button_alias("B", btn_b_index);
+    joy_impl->add_button_alias("X", btn_x_index);
+    joy_impl->add_button_alias("Y", btn_y_index);
+    joy_impl->add_button_alias("BACK", btn_back_index);
+    joy_impl->add_button_alias("GUIDE", btn_guide_index);
+    joy_impl->add_button_alias("START", btn_start_index);
+    joy_impl->add_button_alias("LEFT_STICK", btn_leftstick_index);
+    joy_impl->add_button_alias("RIGHT_STICK", btn_rightstick_index);
+    joy_impl->add_button_alias("LEFT_SHOULDER", btn_leftshoulder_index);
+    joy_impl->add_button_alias("RIGHT_SHOULDER", btn_rightshoulder_index);
+    joy_impl->add_button_alias("DPAD_UP", btn_dpad_up_index);
+    joy_impl->add_button_alias("DPAD_DOWN", btn_dpad_down_index);
+    joy_impl->add_button_alias("DPAD_LEFT", btn_dpad_left_index);
+    joy_impl->add_button_alias("DPAD_RIGHT", btn_dpad_right_index);
     // other common names for buttons
-    joy->add_button_alias("SELECT", btn_back_index);            // PS3
-    joy->add_button_alias("SHARE", btn_back_index);             // PS4
-    joy->add_button_alias("TOUCHPAD", btn_guide_index);         // PS4
-    joy->add_button_alias("OPTIONS", btn_start_index);          // PS4
-    joy->add_button_alias("L3", btn_leftstick_index);           // Xbox/PS3/PS4
-    joy->add_button_alias("R3", btn_rightstick_index);          // Xbox/PS3/PS4
-    joy->add_button_alias("L1", btn_leftshoulder_index);        // Xbox/PS3/PS4
-    joy->add_button_alias("R1", btn_rightshoulder_index);       // Xbox/PS3/PS4
+    joy_impl->add_button_alias("X_PLAYSTATION", btn_a_index);        // PS3/PS4
+    joy_impl->add_button_alias("CIRCLE_PLAYSTATION", btn_b_index);   // PS3/PS4
+    joy_impl->add_button_alias("SQUARE_PLAYSTATION", btn_x_index);   // PS3/PS4
+    joy_impl->add_button_alias("TRIANGLE_PLAYSTATION", btn_y_index); // PS3/PS4
+    joy_impl->add_button_alias("SELECT", btn_back_index);            // PS3
+    joy_impl->add_button_alias("SHARE", btn_back_index);             // PS4
+    joy_impl->add_button_alias("TOUCHPAD", btn_guide_index);         // PS4
+    joy_impl->add_button_alias("OPTIONS", btn_start_index);          // PS4
+    joy_impl->add_button_alias("L3", btn_leftstick_index);           // Xbox/PS3/PS4
+    joy_impl->add_button_alias("R3", btn_rightstick_index);          // Xbox/PS3/PS4
+    joy_impl->add_button_alias("L1", btn_leftshoulder_index);        // Xbox/PS3/PS4
+    joy_impl->add_button_alias("R1", btn_rightshoulder_index);       // Xbox/PS3/PS4
 
   }
 
