@@ -29,5 +29,12 @@ void register_event(SDL_EventType event, SDLEventCallback callback);
  */
 void initialize_event_handler();
 
+/**
+ * Disposes of the event handler subsystem.
+ * 
+ * Any calls to the API are undefined once this function is invoked.
+ */
+void quit_event_handler();
+
 }
 }
