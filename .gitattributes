@@ -1,0 +1,15 @@
+* text=auto
+
+*.hpp text
+*.h text
+*.cpp text
+*.json text
+*.py text
+*.txt text
+*.md text
+*.cmake text
+LICENSE text
+
+*.dll binary
+*.lib binary
+*.so binary
