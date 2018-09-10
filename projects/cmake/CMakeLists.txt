@@ -70,10 +70,12 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 # Build all examples:
 SET(EXAMPLES_SOURCES
 
-  ${ROOT_DIR}/basic/01_lookup.cpp
+  ${ROOT_DIR}/basic/01a_lookup.cpp
+  ${ROOT_DIR}/basic/01b_get_group_single_module.cpp
+  ${ROOT_DIR}/basic/01c_get_group_multiple_modules.cpp
   ${ROOT_DIR}/basic/02a_feedback_foreground.cpp
   ${ROOT_DIR}/basic/02b_feedback_background.cpp
-  ${ROOT_DIR}/basic/03_command.cpp
+  ${ROOT_DIR}/basic/03a_command_position.cpp
   ${ROOT_DIR}/basic/04_kinematics.cpp
   ${ROOT_DIR}/basic/05_ik.cpp
   ${ROOT_DIR}/basic/06_trajectory.cpp
