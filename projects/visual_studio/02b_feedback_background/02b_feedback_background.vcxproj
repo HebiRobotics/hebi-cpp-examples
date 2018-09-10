@@ -77,18 +77,18 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">
     <Link>
-      <AdditionalLibraryDirectories>..\..\..\hebi\lib\win_x86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\hebi-cpp\hebi\lib\win_x86</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /i /y "..\..\..\hebi\lib\win_x86\hebi.dll" "$(OutDir)"</Command>
+      <Command>xcopy /i /y "..\..\..\hebi-cpp\hebi\lib\win_x86\hebi.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
     <Link>
-      <AdditionalLibraryDirectories>..\..\..\hebi\lib\win_x64</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\hebi-cpp\hebi\lib\win_x64</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /i /y "..\..\..\hebi\lib\win_x64\hebi.dll" "$(OutDir)"</Command>
+      <Command>xcopy /i /y "..\..\..\hebi-cpp\hebi\lib\win_x64\hebi.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -98,7 +98,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../../hebi/src;../../../hebi/include;../../../hebi/include/Eigen</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../hebi-cpp/hebi/src;../../../hebi-cpp/hebi/include;../../../hebi-cpp/Eigen</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -111,7 +111,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../../hebi/src;../../../hebi/include;../../../hebi/include/Eigen</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../hebi-cpp/hebi/src;../../../hebi-cpp/hebi/include;../../../hebi-cpp/Eigen</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
   </ItemDefinitionGroup>
@@ -120,7 +120,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../../hebi/src;../../../hebi/include;../../../hebi/include/Eigen</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../hebi-cpp/hebi/src;../../../hebi-cpp/hebi/include;../../../hebi-cpp/Eigen</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
   </ItemDefinitionGroup>
@@ -131,7 +131,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../../../hebi/src;../../../hebi/include;../../../hebi/include/Eigen</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../hebi-cpp/hebi/src;../../../hebi-cpp/hebi/include;../../../hebi-cpp/Eigen</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
