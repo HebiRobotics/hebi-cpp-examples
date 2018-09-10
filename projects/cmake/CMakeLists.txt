@@ -17,25 +17,25 @@ SET (CMAKE_CXX_STANDARD_REQUIRED ON)
 include(hebi_platform.cmake)
 
 if(HEBI_HOST_LINUX)
-  set(HEBI_C_LIB_SUBDIR "lib/linux_${HEBI_TARGET_ARCH}")
+  set(HEBI_C_LIB_SUBDIR "hebi/lib/linux_${HEBI_TARGET_ARCH}")
 elseif(HEBI_HOST_WINDOWS)
-  set(HEBI_C_LIB_SUBDIR "lib/win_${HEBI_TARGET_ARCH}")
+  set(HEBI_C_LIB_SUBDIR "hebi/lib/win_${HEBI_TARGET_ARCH}")
 elseif(HEBI_HOST_OSX)
-  set(HEBI_C_LIB_SUBDIR "lib/osx_${HEBI_TARGET_ARCH}")
+  set(HEBI_C_LIB_SUBDIR "hebi/lib/osx_${HEBI_TARGET_ARCH}")
 else()
   message(FATAL_ERROR "Unkown host platform")
 endif()
 
 set (ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../..)
-set (HEBI_DIR ${ROOT_DIR}/hebi)
+set (HEBI_DIR ${ROOT_DIR}/hebi-cpp)
 
 ################
 # Setup project
 
 set(HEBI_CPP_INCLUDE_DIRECTORIES
   ${HEBI_DIR}/src
-  ${HEBI_DIR}/include
-  ${HEBI_DIR}/include/Eigen
+  ${HEBI_DIR}/hebi/include
+  ${HEBI_DIR}/Eigen
 )
 
 set(HEBI_CPP_SOURCES

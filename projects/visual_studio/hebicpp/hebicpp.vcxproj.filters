@@ -15,90 +15,90 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\hebi\src\color.hpp">
+    <ClInclude Include="..\..\..\hebi-cpp\src\color.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\hebi\src\command.hpp">
+    <ClInclude Include="..\..\..\hebi-cpp\src\command.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\hebi\src\feedback.hpp">
+    <ClInclude Include="..\..\..\hebi-cpp\src\feedback.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\hebi\src\gains.hpp">
+    <ClInclude Include="..\..\..\hebi-cpp\src\gains.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\hebi\src\group.hpp">
+    <ClInclude Include="..\..\..\hebi-cpp\src\group.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\hebi\src\group_command.hpp">
+    <ClInclude Include="..\..\..\hebi-cpp\src\group_command.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\hebi\src\group_feedback.hpp">
+    <ClInclude Include="..\..\..\hebi-cpp\src\group_feedback.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\hebi\src\group_info.hpp">
+    <ClInclude Include="..\..\..\hebi-cpp\src\group_info.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\hebi\src\info.hpp">
+    <ClInclude Include="..\..\..\hebi-cpp\src\info.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\hebi\src\log_file.hpp">
+    <ClInclude Include="..\..\..\hebi-cpp\src\log_file.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\hebi\src\lookup.hpp">
+    <ClInclude Include="..\..\..\hebi-cpp\src\lookup.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\hebi\src\mac_address.hpp">
+    <ClInclude Include="..\..\..\hebi-cpp\src\mac_address.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\hebi\src\robot_model.hpp">
+    <ClInclude Include="..\..\..\hebi-cpp\src\robot_model.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\hebi\src\trajectory.hpp">
+    <ClInclude Include="..\..\..\hebi-cpp\src\trajectory.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\hebi\src\util.hpp">
+    <ClInclude Include="..\..\..\hebi-cpp\src\util.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\hebi\src\vector_3_f.hpp">
+    <ClInclude Include="..\..\..\hebi-cpp\src\vector_3_f.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\hebi\src\command.cpp">
+    <ClCompile Include="..\..\..\hebi-cpp\src\command.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\hebi\src\feedback.cpp">
+    <ClCompile Include="..\..\..\hebi-cpp\src\feedback.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\hebi\src\group.cpp">
+    <ClCompile Include="..\..\..\hebi-cpp\src\group.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\hebi\src\group_command.cpp">
+    <ClCompile Include="..\..\..\hebi-cpp\src\group_command.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\hebi\src\group_feedback.cpp">
+    <ClCompile Include="..\..\..\hebi-cpp\src\group_feedback.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\hebi\src\group_info.cpp">
+    <ClCompile Include="..\..\..\hebi-cpp\src\group_info.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\hebi\src\info.cpp">
+    <ClCompile Include="..\..\..\hebi-cpp\src\info.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\hebi\src\log_file.cpp">
+    <ClCompile Include="..\..\..\hebi-cpp\src\log_file.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\hebi\src\lookup.cpp">
+    <ClCompile Include="..\..\..\hebi-cpp\src\lookup.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\hebi\src\mac_address.cpp">
+    <ClCompile Include="..\..\..\hebi-cpp\src\mac_address.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\hebi\src\robot_model.cpp">
+    <ClCompile Include="..\..\..\hebi-cpp\src\robot_model.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\hebi\src\trajectory.cpp">
+    <ClCompile Include="..\..\..\hebi-cpp\src\trajectory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
