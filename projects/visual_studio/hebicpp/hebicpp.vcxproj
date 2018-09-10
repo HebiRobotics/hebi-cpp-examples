@@ -19,36 +19,36 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\hebi\src\color.hpp" />
-    <ClInclude Include="..\..\..\hebi\src\command.hpp" />
-    <ClInclude Include="..\..\..\hebi\src\feedback.hpp" />
-    <ClInclude Include="..\..\..\hebi\src\gains.hpp" />
-    <ClInclude Include="..\..\..\hebi\src\group.hpp" />
-    <ClInclude Include="..\..\..\hebi\src\group_command.hpp" />
-    <ClInclude Include="..\..\..\hebi\src\group_feedback.hpp" />
-    <ClInclude Include="..\..\..\hebi\src\group_info.hpp" />
-    <ClInclude Include="..\..\..\hebi\src\info.hpp" />
-    <ClInclude Include="..\..\..\hebi\src\log_file.hpp" />
-    <ClInclude Include="..\..\..\hebi\src\lookup.hpp" />
-    <ClInclude Include="..\..\..\hebi\src\mac_address.hpp" />
-    <ClInclude Include="..\..\..\hebi\src\robot_model.hpp" />
-    <ClInclude Include="..\..\..\hebi\src\trajectory.hpp" />
-    <ClInclude Include="..\..\..\hebi\src\util.hpp" />
-    <ClInclude Include="..\..\..\hebi\src\vector_3_f.hpp" />
+    <ClInclude Include="..\..\..\hebi-cpp\src\color.hpp" />
+    <ClInclude Include="..\..\..\hebi-cpp\src\command.hpp" />
+    <ClInclude Include="..\..\..\hebi-cpp\src\feedback.hpp" />
+    <ClInclude Include="..\..\..\hebi-cpp\src\gains.hpp" />
+    <ClInclude Include="..\..\..\hebi-cpp\src\group.hpp" />
+    <ClInclude Include="..\..\..\hebi-cpp\src\group_command.hpp" />
+    <ClInclude Include="..\..\..\hebi-cpp\src\group_feedback.hpp" />
+    <ClInclude Include="..\..\..\hebi-cpp\src\group_info.hpp" />
+    <ClInclude Include="..\..\..\hebi-cpp\src\info.hpp" />
+    <ClInclude Include="..\..\..\hebi-cpp\src\log_file.hpp" />
+    <ClInclude Include="..\..\..\hebi-cpp\src\lookup.hpp" />
+    <ClInclude Include="..\..\..\hebi-cpp\src\mac_address.hpp" />
+    <ClInclude Include="..\..\..\hebi-cpp\src\robot_model.hpp" />
+    <ClInclude Include="..\..\..\hebi-cpp\src\trajectory.hpp" />
+    <ClInclude Include="..\..\..\hebi-cpp\src\util.hpp" />
+    <ClInclude Include="..\..\..\hebi-cpp\src\vector_3_f.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\hebi\src\command.cpp" />
-    <ClCompile Include="..\..\..\hebi\src\feedback.cpp" />
-    <ClCompile Include="..\..\..\hebi\src\group.cpp" />
-    <ClCompile Include="..\..\..\hebi\src\group_command.cpp" />
-    <ClCompile Include="..\..\..\hebi\src\group_feedback.cpp" />
-    <ClCompile Include="..\..\..\hebi\src\group_info.cpp" />
-    <ClCompile Include="..\..\..\hebi\src\info.cpp" />
-    <ClCompile Include="..\..\..\hebi\src\log_file.cpp" />
-    <ClCompile Include="..\..\..\hebi\src\lookup.cpp" />
-    <ClCompile Include="..\..\..\hebi\src\mac_address.cpp" />
-    <ClCompile Include="..\..\..\hebi\src\robot_model.cpp" />
-    <ClCompile Include="..\..\..\hebi\src\trajectory.cpp" />
+    <ClCompile Include="..\..\..\hebi-cpp\src\command.cpp" />
+    <ClCompile Include="..\..\..\hebi-cpp\src\feedback.cpp" />
+    <ClCompile Include="..\..\..\hebi-cpp\src\group.cpp" />
+    <ClCompile Include="..\..\..\hebi-cpp\src\group_command.cpp" />
+    <ClCompile Include="..\..\..\hebi-cpp\src\group_feedback.cpp" />
+    <ClCompile Include="..\..\..\hebi-cpp\src\group_info.cpp" />
+    <ClCompile Include="..\..\..\hebi-cpp\src\info.cpp" />
+    <ClCompile Include="..\..\..\hebi-cpp\src\log_file.cpp" />
+    <ClCompile Include="..\..\..\hebi-cpp\src\lookup.cpp" />
+    <ClCompile Include="..\..\..\hebi-cpp\src\mac_address.cpp" />
+    <ClCompile Include="..\..\..\hebi-cpp\src\robot_model.cpp" />
+    <ClCompile Include="..\..\..\hebi-cpp\src\trajectory.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -122,7 +122,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>../../../hebi/include;../../../hebi/include/Eigen</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../hebi-cpp/hebi/include;../../../hebi-cpp/hebi/include/Eigen</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -137,7 +137,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>../../../hebi/include;../../../hebi/include/Eigen</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../hebi/hebi-cpp/include;../../../hebi/hebi-cpp/include/Eigen</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -154,7 +154,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>../../../hebi/include;../../../hebi/include/Eigen</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../hebi/hebi-cpp/include;../../../hebi/hebi-cpp/include/Eigen</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -173,7 +173,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>../../../hebi/include;../../../hebi/include/Eigen</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../hebi/hebi-cpp/include;../../../hebi/hebi-cpp/include/Eigen</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
