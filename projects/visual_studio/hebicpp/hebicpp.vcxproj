@@ -122,7 +122,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>../../../hebi-cpp/hebi/include;../../../hebi-cpp/hebi/include/Eigen</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../hebi-cpp/hebi/include;../../../hebi-cpp/Eigen</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -137,7 +137,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>../../../hebi/hebi-cpp/include;../../../hebi/hebi-cpp/include/Eigen</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../hebi-cpp/hebi/include;../../../hebi-cpp/Eigen</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -154,7 +154,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>../../../hebi/hebi-cpp/include;../../../hebi/hebi-cpp/include/Eigen</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../hebi-cpp/hebi/include;../../../hebi-cpp/Eigen</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -173,7 +173,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>../../../hebi/hebi-cpp/include;../../../hebi/hebi-cpp/include/Eigen</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../hebi-cpp/hebi/include;../../../hebi-cpp/Eigen</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
