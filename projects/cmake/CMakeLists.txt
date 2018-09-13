@@ -76,6 +76,10 @@ SET(EXAMPLES_SOURCES
   ${ROOT_DIR}/basic/02a_feedback_foreground.cpp
   ${ROOT_DIR}/basic/02b_feedback_background.cpp
   ${ROOT_DIR}/basic/03a_command_position.cpp
+  ${ROOT_DIR}/basic/03b_command_velocity.cpp
+  ${ROOT_DIR}/basic/03c_command_effort.cpp
+  ${ROOT_DIR}/basic/03d_command_pos_vel.cpp
+  ${ROOT_DIR}/basic/03e_command_pos_vel_effort.cpp
   ${ROOT_DIR}/basic/04_kinematics.cpp
   ${ROOT_DIR}/basic/05_ik.cpp
   ${ROOT_DIR}/basic/06_trajectory.cpp

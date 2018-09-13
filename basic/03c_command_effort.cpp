@@ -1,5 +1,5 @@
 /**
- * Send position commands and log in the background.
+ * Send effort commands and log in the background.
  *
  * For more information, go to http://docs.hebi.us/tools.html#cpp-api
  *
@@ -30,7 +30,7 @@ int main() {
     return -1;
   }
 
-  //// Open-loop controller (position)
+  //// Open-loop controller (effort)
 
   // The command struct has fields for various commands and settings; for the
   // actuator, we will primarily use position, velocity, and effort.
@@ -38,7 +38,7 @@ int main() {
   // Fields that are not filled in will be ignored when sending.
   GroupCommand group_command(group->size());
   // GroupCommand uses Eigen types for data interchange
-  Eigen::VectorXd positions(1);
+  Eigen::VectorXd efforts(1);
   // Allocate feedback
   GroupFeedback group_feedback(group->size());
   
@@ -48,7 +48,7 @@ int main() {
   // Parameters for sin/cos function
   double freq_hz = 0.5;               // [Hz]
   double freq = freq_hz * 2.0 * M_PI; // [rad / sec]
-  double amp = M_PI / 4.0;            // [rad] (45 degrees)
+  double amp = 1.0;                   // [Nm]
 
   double duration = 10;               // [sec]
   auto start = std::chrono::system_clock::now();
@@ -59,10 +59,10 @@ int main() {
     // limits the loop rate to the feedback frequency
     group->getNextFeedback(group_feedback);
 
-    // Update position set point
+    // Update effort set point
     t = std::chrono::system_clock::now() - start;
-    positions[0] = amp * std::sin(freq * t.count());
-    group_command.setPosition(positions);
+    efforts[0] = amp * std::sin(freq * t.count());
+    group_command.setEffort(efforts);
     group->sendCommand(group_command);
   }
 

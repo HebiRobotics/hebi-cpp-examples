@@ -1,9 +1,18 @@
 /**
- * Send position commands and log in the background.
+ * Send simultaneous position/velocity/effort commands and log in the
+ * background.
  *
  * For more information, go to http://docs.hebi.us/tools.html#cpp-api
  *
  * This script assumes you can create a group with 1 module.
+ *
+ * IMPORTANT!!!
+ *  It also
+ * assumes that a load with some mass / inertia is attached to the output. 
+ * If the output is unloaded, these commands will track worse than the
+ * previous example that only commanded position + velocity.  See the
+ * comments about inertia at line 59 below.
+ *
  *
  * HEBI Robotics
  * September 2018
@@ -30,16 +39,13 @@ int main() {
     return -1;
   }
 
-  //// Open-loop controller (position)
+  //// Open-loop controller (position + velocity + effort)
 
-  // The command struct has fields for various commands and settings; for the
-  // actuator, we will primarily use position, velocity, and effort.
-  //
   // Fields that are not filled in will be ignored when sending.
   GroupCommand group_command(group->size());
-  // GroupCommand uses Eigen types for data interchange
   Eigen::VectorXd positions(1);
-  // Allocate feedback
+  Eigen::VectorXd velocities(1);
+  Eigen::VectorXd accelerations(1);
   GroupFeedback group_feedback(group->size());
   
   // Start logging in the background
@@ -50,6 +56,10 @@ int main() {
   double freq = freq_hz * 2.0 * M_PI; // [rad / sec]
   double amp = M_PI / 4.0;            // [rad] (45 degrees)
 
+  // Inertia parameters for converting acceleration to torque.  This inertia
+  // value corresponds to roughly a 300mm X5 link extending off the output. 
+  double inertia = .01;               // [kg * m^2]
+
   double duration = 10;               // [sec]
   auto start = std::chrono::system_clock::now();
 
@@ -59,10 +69,21 @@ int main() {
     // limits the loop rate to the feedback frequency
     group->getNextFeedback(group_feedback);
 
-    // Update position set point
     t = std::chrono::system_clock::now() - start;
+
+    // Position command
     positions[0] = amp * std::sin(freq * t.count());
+
+    // Velocity command (time derivative of position)
+    velocities[0] = freq * amp * std::cos(freq * t.count());
+
+    // Acceleration command (time-derivative of velocity)
+    accelerations[0] = -freq * freq * amp * std::sin( freq * t.count());
+
+    // Update set points
     group_command.setPosition(positions);
+    group_command.setVelocity(velocities);
+    group_command.setEffort(accelerations * inertia);
     group->sendCommand(group_command);
   }
 

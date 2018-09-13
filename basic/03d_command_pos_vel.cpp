@@ -1,5 +1,5 @@
 /**
- * Send position commands and log in the background.
+ * Send simultaneous position and velocity commands and log in the background.
  *
  * For more information, go to http://docs.hebi.us/tools.html#cpp-api
  *
@@ -30,16 +30,12 @@ int main() {
     return -1;
   }
 
-  //// Open-loop controller (position)
+  //// Open-loop controller (position + velocity)
 
-  // The command struct has fields for various commands and settings; for the
-  // actuator, we will primarily use position, velocity, and effort.
-  //
   // Fields that are not filled in will be ignored when sending.
   GroupCommand group_command(group->size());
-  // GroupCommand uses Eigen types for data interchange
   Eigen::VectorXd positions(1);
-  // Allocate feedback
+  Eigen::VectorXd velocities(1);
   GroupFeedback group_feedback(group->size());
   
   // Start logging in the background
@@ -59,10 +55,17 @@ int main() {
     // limits the loop rate to the feedback frequency
     group->getNextFeedback(group_feedback);
 
-    // Update position set point
     t = std::chrono::system_clock::now() - start;
+
+    // Position command
     positions[0] = amp * std::sin(freq * t.count());
+
+    // Velocity command (time derivative of position)
+    velocities[0] = freq * amp * std::cos(freq * t.count());
+
+    // Update set points
     group_command.setPosition(positions);
+    group_command.setVelocity(velocities);
     group->sendCommand(group_command);
   }
 
