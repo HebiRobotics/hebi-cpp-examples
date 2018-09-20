@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.0)
 project(hebi_cpp_examples)
 
+if("${CMAKE_BUILD_TYPE}" STREQUAL "")
+  set(CMAKE_BUILD_TYPE Debug)
+endif()
+
 set(ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../..)
 get_filename_component(ROOT_DIR "${ROOT_DIR}" REALPATH)
 
@@ -14,7 +18,11 @@ else()
   set(HEBI_DIR ${HEBI_CPP_DIR})
 endif()
 
-add_subdirectory(${HEBI_DIR} ${CMAKE_CURRENT_BINARY_DIR}/hebi-cpp-${CMAKE_BUILD_TYPE})
+set(hebi_cpp_build_dir hebi-cpp-${CMAKE_BUILD_TYPE})
+string(TOLOWER ${hebi_cpp_build_dir} hebi_cpp_build_dir)
+get_filename_component(hebi_cpp_build_dir "${CMAKE_CURRENT_BINARY_DIR}/${hebi_cpp_build_dir}" REALPATH)
+
+add_subdirectory(${HEBI_DIR} ${hebi_cpp_build_dir})
 
 set(HEBI_CPP_LIB_DIRECTORY ${HEBI_DIR}/${HEBI_C_LIB_SUBDIR})
 
