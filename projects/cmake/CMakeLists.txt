@@ -58,19 +58,22 @@ foreach (EXAMPLE ${EXAMPLES_SOURCES})
 
   # The target for the individual example is based on the filename
   get_filename_component(EX_NAME ${EXAMPLE} NAME_WE)
-  add_executable(${EX_NAME} ${EXAMPLE})
+  if(WIN32)
+    add_executable(${EX_NAME} ${EXAMPLE} $<TARGET_OBJECTS:_hebic++-obj>)
+  else()
+    add_executable(${EX_NAME} ${EXAMPLE})
+  endif()
   add_dependencies(examples ${EX_NAME})
   target_include_directories(${EX_NAME} PRIVATE ${ROOT_DIR})
 
   if(WIN32)
-    target_link_libraries(${EX_NAME} hebi hebic++ kernel32)
+    target_link_libraries(${EX_NAME} hebi kernel32)
     # For Windows, we copy the .dll file into the binary directory so that we
     # don't have to set the PATH variable.
     add_custom_command(TARGET ${EX_NAME} POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
       "${HEBI_CPP_LIB_DIRECTORY}/hebi.dll"
       $<TARGET_FILE_DIR:${EX_NAME}>)
-
   elseif(UNIX)
     target_link_libraries(${EX_NAME} hebi hebic++ m pthread)
   endif()
