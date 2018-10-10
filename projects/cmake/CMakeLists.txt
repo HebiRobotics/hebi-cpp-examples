@@ -81,8 +81,7 @@ SET(EXAMPLES_SOURCES
   ${ROOT_DIR}/basic/03d_command_pos_vel.cpp
   ${ROOT_DIR}/basic/03e_command_pos_vel_effort.cpp
   ${ROOT_DIR}/basic/03f_command_vel_w_feedback.cpp
-  ${ROOT_DIR}/basic/05_ik.cpp
-  ${ROOT_DIR}/basic/06_trajectory.cpp
+  ${ROOT_DIR}/basic/05_trajectory.cpp
   ${ROOT_DIR}/basic/06a_kinematics_setup.cpp
   ${ROOT_DIR}/basic/06b_kinematics_fwd_kinematics.cpp
   ${ROOT_DIR}/basic/06c_kinematics_inv_kinematics.cpp
