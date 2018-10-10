@@ -81,6 +81,9 @@ SET(EXAMPLES_SOURCES
   ${ROOT_DIR}/basic/03d_command_pos_vel.cpp
   ${ROOT_DIR}/basic/03e_command_pos_vel_effort.cpp
   ${ROOT_DIR}/basic/03f_command_vel_w_feedback.cpp
+  ${ROOT_DIR}/basic/04a_gains_position_kp.cpp
+  ${ROOT_DIR}/basic/04b_gains_saving_xml.cpp
+  ${ROOT_DIR}/basic/04c_gains_loading_xml.cpp
   ${ROOT_DIR}/basic/05_trajectory.cpp
   ${ROOT_DIR}/basic/06a_kinematics_setup.cpp
   ${ROOT_DIR}/basic/06b_kinematics_fwd_kinematics.cpp
@@ -94,7 +97,6 @@ SET(EXAMPLES_SOURCES
   ${ROOT_DIR}/advanced/feedback/led_feedback_example.cpp
 
   ${ROOT_DIR}/advanced/commands/command_control_strategy_example.cpp
-  ${ROOT_DIR}/advanced/commands/command_gains.cpp
   ${ROOT_DIR}/advanced/commands/command_position_example.cpp
   ${ROOT_DIR}/advanced/commands/command_persist_settings_example.cpp
   ${ROOT_DIR}/advanced/commands/command_settings_example.cpp
@@ -118,6 +120,9 @@ foreach (EXAMPLE ${EXAMPLES_SOURCES})
   add_custom_command(TARGET ${EX_NAME} POST_BUILD
                      COMMAND ${CMAKE_COMMAND} -E copy_directory
                          ${ROOT_DIR}/basic/hrdf $<TARGET_FILE_DIR:${EX_NAME}>/hrdf)
+  add_custom_command(TARGET ${EX_NAME} POST_BUILD
+                     COMMAND ${CMAKE_COMMAND} -E copy_directory
+                         ${ROOT_DIR}/basic/gains $<TARGET_FILE_DIR:${EX_NAME}>/gains)
 
   # Create logs directory in case the example logs data.
   add_custom_command(TARGET ${EX_NAME} POST_BUILD
