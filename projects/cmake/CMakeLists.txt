@@ -120,6 +120,11 @@ foreach (EXAMPLE ${EXAMPLES_SOURCES})
                      COMMAND ${CMAKE_COMMAND} -E copy_directory
                          ${ROOT_DIR}/basic/hrdf $<TARGET_FILE_DIR:${EX_NAME}>/hrdf)
 
+  # Create logs directory in case the example logs data.
+  add_custom_command(TARGET ${EX_NAME} POST_BUILD
+                     COMMAND ${CMAKE_COMMAND} -E make_directory
+                         $<TARGET_FILE_DIR:${EX_NAME}>/logs)
+
   # Add this example to metatarget
   add_dependencies(examples ${EX_NAME})
 
