@@ -80,9 +80,12 @@ SET(EXAMPLES_SOURCES
   ${ROOT_DIR}/basic/03c_command_effort.cpp
   ${ROOT_DIR}/basic/03d_command_pos_vel.cpp
   ${ROOT_DIR}/basic/03e_command_pos_vel_effort.cpp
-  ${ROOT_DIR}/basic/04_kinematics.cpp
+  ${ROOT_DIR}/basic/03f_command_vel_w_feedback.cpp
   ${ROOT_DIR}/basic/05_ik.cpp
   ${ROOT_DIR}/basic/06_trajectory.cpp
+  ${ROOT_DIR}/basic/06a_kinematics_setup.cpp
+  ${ROOT_DIR}/basic/06b_kinematics_fwd_kinematics.cpp
+  ${ROOT_DIR}/basic/06c_kinematics_inv_kinematics.cpp
 
   ${ROOT_DIR}/advanced/lookup/lookup_general_example.cpp
   ${ROOT_DIR}/advanced/lookup/lookup_example.cpp
@@ -111,6 +114,11 @@ foreach (EXAMPLE ${EXAMPLES_SOURCES})
   # The target for the individual example is based on the filename
   get_filename_component(EX_NAME ${EXAMPLE} NAME_WE)
   add_executable(${EX_NAME} ${EXAMPLE} $<TARGET_OBJECTS:hebi_cpp_files>)
+
+  # Copy over resource files potentially used by the examples
+  add_custom_command(TARGET ${EX_NAME} POST_BUILD
+                     COMMAND ${CMAKE_COMMAND} -E copy_directory
+                         ${ROOT_DIR}/basic/hrdf $<TARGET_FILE_DIR:${EX_NAME}>/hrdf)
 
   # Add this example to metatarget
   add_dependencies(examples ${EX_NAME})
