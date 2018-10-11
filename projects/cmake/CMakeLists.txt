@@ -88,6 +88,8 @@ SET(EXAMPLES_SOURCES
   ${ROOT_DIR}/basic/06a_kinematics_setup.cpp
   ${ROOT_DIR}/basic/06b_kinematics_fwd_kinematics.cpp
   ${ROOT_DIR}/basic/06c_kinematics_inv_kinematics.cpp
+  ${ROOT_DIR}/basic/07a_robot_3_dof_arm.cpp
+  ${ROOT_DIR}/basic/07b_robot_6_dof_arm.cpp
 
   ${ROOT_DIR}/advanced/lookup/lookup_general_example.cpp
   ${ROOT_DIR}/advanced/lookup/lookup_example.cpp
