@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\basic\04_kinematics.cpp">
+    <ClCompile Include="..\..\..\basic\06c_kinematics_inv_kinematics.cpp" />
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

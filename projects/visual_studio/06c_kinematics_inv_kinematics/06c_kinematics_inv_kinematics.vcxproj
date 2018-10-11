@@ -20,8 +20,8 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{7E24AEEB-3A9F-4C6F-84DA-504D14F52D1B}</ProjectGuid>
-    <RootNamespace>My03command</RootNamespace>
+    <ProjectGuid>{71687497-F336-4B87-8573-944DF6690616}</ProjectGuid>
+    <RootNamespace>My06ckinematicsinversekinematics</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -140,7 +140,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\basic\03_command.cpp" />
+    <ClCompile Include="..\..\..\basic\06c_kinematics_inv_kinematics.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\hebicpp\hebicpp.vcxproj">

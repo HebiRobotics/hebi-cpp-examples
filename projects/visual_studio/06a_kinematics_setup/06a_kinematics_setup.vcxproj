@@ -20,8 +20,8 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{8A11E5EE-92CF-4F17-B5FE-BA0BCA3F7D76}</ProjectGuid>
-    <RootNamespace>My06trajectory</RootNamespace>
+    <ProjectGuid>{455C2488-22E4-45DA-BDAC-97F78DF761D7}</ProjectGuid>
+    <RootNamespace>My06akinematicssetup</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -140,7 +140,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\basic\06_trajectory.cpp" />
+    <ClCompile Include="..\..\..\basic\06a_kinematics_setup.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\hebicpp\hebicpp.vcxproj">

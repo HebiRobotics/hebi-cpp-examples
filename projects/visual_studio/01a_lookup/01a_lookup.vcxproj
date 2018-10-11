@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{0738ABEB-35C3-4E60-9355-EB4AB847D33F}</ProjectGuid>
-    <RootNamespace>My01lookup</RootNamespace>
+    <RootNamespace>My01alookup</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -140,7 +140,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\basic\01_lookup.cpp" />
+    <ClCompile Include="..\..\..\basic\01a_lookup.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\hebicpp\hebicpp.vcxproj">
