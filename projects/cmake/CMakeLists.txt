@@ -24,8 +24,6 @@ get_filename_component(hebi_cpp_build_dir "${CMAKE_CURRENT_BINARY_DIR}/${hebi_cp
 
 add_subdirectory(${HEBI_DIR} ${hebi_cpp_build_dir})
 
-set(HEBI_CPP_LIB_DIRECTORY ${HEBI_DIR}/${HEBI_C_LIB_SUBDIR})
-
 set(EXAMPLES_SOURCES
 # Basic Examples
   ${ROOT_DIR}/basic/01_lookup.cpp
@@ -68,8 +66,13 @@ foreach (EXAMPLE ${EXAMPLES_SOURCES})
 
   if(WIN32)
     target_link_libraries(${EX_NAME} hebi kernel32)
+    target_include_directories(${EX_NAME} PRIVATE ${HEBI_DIR}/src ${HEBI_DIR}/include${HEBI_DIR}/Eigen)
     # For Windows, we copy the .dll file into the binary directory so that we
     # don't have to set the PATH variable.
+
+    set(LIBHEBI_LOCATION "lib/win_${LIBHEBI_TARGET_ARCHITECTURE}")
+    set(HEBI_CPP_LIB_DIRECTORY ${HEBI_DIR}/hebi/${LIBHEBI_LOCATION}/)
+
     add_custom_command(TARGET ${EX_NAME} POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
       "${HEBI_CPP_LIB_DIRECTORY}/hebi.dll"
