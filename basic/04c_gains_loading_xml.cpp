@@ -32,10 +32,11 @@ int main() {
   // Set gains.  If this doesn't succeed, it may be because the number of
   // modules in the group doesn't match the number in the XML, or the file does
   // not exist or is corrupt.
-  if (cmd.readGains("gains/example_gains.xml"))
-  {
-    std::cout << "Successfully read gains from file; now sending to module." << std::endl;
-    group->sendCommand(cmd);
+  if (cmd.readGains("gains/example_gains.xml") &&
+    group->sendCommandWithAcknowledgement(cmd)) {
+    std::cout << "Successfully read gains from file and sent to module." << std::endl;
+  } else {
+    std::cout << "Problem reading gains from file or sending to module." << std::endl;
   }
 
   return 0;
