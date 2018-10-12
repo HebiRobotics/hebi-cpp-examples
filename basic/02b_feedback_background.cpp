@@ -10,7 +10,7 @@ int main()
 {
   // Get a group
   Lookup lookup;
-  std::shared_ptr<Group> group = lookup.getGroupFromNames({ "family" }, { "base", "shoulder", "elbow" });
+  auto group = lookup.getGroupFromNames({ "Test Family" }, { "Test Actuator" });
   if (!group)
   {
     std::cout << "Group not found!" << std::endl;

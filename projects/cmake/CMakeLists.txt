@@ -27,15 +27,30 @@ get_filename_component(hebi_cpp_build_dir "${CMAKE_CURRENT_BINARY_DIR}/${hebi_cp
 
 add_subdirectory(${HEBI_DIR} ${hebi_cpp_build_dir})
 
-set(EXAMPLES_SOURCES
+# Build all examples:
+SET(EXAMPLES_SOURCES
+
 # Basic Examples
-  ${ROOT_DIR}/basic/01_lookup.cpp
+  ${ROOT_DIR}/basic/01a_lookup.cpp
+  ${ROOT_DIR}/basic/01b_get_group_single_module.cpp
+  ${ROOT_DIR}/basic/01c_get_group_multiple_modules.cpp
   ${ROOT_DIR}/basic/02a_feedback_foreground.cpp
   ${ROOT_DIR}/basic/02b_feedback_background.cpp
-  ${ROOT_DIR}/basic/03_command.cpp
-  ${ROOT_DIR}/basic/04_kinematics.cpp
-  ${ROOT_DIR}/basic/05_ik.cpp
-  ${ROOT_DIR}/basic/06_trajectory.cpp
+  ${ROOT_DIR}/basic/03a_command_position.cpp
+  ${ROOT_DIR}/basic/03b_command_velocity.cpp
+  ${ROOT_DIR}/basic/03c_command_effort.cpp
+  ${ROOT_DIR}/basic/03d_command_pos_vel.cpp
+  ${ROOT_DIR}/basic/03e_command_pos_vel_effort.cpp
+  ${ROOT_DIR}/basic/03f_command_vel_w_feedback.cpp
+  ${ROOT_DIR}/basic/04a_gains_position_kp.cpp
+  ${ROOT_DIR}/basic/04b_gains_saving_xml.cpp
+  ${ROOT_DIR}/basic/04c_gains_loading_xml.cpp
+  ${ROOT_DIR}/basic/05_trajectory.cpp
+  ${ROOT_DIR}/basic/06a_kinematics_setup.cpp
+  ${ROOT_DIR}/basic/06b_kinematics_fwd_kinematics.cpp
+  ${ROOT_DIR}/basic/06c_kinematics_inv_kinematics.cpp
+  ${ROOT_DIR}/basic/07a_robot_3_dof_arm.cpp
+  ${ROOT_DIR}/basic/07b_robot_6_dof_arm.cpp
 # Advanced examples
   ${ROOT_DIR}/advanced/lookup/lookup_general_example.cpp
   ${ROOT_DIR}/advanced/lookup/lookup_example.cpp
@@ -43,7 +58,6 @@ set(EXAMPLES_SOURCES
   ${ROOT_DIR}/advanced/feedback/io_feedback_example.cpp
   ${ROOT_DIR}/advanced/feedback/led_feedback_example.cpp
   ${ROOT_DIR}/advanced/commands/command_control_strategy_example.cpp
-  ${ROOT_DIR}/advanced/commands/command_gains.cpp
   ${ROOT_DIR}/advanced/commands/command_position_example.cpp
   ${ROOT_DIR}/advanced/commands/command_persist_settings_example.cpp
   ${ROOT_DIR}/advanced/commands/command_settings_example.cpp
@@ -59,10 +73,25 @@ foreach (EXAMPLE ${EXAMPLES_SOURCES})
 
   # The target for the individual example is based on the filename
   get_filename_component(EX_NAME ${EXAMPLE} NAME_WE)
+
   if(WIN32)
     add_executable(${EX_NAME} ${EXAMPLE} $<TARGET_OBJECTS:_hebic++-obj>)
   else()
     add_executable(${EX_NAME} ${EXAMPLE})
+
+  # Copy over resource files potentially used by the examples
+  add_custom_command(TARGET ${EX_NAME} POST_BUILD
+                     COMMAND ${CMAKE_COMMAND} -E copy_directory
+                         ${ROOT_DIR}/basic/hrdf $<TARGET_FILE_DIR:${EX_NAME}>/hrdf)
+  add_custom_command(TARGET ${EX_NAME} POST_BUILD
+                     COMMAND ${CMAKE_COMMAND} -E copy_directory
+                         ${ROOT_DIR}/basic/gains $<TARGET_FILE_DIR:${EX_NAME}>/gains)
+
+  # Create logs directory in case the example logs data.
+  add_custom_command(TARGET ${EX_NAME} POST_BUILD
+                     COMMAND ${CMAKE_COMMAND} -E make_directory
+                         $<TARGET_FILE_DIR:${EX_NAME}>/logs)
+
   endif()
   add_dependencies(examples ${EX_NAME})
   target_include_directories(${EX_NAME} PRIVATE ${ROOT_DIR})
