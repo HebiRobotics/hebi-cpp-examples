@@ -14,7 +14,6 @@ void HexapodParameters::resetToDefaults()
   max_r_ = 0.18f;
   step_threshold_rotate_ = 0.05f;
   step_threshold_shift_ = 0.02f;
-  log_path_ = "";
   logging_enabled_ = true;
   low_log_frequency_hz_ = 5;
   high_log_frequency_hz_ = 200;
@@ -43,7 +42,6 @@ bool HexapodParameters::loadFromFile(std::string file)
     XMLHelpers::trySetFloatParameter(step_thresh.attribute("rotate"), step_threshold_rotate_) &&
     XMLHelpers::trySetFloatParameter(step_thresh.attribute("shift"), step_threshold_shift_);
   success = success &&
-    XMLHelpers::trySetStringParameter(logging.attribute("path"), log_path_) &&
     XMLHelpers::trySetBoolParameter(logging.attribute("enabled"), logging_enabled_) &&
     XMLHelpers::trySetFloatParameter(logging.attribute("low_frequency_hz"), low_log_frequency_hz_);
     XMLHelpers::trySetFloatParameter(logging.attribute("high_frequency_hz"), high_log_frequency_hz_);
@@ -68,7 +66,6 @@ bool HexapodParameters::saveToFile(std::string file) const
   stance.append_attribute("max_shift_radius") = max_r_;
   step_thresh.append_attribute("rotate") = step_threshold_rotate_;
   step_thresh.append_attribute("shift") = step_threshold_shift_;
-  logging.append_attribute("path") = log_path_.c_str();
   logging.append_attribute("enabled") = logging_enabled_;
   logging.append_attribute("low_frequency_hz") = low_log_frequency_hz_;
   logging.append_attribute("high_frequency_hz") = high_log_frequency_hz_;

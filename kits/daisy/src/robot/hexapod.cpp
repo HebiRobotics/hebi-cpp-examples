@@ -14,12 +14,12 @@
 
 namespace hebi {
 
-std::unique_ptr<Hexapod> Hexapod::create(const HexapodParameters& params, bool log_ioboard, HexapodErrors& hex_errors)
+std::unique_ptr<Hexapod> Hexapod::create(const HexapodParameters& params, HexapodErrors& hex_errors)
 {
-  return createPartial(params, {0, 1, 2, 3, 4, 5}, log_ioboard, hex_errors);
+  return createPartial(params, {0, 1, 2, 3, 4, 5}, hex_errors);
 }
 
-std::unique_ptr<Hexapod> Hexapod::createPartial(const HexapodParameters& params, std::set<int> real_legs, bool log_ioboard, HexapodErrors& hex_errors)
+std::unique_ptr<Hexapod> Hexapod::createPartial(const HexapodParameters& params, std::set<int> real_legs, HexapodErrors& hex_errors)
 {
   hebi::Lookup lookup;
   std::vector<std::string> names;
@@ -45,8 +45,7 @@ std::unique_ptr<Hexapod> Hexapod::createPartial(const HexapodParameters& params,
   std::shared_ptr<hebi::Group> log_group_io;
   if (params.logging_enabled_)
   {
-    if (log_ioboard)
-      log_group_io = lookup.getGroupFromNames({"HEBI"}, {"Mobile IO"}, timeout_ms);
+    log_group_io = lookup.getGroupFromNames({"HEBI"}, {"Mobile IO"}, timeout_ms);
     log_group_modules = lookup.getGroupFromNames(family, names, timeout_ms);
   }
   return std::unique_ptr<Hexapod>(new Hexapod(group, log_group_io, log_group_modules, params, real_legs, hex_errors));
@@ -150,7 +149,7 @@ bool Hexapod::setGains()
     return true;
 
   hebi::GroupCommand gains(group_->size());
-  std::string gains_file = params_.log_path_ + "/" + std::string("gains") + std::to_string(group_->size()) + ".xml";
+  std::string gains_file = std::string("gains") + std::to_string(group_->size()) + ".xml";
   std::cout << "Loading gains from: " << gains_file << std::endl;
   bool success = gains.readGains(gains_file);
   return success && group_->sendCommandWithAcknowledgement(gains, 4000);
@@ -514,12 +513,7 @@ void Hexapod::startLogging()
 {
   // Set up logging if enabled:
   if (log_group_input_ || log_group_modules_)
-  {
-    if (params_.log_path_.size() > 0)
-      std::cout << "Logging to: " << params_.log_path_ << " at " << params_.low_log_frequency_hz_ << "hz with bursts of " << params_.high_log_frequency_hz_ << " hz every 30 minutes." << std::endl;
-    else
-      std::cout << "Logging to local directory at " << params_.low_log_frequency_hz_ << "hz with bursts of " << params_.high_log_frequency_hz_ << " hz every 30 minutes." << std::endl;
-  }
+    std::cout << "Logging to 'logs' directory at " << params_.low_log_frequency_hz_ << "hz with bursts of " << params_.high_log_frequency_hz_ << " hz every 30 minutes." << std::endl;
 
   std::string log_name_base;
   {
@@ -535,12 +529,12 @@ void Hexapod::startLogging()
   if (log_group_input_)
   {
     log_group_input_->setFeedbackFrequencyHz(params_.low_log_frequency_hz_);
-    log_group_input_->startLog(params_.log_path_, log_name_base + "-IO.hebilog");
+    log_group_input_->startLog("logs", log_name_base + "-IO.hebilog");
   }
   if (log_group_modules_)
   {
     log_group_modules_->setFeedbackFrequencyHz(params_.low_log_frequency_hz_);
-    log_group_modules_->startLog(params_.log_path_, log_name_base + "-HEX.hebilog");
+    log_group_modules_->startLog("logs", log_name_base + "-HEX.hebilog");
 
   }
 }

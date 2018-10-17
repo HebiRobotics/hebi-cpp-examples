@@ -49,7 +49,6 @@ HexapodParameterGui::HexapodParameterGui(IHexapodParameterView* viewer/* Qt3DCor
   // Add buttons
   QPushButton* import_button = new QPushButton("Reload From File");
   QPushButton* export_button = new QPushButton("Save To File");
-  QPushButton* log_dir_button = new QPushButton("Choose Log Folder");
 
   // Connect sliders and buttons 
   QObject::connect(stance_radius_slider_, &QSlider::valueChanged,
@@ -61,8 +60,6 @@ HexapodParameterGui::HexapodParameterGui(IHexapodParameterView* viewer/* Qt3DCor
                    this, &HexapodParameterGui::handleImportButton);
   QObject::connect(export_button, &QPushButton::released,
                    this, &HexapodParameterGui::handleExportButton);
-  QObject::connect(log_dir_button, &QPushButton::released,
-                   this, &HexapodParameterGui::handleLogDirButton);
 
   // Add widgets
   layout->addWidget(title);
@@ -70,7 +67,6 @@ HexapodParameterGui::HexapodParameterGui(IHexapodParameterView* viewer/* Qt3DCor
   layout->addWidget(stance_radius_slider_);
   layout->addWidget(body_height_label);
   layout->addWidget(body_height_slider_);
-  layout->addWidget(log_dir_button);
 //  QLabel* label = new QLabel(tr(""));
 //  layout->addWidget(label);
   // TODO: add some space here! Divider?
@@ -113,28 +109,5 @@ void HexapodParameterGui::handleExportButton()
     param_error.setWindowTitle("Unable to save parameters");
     param_error.setText("Problem saving parameters!");
     param_error.exec();
-  }
-}
-
-void HexapodParameterGui::handleLogDirButton()
-{
-  // Copy this so we can modify it below
-  hebi::HexapodParameters params = *viewer_->params();
-
-  // Get updated directory
-  QString file_name = QFileDialog::getExistingDirectory(nullptr,
-    tr("Select Log Directory"), params.log_path_.c_str(),
-    QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-  if (file_name.size() == 0)
-  {
-    QMessageBox param_error;
-    param_error.setWindowTitle("No folder selected");
-    param_error.setText("No folder selected!");
-    param_error.exec();
-  }
-  else
-  {
-    params.log_path_ = file_name.toStdString();
-    viewer_->paramsUpdated(params);
   }
 }

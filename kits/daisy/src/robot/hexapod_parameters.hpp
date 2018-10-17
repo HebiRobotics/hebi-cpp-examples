@@ -18,7 +18,6 @@ struct HexapodParameters
   float step_threshold_shift_; // m
 
   // Logging directory
-  std::string log_path_;
   bool logging_enabled_;
   float high_log_frequency_hz_;
   float low_log_frequency_hz_;

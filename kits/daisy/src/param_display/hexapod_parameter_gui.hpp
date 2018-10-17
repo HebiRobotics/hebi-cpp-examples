@@ -24,7 +24,6 @@ public:
 public slots:
   void handleImportButton();
   void handleExportButton();
-  void handleLogDirButton();
 
 private:
   std::unique_ptr<IHexapodParameterView> viewer_;

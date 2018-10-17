@@ -36,8 +36,8 @@ class Hexapod
 public:
   enum Mode { Step, Stance };
 
-  static std::unique_ptr<Hexapod> create(const HexapodParameters& params, bool log_ioboard, HexapodErrors& hex_errors);
-  static std::unique_ptr<Hexapod> createPartial(const HexapodParameters& params, std::set<int> real_legs, bool log_ioboard, HexapodErrors& hex_errors);
+  static std::unique_ptr<Hexapod> create(const HexapodParameters& params, HexapodErrors& hex_errors);
+  static std::unique_ptr<Hexapod> createPartial(const HexapodParameters& params, std::set<int> real_legs, HexapodErrors& hex_errors);
   static std::unique_ptr<Hexapod> createDummy(const HexapodParameters& params);
 
   static double getFeedbackPeriodMs() { return 5; }
