@@ -6,7 +6,7 @@
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QVBoxLayout>
 
-#include "hexapod_parameters.hpp"
+#include "robot/hexapod_parameters.hpp"
 
 QSlider* addSlider()
 {

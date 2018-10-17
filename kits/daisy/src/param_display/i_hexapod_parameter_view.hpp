@@ -1,6 +1,6 @@
 #pragma once
 
-#include "hexapod_parameters.hpp"
+#include "robot/hexapod_parameters.hpp"
 
 class IHexapodParameterView : public QObject
 {

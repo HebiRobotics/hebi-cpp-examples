@@ -6,7 +6,7 @@
 
 #include "i_hexapod_parameter_view.hpp"
 #include "display/hexapod_view_2d.hpp"
-#include "hexapod_parameters.hpp"
+#include "robot/hexapod_parameters.hpp"
 
 class QGraphicsScene;
 class QGraphicsLineItem;

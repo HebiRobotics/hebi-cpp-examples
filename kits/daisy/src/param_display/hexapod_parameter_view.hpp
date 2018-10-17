@@ -7,7 +7,7 @@
 
 #include <Qt3DExtras/QCylinderMesh>
 #include <Qt3DExtras/QSphereMesh>
-#include "hexapod_parameters.hpp"
+#include "robot/hexapod_parameters.hpp"
 #include "i_hexapod_parameter_view.hpp"
 
 class HexapodParameterView : public IHexapodParameterView

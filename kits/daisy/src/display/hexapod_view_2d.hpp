@@ -5,7 +5,7 @@
 #include <QtCore/QObject>
 #include <QEvent>
 
-#include "hexapod_parameters.hpp"
+#include "robot/hexapod_parameters.hpp"
 
 class QGraphicsScene;
 class QGraphicsLineItem;
