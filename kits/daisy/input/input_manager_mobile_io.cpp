@@ -1,6 +1,6 @@
 #include "input_manager_mobile_io.hpp"
 #include "lookup.hpp"
-#include "pugixml.hpp"
+#include "xml_util/pugixml.hpp"
 #include "group_feedback.hpp"
 
 #include <iostream> // Note: for debugging output.
