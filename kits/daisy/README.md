@@ -1,6 +1,6 @@
-= Example code for Daisy (HEBI Hexapod) =
+# Example code for Daisy (HEBI Hexapod) #
 
-== Dependencies ==
+## Dependencies ##
 
 CMake
 Qt
@@ -8,7 +8,7 @@ iOS or Android device with HEBI Mobile I/O
 
 *TODO: get version for Qt and CMake, and any other dependencies*
 
-== Building ==
+## Building ##
 
 Note -- the HEBI C++ API must be in the `hebi-cpp` directory in the root of the
 project in order for this project to build correctly!  If this does not exist,
@@ -28,12 +28,12 @@ make
 This will build several different programs and utilities that allow you to
 configure and run the hexapod.
 
-== Configuration ==
+## Configuration ##
 
 There are several utility programs included to help set the parameters that
 control the robot, as well as test the input device is working as expected.
 
-=== Parameter GUI ===
+### Parameter GUI ###
 
 For the parameter GUI, there is a 2D "line art" version and a 3D "spheres and
 cylinders" version (`parameter_gui_22` and `parameter_gui`, respectively).
@@ -49,7 +49,7 @@ CMake copies the file over from the `resources` directory, but whether this
 happens each build or just on a brand new build is not specified/guaranteed at
 this time.
 
-=== Input Test ===
+### Input Test ###
 
 The input test simply prints out data from the connected input device; this is
 currently set to be a HEBI "Mobile I/O" app (available for Android and iOS), but
@@ -59,7 +59,7 @@ device as well.
 In either case, this program will allow you to verify the basic functionality of
 the device before connecting to the full hexapod robot.
 
-== Running ==
+## Running ##
 
 To run the control program and drive the robot, run `./hexapod_control`. Note
 that there are several command line arguments as well, and a short help message
