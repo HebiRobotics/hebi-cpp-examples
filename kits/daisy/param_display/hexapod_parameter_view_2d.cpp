@@ -3,7 +3,7 @@
 #include <QGraphicsScene>
 
 #include "hexapod_parameter_view_2d.hpp"
-#include "hexapod.hpp"
+#include "robot/hexapod.hpp"
 
 #include <iostream>
 

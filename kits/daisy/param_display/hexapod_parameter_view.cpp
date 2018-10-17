@@ -5,7 +5,7 @@
 //#include <QtCore/QDebug>
 
 // Refactor into a separate "get transforms for parameters" function/class?
-#include "hexapod.hpp"
+#include "robot/hexapod.hpp"
 #include "robot_model.hpp"
 
 void makeSphere(Qt3DCore::QEntity*& sphere, Qt3DCore::QTransform*& sphere_transform, QRgb rgb,

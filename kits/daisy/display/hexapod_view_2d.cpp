@@ -6,7 +6,7 @@
 
 #include "hexapod_view_2d.hpp"
 
-#include "leg.hpp"
+#include "robot/leg.hpp"
 
 #include <iostream>
 
