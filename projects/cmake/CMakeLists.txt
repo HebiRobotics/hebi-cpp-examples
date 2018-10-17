@@ -98,7 +98,7 @@ foreach (EXAMPLE ${EXAMPLES_SOURCES})
 
   if(WIN32)
     target_link_libraries(${EX_NAME} hebi kernel32)
-    target_include_directories(${EX_NAME} PRIVATE ${HEBI_DIR}/src ${HEBI_DIR}/include${HEBI_DIR}/Eigen)
+    target_include_directories(${EX_NAME} PRIVATE ${HEBI_DIR}/src ${HEBI_DIR}/include ${HEBI_DIR}/Eigen)
     # For Windows, we copy the .dll file into the binary directory so that we
     # don't have to set the PATH variable.
 
