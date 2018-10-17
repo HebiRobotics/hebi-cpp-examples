@@ -54,9 +54,11 @@ public:
   double getStepPeriod() const;
 
 private:
+
   static const int num_joints_ = 3;
-  float stance_radius_; // m
-  float body_height_; // m
+  float stance_radius_; // [m]
+  float body_height_; // [m]
+  const float spring_shift_; // [N*m] compensate for the spring torques
   Eigen::VectorXd seed_angles_;
 
   std::unique_ptr<Step> step_;

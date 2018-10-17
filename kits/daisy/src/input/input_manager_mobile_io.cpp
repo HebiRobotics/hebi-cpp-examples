@@ -80,7 +80,7 @@ Eigen::Vector3f InputManagerMobileIO::getTranslationVelocityCmd() const
   if (isConnected())
   {
     translation_velocity_cmd <<
-      xyz_scale_ * right_vert_raw_,
+      -xyz_scale_ * right_vert_raw_,
       xyz_scale_ * right_horz_raw_,
       xyz_scale_ * getVerticalVelocity();
   }
@@ -98,7 +98,7 @@ Eigen::Vector3f InputManagerMobileIO::getRotationVelocityCmd() const
   {
     rotation_velocity_cmd <<
       0,
-      rot_scale_ * left_vert_raw_, // TODO: think about only enabling in stance mode...
+      -rot_scale_ * left_vert_raw_,
       rot_scale_ * left_horz_raw_;
   }
   else

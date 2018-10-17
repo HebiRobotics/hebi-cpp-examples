@@ -7,7 +7,7 @@ using ActuatorType = hebi::robot_model::RobotModel::ActuatorType;
 using LinkType = hebi::robot_model::RobotModel::LinkType;
 
 Leg::Leg(double angle_rad, double distance, const Eigen::VectorXd& current_angles, const HexapodParameters& params, bool is_dummy, int index, LegConfiguration configuration)
-  : index_(index), stance_radius_(params.stance_radius_), body_height_(params.default_body_height_)
+  : index_(index), stance_radius_(params.stance_radius_), body_height_(params.default_body_height_), spring_shift_(configuration == LegConfiguration::Right ? 2.5 : -2.5) // Nm
 {
   kin_ = configuration == LegConfiguration::Left ?
     hebi::robot_model::RobotModel::loadHRDF("left.hrdf") :
@@ -88,11 +88,10 @@ bool Leg::computeState(double t, Eigen::VectorXd& angles, Eigen::VectorXd& vels,
 Eigen::VectorXd Leg::computeTorques(const robot_model::MatrixXdVector& jacobian_com, const Eigen::MatrixXd& jacobian_ee, const Eigen::VectorXd& angles, const Eigen::VectorXd& vels, const Eigen::Vector3d& gravity_vec, const Eigen::Vector3d& foot_force)
 {
   // TODO: pull from XML?
-  constexpr float spring_shift = -2.5 * 1.3; // Nm
   constexpr float drag_shift = 1.5; // Nm / (rad/sec)
   
   Eigen::VectorXd spring(Leg::getNumJoints());
-  spring << 0, spring_shift + drag_shift * vels(1), 0;
+  spring << 0, spring_shift_ + drag_shift * vels(1), 0;
   Eigen::VectorXd stance(Leg::getNumJoints());
   Eigen::VectorXd grav_comp(Leg::getNumJoints());
   // TODO: remove later after we use correctly during startup.
