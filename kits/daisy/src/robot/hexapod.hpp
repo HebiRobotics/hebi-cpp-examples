@@ -87,6 +87,9 @@ public:
   }
   bool hasLogGroup() { if (log_group_input_ || log_group_modules_) return true; return false; }
 
+  void clearLegColors();
+  void setLegColor(int leg_index, uint8_t r, uint8_t g, uint8_t b);
+
 private:
 
   std::chrono::time_point<std::chrono::steady_clock> last_fbk;

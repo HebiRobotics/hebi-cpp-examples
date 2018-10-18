@@ -91,6 +91,21 @@ The current command line argument options are:
  -v
      Visualize -- show a simple rendering of the robot.
 
+ -q
+     Quiet mode (no dialog messages; waits and tries to continue on failure such as no modules on the network).
+
  -h
      Print help and return.
 ```
+
+Note that using `-q` is useful when auto-starting the script on a computer.  The
+flag causes the program to not quit when it cannot find the robot or joystick,
+(or the robot is M-Stopped), but continually try again. It uses a simple set of
+LED codes:
+
+When it can find the robot, but one of the legs is out of a safe range (+/- 90
+degrees from straight out), it sets the LEDs on that leg red.
+
+When if can find the robot, and all of the legs are within range, but it cannot
+find the joystick (mobile IO app with family "HEBI" and name "Mobile IO", it
+sets the LEDs on all modules to blue.

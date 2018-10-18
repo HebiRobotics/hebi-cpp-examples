@@ -22,11 +22,12 @@
 using namespace hebi;
 using namespace Eigen;
 
-bool parse_parameters(int argc, char** argv, bool& visualize, bool& dummy, bool& partial, std::set<int>& partial_legs)
+bool parse_parameters(int argc, char** argv, bool& visualize, bool& dummy, bool& partial, bool& quiet, std::set<int>& partial_legs)
 {
   visualize = false;
   dummy = false;
   partial = false;
+  quiet = false;
   bool valid = true;
   int idx = 1; // Ignore program name!
   for (;idx < argc; ++idx)
@@ -42,6 +43,8 @@ bool parse_parameters(int argc, char** argv, bool& visualize, bool& dummy, bool&
       "        are connected to." << std::endl << std::endl <<
       "    -v" << std::endl <<
       "        Visualize -- show a simple rendering of the robot." << std::endl << std::endl <<
+      "    -q" << std::endl <<
+      "        Quiet mode (no dialog messages; waits and tries to continue on failure such as no modules on the network)." << std::endl <<
       "    -h" << std::endl <<
       "        Print this help and return." << std::endl;
       return false;
@@ -74,6 +77,11 @@ bool parse_parameters(int argc, char** argv, bool& visualize, bool& dummy, bool&
       }
       continue;
     }
+    else if (str_arg == "-q")
+    {
+      quiet = true;
+      continue;
+    }
     else
     {
       valid = false;
@@ -91,100 +99,152 @@ bool parse_parameters(int argc, char** argv, bool& visualize, bool& dummy, bool&
   return true;
 }
 
+// Get the hexapod, handling errors as appropriate
+std::unique_ptr<Hexapod> getHexapod(const HexapodParameters& params, bool is_dummy, bool is_partial, bool is_quiet, const std::set<int>& legs)
+{
+  std::unique_ptr<Hexapod> hexapod;
+
+  HexapodErrors hex_errors;
+  hex_errors.has_valid_initial_feedback = true;
+  hex_errors.first_out_of_range_leg = -1;
+
+  if (is_dummy)
+  {
+    std::cout << "Creating dummy hexapod for testing" << std::endl;
+    hexapod = Hexapod::createDummy(params);
+  }
+  else if (is_partial)
+  {
+    std::cout << "Creating partial hexapod for testing" << std::endl;
+    hexapod = Hexapod::createPartial(params, legs, hex_errors);
+  }
+  else
+  {
+    std::cout << "Searching network for modules..." << std::endl;
+    hexapod = Hexapod::create(params, hex_errors);
+  }
+
+  if (!hexapod)
+  {
+    if (!is_quiet)
+    {
+      QMessageBox param_error;
+      param_error.setWindowTitle("Could not start up hexapod");
+      param_error.setText("Could not find hexapod on network -- check that all modules are visible via the Scope GUI.");
+      param_error.exec();
+    }
+    return nullptr;
+  }
+
+  // Clear any colors potentially set elsewhere
+  hexapod->clearLegColors();
+
+  if(!hex_errors.has_valid_initial_feedback)
+  {
+    if (!is_quiet)
+    {
+      QMessageBox param_error;
+      param_error.setWindowTitle("Did not get initial feedback from modules!");
+      param_error.setText("Could not get feedback from all modules -- this could indicate an intermittent network connection with the modules.");
+      param_error.exec();
+    }
+    return nullptr;
+  }
+
+  if(hex_errors.first_out_of_range_leg != -1)
+  {
+    if (!is_quiet)
+    {
+      QMessageBox param_error;
+      param_error.setWindowTitle("Base module out of range!");
+      std::string message = "Base module out of range (leg " + std::to_string(hex_errors.first_out_of_range_leg + 1) + ")";
+      param_error.setText(QString(message.c_str()));
+      param_error.exec();
+    }
+    else
+    {
+      // Set to red!
+      hexapod->setLegColor(hex_errors.first_out_of_range_leg, 255, 0, 0);
+    }
+    return nullptr;
+  }
+
+  return hexapod;
+
+}
+
 int main(int argc, char** argv)
 {
   // Construct initially so I can pop up error dialogs!
   QApplication app(argc, argv);
 
+  bool do_visualize{};
+  bool is_dummy{};
+  bool is_partial{};
+  bool is_quiet{};
+  std::set<int> legs;
+  if (!parse_parameters(argc, argv, do_visualize, is_dummy, is_partial, is_quiet, legs))
+    return -1;
+
   HexapodParameters params;
   if (!params.loadFromFile("hex_config.xml"))
   {
     params.resetToDefaults();
-    QMessageBox param_error;
-    param_error.setWindowTitle("Could not find parameters");
-    param_error.setText("Could not find hexapod parameters, or file corrupt! Using default parameters.");
-    param_error.exec();
+    if (!is_quiet)
+    {
+      QMessageBox param_error;
+      param_error.setWindowTitle("Could not find parameters");
+      param_error.setText("Could not find hexapod parameters, or file corrupt! Using default parameters.");
+      param_error.exec();
+    }
   }
 
-  bool do_visualize{};
-  bool is_dummy{};
-  HexapodErrors hex_errors;
-  hex_errors.has_valid_initial_feedback = true;
-  hex_errors.first_out_of_range_leg = -1;
-  std::unique_ptr<Hexapod> hexapod;
+  std::unique_ptr<Hexapod> hexapod = getHexapod(params, is_dummy, is_partial, is_quiet, legs);
+  while (is_quiet && !hexapod)
   {
-    bool is_partial{};
-    std::set<int> legs;
-    if (!parse_parameters(argc, argv, do_visualize, is_dummy, is_partial, legs))
-      return -1;
-    if (is_dummy)
+    hexapod = getHexapod(params, is_dummy, is_partial, is_quiet, legs);
+  }
+
+  if(!hexapod && !is_quiet)
+    return -1;
+
+  if (!is_dummy)
+  {
+    // Try (twice) to set gains; short circuits after first success
+    if (hexapod && !hexapod->setGains() && !hexapod->setGains())
     {
-      std::cout << "Creating dummy hexapod for testing" << std::endl;
-      hexapod = Hexapod::createDummy(params);
-    }
-    else if (is_partial)
-    {
-      std::cout << "Creating partial hexapod for testing" << std::endl;
-      hexapod = Hexapod::createPartial(params, legs, hex_errors);
-    }
-    else
-    {
-      std::cout << "Searching network for modules..." << std::endl;
-      hexapod = Hexapod::create(params, hex_errors);
-    }
-    if (!is_dummy)
-    {
-      // Try (twice) to set gains; short circuits after first success
-      if (hexapod && !hexapod->setGains() && !hexapod->setGains())
+      if (!is_quiet)
       {
         QMessageBox param_error;
         param_error.setWindowTitle("Could not set gains!");
         param_error.setText("Could not set controller gains on connected modules -- this could indicate an intermittent network connection with the modules.");
         param_error.exec();
-      }
-      if (hexapod)
-      {
-        hexapod->startLogging();
-      }
+      }      
+    }
+    if (hexapod)
+    {
+      hexapod->startLogging();
     }
   }
 
-  if(!hexapod)
-  {
-    QMessageBox param_error;
-    param_error.setWindowTitle("Could not start up hexapod");
-    param_error.setText("Could not find hexapod on network -- check that all modules are visible via the Scope GUI.");
-    param_error.exec();
-    return -1;
-  }
-
-  if(!hex_errors.has_valid_initial_feedback)
-  {
-    QMessageBox param_error;
-    param_error.setWindowTitle("Did not get initial feedback from modules!");
-    param_error.setText("Could not get feedback from all modules -- this could indicate an intermittent network connection with the modules.");
-    param_error.exec();
-    return -1;
-  }
-
-  if(hex_errors.first_out_of_range_leg != -1)
-  {
-    QMessageBox param_error;
-    param_error.setWindowTitle("Base module out of range!");
-    std::string message = "Base module out of range (leg " + std::to_string(hex_errors.first_out_of_range_leg + 1) + ")";
-    param_error.setText(QString(message.c_str()));
-    param_error.exec();
-    return -1;
-  }
+  // Set LEDs blue to indicate looking for joystick
+  for (int i = 0; i < 6; ++i)
+    hexapod->setLegColor(i, 0, 0, 255);
 
   std::unique_ptr<input::InputManager> input(new input::InputManagerMobileIO());
-  // TODO: retry a "reset" this multiple times? Wait in a for loop?
-  if (!input->isConnected())
+  
+  if (!is_quiet && !input->isConnected())
   {
     std::cout << "Could not find I/O board for joystick." << std::endl;
     return -1;
   }
+  // Retry a "reset" multiple times! Wait for this in a loop.
+  while (is_quiet && !input->isConnected())
+  {
+    static_cast<input::InputManagerMobileIO*>(input.get())->reset();
+  }
 
+  hexapod->clearLegColors();
 
   //////////////////////////////////////////////////////////////////////////////
 

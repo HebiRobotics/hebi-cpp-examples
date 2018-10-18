@@ -406,6 +406,41 @@ std::chrono::time_point<std::chrono::steady_clock> Hexapod::getLastFeedbackTime(
   return last_fbk;
 }
 
+void Hexapod::clearLegColors()
+{
+  GroupCommand cmd(group_->size());
+  for (int i = 0; i < group_->size(); ++i)
+    cmd[i].led().set(hebi::Color(0,0,0,0));
+  group_->sendCommand(cmd);
+}
+
+void Hexapod::setLegColor(int leg_index, uint8_t r, uint8_t g, uint8_t b)
+{
+  GroupCommand cmd(group_->size());
+
+  // Fancy mapping to allow for partial sets of legs...
+  int leg_count = 6;
+  int leg_module_start = 0;
+  for (int i = 0; i < leg_count; ++i)
+  {
+    // Only do anything if this is real!
+    if (real_legs_.count(i) != 0)
+    {
+      // This is the leg we want to set:
+      if (leg_index == i)
+      {
+        cmd[leg_module_start].led().set(hebi::Color(r, g, b));
+        cmd[leg_module_start + 1].led().set(hebi::Color(r, g, b));
+        cmd[leg_module_start + 2].led().set(hebi::Color(r, g, b));
+        break;
+      }
+      leg_module_start += 3;
+    }
+  }
+
+  group_->sendCommand(cmd);
+}
+
 // Note -- because the "cmd_" object is a class member, we have to provide some constructor
 // here, and so we just give it a size '1' if there is no group.  This could become a smart
 // pointer instead?
