@@ -109,3 +109,24 @@ degrees from straight out), it sets the LEDs on that leg red.
 When if can find the robot, and all of the legs are within range, but it cannot
 find the joystick (mobile IO app with family "HEBI" and name "Mobile IO", it
 sets the LEDs on all modules to blue.
+
+## Automatic startup instructions for Linux
+
+This process was tested using Ubuntu 16.04.
+
+The folder also contains scripts designed to automatically launch the demo.
+`daisyStart.sh` is used to launch the demo with the correct path. The
+`install.sh` script will create a symbolic link to `daisyStart.sh` so that the
+user can simply type `daisyStart` into a terminal window and program will run.
+
+To install:
+* Open a command prompt and navigate to the top level `daisy` kit directory
+* Make sure that the `install.sh` script has execute permissions: `chmod +x install.sh`
+* Run `install.sh`: `./install.sh`
+
+If you would like to have the script start on boot, add the `daisyStart`
+command under `Startup Applications` if using Ubuntu or use another standard
+method for automatically launching the program.
+
+Note that if you move the location of `daisyStart.sh` you will have to delete
+the symbolic link from `/usr/bin` and run `install.sh` again.
