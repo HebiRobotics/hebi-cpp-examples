@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cmath>
+
 #include "robot/hexapod_parameters.hpp"
 
 class IHexapodParameterView : public QObject

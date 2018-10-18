@@ -12,6 +12,7 @@
 
 #include "robot/hexapod.hpp"
 #include "input/input_manager_mobile_io.hpp"
+#include <atomic>
 #include <iostream>
 #include <unistd.h>
 #include <chrono>

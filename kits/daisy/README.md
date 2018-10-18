@@ -2,11 +2,19 @@
 
 ## Dependencies ##
 
-CMake
-Qt
-iOS or Android device with HEBI Mobile I/O
+Ubuntu 18.04 computer with:
+* CMake
+* Qt 5.9
 
-*TODO: get version for Qt and CMake, and any other dependencies*
+Other:
+* iOS or Android device with HEBI Mobile I/O
+
+To install the dependencies on Ubuntu 18.04:
+
+```
+sudo apt install build-essential qt5-default qt3d5-dev cmake
+
+```
 
 ## Building ##
 
@@ -15,13 +23,13 @@ project in order for this project to build correctly!  If this does not exist,
 download a github release of the code repository, or build the full examples
 CMake (projects/cmake/CMakeLists.txt) in order to download this directory.
 
-This code contains its own CMake project.  It has only been tested in Linux so
+This code contains its own CMake project.  It has only been tested in Ubuntu so
 far. To compile, from this directory run the following commands:
 
 ```
 mkdir build;
 cd build;
-cmake .. -DQT58BASE=/path/to/Qt/5.8 -DQT59BASE=/path/to/Qt/5.9
+cmake ..
 make
 ```
 
@@ -42,6 +50,11 @@ To run these, run `./parameter_gui_2d` or `./parameter_gui` from the build
 folder.  These will allow you to load and save the `hex_config.xml` file and
 change a couple of the basic values in this file, as well as visualize their
 effects.  You can also modify the file directly by hand.
+
+_Note that due to issues installing the Qt53dRender package on Ubuntu 18.04, the
+3D rendered parameter GUI has temporarily been disabled and removed from the
+CMakeLists scripts.  The 2D GUI has the same functionality and should be used
+instead._
 
 Note that the parameter file changed is the one _in the build directory_. You
 may want to consider backing up this file if you plan to rebuild. At build time,
