@@ -107,6 +107,7 @@ std::unique_ptr<Hexapod> getHexapod(const HexapodParameters& params, bool is_dum
   HexapodErrors hex_errors;
   hex_errors.has_valid_initial_feedback = true;
   hex_errors.first_out_of_range_leg = -1;
+  hex_errors.m_stop_pressed = false;
 
   if (is_dummy)
   {
@@ -165,6 +166,18 @@ std::unique_ptr<Hexapod> getHexapod(const HexapodParameters& params, bool is_dum
     {
       // Set to red!
       hexapod->setLegColor(hex_errors.first_out_of_range_leg, 255, 0, 0);
+    }
+    return nullptr;
+  }
+
+  if (hex_errors.m_stop_pressed)
+  {
+    if (!is_quiet)
+    {
+      QMessageBox param_error;
+      param_error.setWindowTitle("M-stop active!");
+      param_error.setText("M-stop is active on at least one module! Reset before continuing.");
+      param_error.exec();
     }
     return nullptr;
   }

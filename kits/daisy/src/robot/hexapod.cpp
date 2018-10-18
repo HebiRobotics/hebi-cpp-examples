@@ -399,6 +399,17 @@ int getFirstOutOfRange(const Eigen::VectorXd& positions)
   }
   return -1;
 }
+    
+bool getMStopPressed(const hebi::GroupFeedback& fbk)
+{
+  for (int i = 0; i < fbk.size(); ++i)
+  {
+    // At least one module has the m-stop pressed!
+    if (fbk[i].actuator().mstopState().get() == hebi::Feedback::MstopState::Triggered)
+      return true;
+  }
+  return false;
+}
 
 std::chrono::time_point<std::chrono::steady_clock> Hexapod::getLastFeedbackTime()
 {
@@ -469,6 +480,7 @@ Hexapod::Hexapod(std::shared_ptr<Group> group,
     hex_errors.has_valid_initial_feedback = copyIntoPositions(positions_, &fbk, real_legs_)
       && hex_errors.has_valid_initial_feedback;
     hex_errors.first_out_of_range_leg = getFirstOutOfRange(positions_);
+    hex_errors.m_stop_pressed = getMStopPressed(fbk);
   }
 
   // TODO: generalize!
@@ -592,7 +604,7 @@ Hexapod::~Hexapod()
     log_group_modules_->setFeedbackFrequencyHz(0);
   }
   if (log_group_input_ || log_group_modules_)
-    std::cout << "stopped log" << std::endl;
+    std::cout << "stopped any active logs" << std::endl;
 }
 
 } // namespace hebi

@@ -28,6 +28,7 @@ namespace hebi {
 
 typedef struct {
   bool has_valid_initial_feedback;
+  bool m_stop_pressed;
   int first_out_of_range_leg;
 } HexapodErrors;
 
