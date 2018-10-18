@@ -571,11 +571,15 @@ int main(int argc, char** argv)
         Eigen::VectorXd a(3);
         startup_trajectories[i]->getState(elapsed.count(), &angles, &v, &a);
         vels = v;
-        // TODO: FILL IN JACOBIAN DURING STARTUP!
-        Eigen::MatrixXd jacobian_ee(0,0);
-        robot_model::MatrixXdVector jacobian_com;
+
         Eigen::Vector3d foot_force = foot_forces.block<3,1>(0,i);
         hebi::Leg* curr_leg = hexapod->getLeg(i);
+
+        // Get the Jacobian
+        Eigen::MatrixXd jacobian_ee;
+        robot_model::MatrixXdVector jacobian_com;
+        curr_leg->computeJacobians(angles, jacobian_ee, jacobian_com);
+
         torques = curr_leg->computeTorques(jacobian_com, jacobian_ee, angles, vels, gravity_vec, /* dynamic_comp_torque,*/ foot_force); // TODO:
         // For rendering:
         if (hexapod_display)
@@ -593,6 +597,9 @@ int main(int argc, char** argv)
       continue;
     }
 
+    // Optionally slowly ramp up commands over the first few seconds
+    double ramp_up_scale = std::min(1.0, (elapsed.count() - startup_seconds) / 2.0);
+
     mode->setText(hexapod->getMode() == hebi::Hexapod::Mode::Step ? "Step" : "Stance");
 
     hexapod->updateStance(
@@ -609,6 +616,8 @@ int main(int argc, char** argv)
 
     // Calculate how the weight is distributed
     hexapod->computeFootForces(elapsed.count(), foot_forces);
+
+    foot_forces *= ramp_up_scale;
 
     Eigen::MatrixXd jacobian_ee;
     robot_model::MatrixXdVector jacobian_com;

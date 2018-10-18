@@ -7,7 +7,7 @@ using ActuatorType = hebi::robot_model::RobotModel::ActuatorType;
 using LinkType = hebi::robot_model::RobotModel::LinkType;
 
 Leg::Leg(double angle_rad, double distance, const Eigen::VectorXd& current_angles, const HexapodParameters& params, bool is_dummy, int index, LegConfiguration configuration)
-  : index_(index), stance_radius_(params.stance_radius_), body_height_(params.default_body_height_), spring_shift_(configuration == LegConfiguration::Right ? 2.5 : -2.5) // Nm
+  : index_(index), stance_radius_(params.stance_radius_), body_height_(params.default_body_height_), spring_shift_(configuration == LegConfiguration::Right ? 3.75 : -3.75) // Nm
 {
   kin_ = configuration == LegConfiguration::Left ?
     hebi::robot_model::RobotModel::loadHRDF("left.hrdf") :
@@ -52,7 +52,14 @@ Leg::Leg(double angle_rad, double distance, const Eigen::VectorXd& current_angle
   // TODO: initialize better here? What did the MATLAB code do? (nevermind -- that fix wasn't
   //cmd_stance_xyz_ = fbk_stance_xyz_;
 }
-  
+
+// Compute jacobian given position and velocities
+bool Leg::computeJacobians(const Eigen::VectorXd& angles, Eigen::MatrixXd& jacobian_ee, robot_model::MatrixXdVector& jacobian_com)
+{
+  kin_->getJEndEffector(angles, jacobian_ee);
+  kin_->getJ(HebiFrameTypeCenterOfMass, angles, jacobian_com);
+}
+ 
 bool Leg::computeState(double t, Eigen::VectorXd& angles, Eigen::VectorXd& vels, Eigen::MatrixXd& jacobian_ee, robot_model::MatrixXdVector& jacobian_com)
 {
   // TODO: think about returning an error value, e.g., when IK fails?
@@ -63,8 +70,7 @@ bool Leg::computeState(double t, Eigen::VectorXd& angles, Eigen::VectorXd& vels,
   {
     Eigen::VectorXd accels;
     step_->computeState(t, angles, vels, accels);
-    kin_->getJEndEffector(angles, jacobian_ee);
-    kin_->getJ(HebiFrameTypeCenterOfMass, angles, jacobian_com);
+    computeJacobians(angles, jacobian_ee, jacobian_com);
   }
   else // Stance
   {
@@ -76,8 +82,7 @@ bool Leg::computeState(double t, Eigen::VectorXd& angles, Eigen::VectorXd& vels,
     {
       return false;
     }
-    kin_->getJEndEffector(angles, jacobian_ee);
-    kin_->getJ(HebiFrameTypeCenterOfMass, angles, jacobian_com);
+    computeJacobians(angles, jacobian_ee, jacobian_com);
     // J(1:3,:) \ stance_vel_xyz)
     MatrixXd jacobian_part = jacobian_ee.topLeftCorner(3,jacobian_ee.cols());
     vels = jacobian_part.colPivHouseholderQr().solve(stance_vel_xyz_).eval();
@@ -94,28 +99,13 @@ Eigen::VectorXd Leg::computeTorques(const robot_model::MatrixXdVector& jacobian_
   spring << 0, spring_shift_ + drag_shift * vels(1), 0;
   Eigen::VectorXd stance(Leg::getNumJoints());
   Eigen::VectorXd grav_comp(Leg::getNumJoints());
-  // TODO: remove later after we use correctly during startup.
-  if (jacobian_ee.rows() != 0)
-  {
-    MatrixXd jacobian_part = jacobian_ee.topLeftCorner(3,jacobian_ee.cols());
-    stance = jacobian_part.transpose() * (-foot_force);
-  }
-  else
-  {
-    stance.setZero();
-  }
-  if (jacobian_com.size() != 0)
-  {
-    grav_comp.setZero();
-    for (int i = 0; i < masses_.size(); ++i)
-    {
-      grav_comp += - jacobian_com[i].block(0,0,3,Leg::getNumJoints()).transpose() * (gravity_vec * masses_[i]);
-    }
-  }
-  else
-  {
-    grav_comp.setZero();
-  }
+
+  MatrixXd jacobian_part = jacobian_ee.topLeftCorner(3,jacobian_ee.cols());
+  stance = jacobian_part.transpose() * (-foot_force);
+
+  grav_comp.setZero();
+  for (int i = 0; i < masses_.size(); ++i)
+    grav_comp += - jacobian_com[i].block(0,0,3,Leg::getNumJoints()).transpose() * (gravity_vec * masses_[i]);
 
   return grav_comp + stance + /*dyn_comp + */ spring;
 }

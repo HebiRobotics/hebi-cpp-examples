@@ -16,6 +16,11 @@ public:
   // Angle and distance from the center of the parent creature.
   Leg(double angle_rad, double distance, const Eigen::VectorXd& current_angles, const HexapodParameters& params, bool is_dummy, int index, LegConfiguration configuration);
 
+  // Compute jacobian given position and velocities.  Usually, this is done internally
+  // int `computeState`, but if the position/velocity is known (e.g., external
+  // step control), this can be used to get these jacobians from the internal
+  // kinematics object.
+  bool computeJacobians(const Eigen::VectorXd& angles, Eigen::MatrixXd& jacobian_ee, robot_model::MatrixXdVector& jacobian_com);
   // TODO: return value?  What if IK fails?
   bool computeState(double t, Eigen::VectorXd& angles, Eigen::VectorXd& vels, Eigen::MatrixXd& jacobian_ee, robot_model::MatrixXdVector& jacobian_com);
 
