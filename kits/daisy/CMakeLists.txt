@@ -122,6 +122,15 @@ add_custom_command( TARGET hexapod_control POST_BUILD
   $<TARGET_FILE_DIR:hexapod_control>)
 endif()
 
+add_custom_command(TARGET hexapod_control POST_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E copy_directory
+                       ${CMAKE_CURRENT_SOURCE_DIR}/resources/ $<TARGET_FILE_DIR:hexapod_control>/)
+
+# Create logs directory in case the example logs data.
+add_custom_command(TARGET hexapod_control POST_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E make_directory
+                       $<TARGET_FILE_DIR:hexapod_control>/logs)
+
 # Build all examples:
 # Parameter setting GUI
 add_executable(parameter_gui ${PARAMETER_GUI_SOURCES} $<TARGET_OBJECTS:hexapod_core>)
