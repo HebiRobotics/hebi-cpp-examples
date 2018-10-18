@@ -110,6 +110,40 @@ When if can find the robot, and all of the legs are within range, but it cannot
 find the joystick (mobile IO app with family "HEBI" and name "Mobile IO", it
 sets the LEDs on all modules to blue.
 
+## Driving ##
+
+After starting the program, the robot will take a few seconds to move the legs
+into a starting stance and then raise its body.
+
+When driving the robot, there are two basic modes - "stance" and "step".
+Pressing "B7" on the Mobile IO app will toggle between these modes.
+
+### Step ###
+
+By default, the robot is in the "step" mode; it will take a step to keep balanced
+as its body/center of mass is moved (either when manually moved or when driven
+with the app). 
+
+The left joystick can be used to rotate in place, and the right joystick can be
+used to move forward/back or sidestep.
+
+### Stance ###
+
+In stance mode, the legs stay on the ground, and the body can move relative to
+this stance position.  The left joystick is used for tilting and rotating the
+body, and the right joystick is used for shifting the body forward/back and
+left/right.
+
+### Other Controls ###
+
+In both modes, the slider A3 can be used to move the body up and down. The
+slider controls the velocity of the motion; the middle 50% is a "dead zone" that
+does not command a height change.
+
+As noted above, "B7" switches between Step and Stance modes.
+
+The button "B8" will quit the app.
+
 ## Automatic startup instructions for Linux
 
 This process was tested using Ubuntu 16.04.
