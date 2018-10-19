@@ -293,8 +293,7 @@ void Hexapod::computeFootForces(double t, Eigen::MatrixXd& foot_forces)
 {
   Eigen::VectorXd factors(6);
   Eigen::VectorXd blend_factors(6);
-  Eigen::Vector3d grav;
-  grav << 0, 0, 1;
+  Eigen::Vector3d grav = -gravity_direction_;
   // Get the dot product of gravity with each leg, and then subtract a scaled
   // gravity from the foot stance position.
   // NOTE: Matt is skeptical about this overall approach; but it worked before so we are keeping
@@ -457,6 +456,12 @@ void Hexapod::setLegColor(int leg_index, uint8_t r, uint8_t g, uint8_t b)
   group_->sendCommand(cmd);
 }
 
+Eigen::Vector3d Hexapod::getGravityDirection()
+{
+  std::lock_guard<std::mutex> lg(grav_lock_);
+  return gravity_direction_;
+}
+
 // Note -- because the "cmd_" object is a class member, we have to provide some constructor
 // here, and so we just give it a size '1' if there is no group.  This could become a smart
 // pointer instead?
@@ -501,16 +506,19 @@ Hexapod::Hexapod(std::shared_ptr<Group> group,
   last_step_legs_.insert(3);
   last_step_legs_.insert(4);
 
+  // Default to straight down w/ a level chassis
+  gravity_direction_ = -Eigen::Vector3d::UnitZ();
+
   last_fbk = std::chrono::steady_clock::now();
   // Start a background feedback handler
   if (group_)
   {
     group->addFeedbackHandler([this] (const GroupFeedback& fbk)
     {
-      Eigen::Vector3d avg_accel;
-      avg_accel.setZero(); // unnecessary?
-      Eigen::Vector3d avg_gyro;
-      avg_gyro.setZero(); // unnecessary?
+      // A -z vector in a local frame.
+      Eigen::Vector3d down(0, 0, -1);
+      Eigen::Vector3d avg_grav;
+      avg_grav.setZero();
 
       std::lock_guard<std::mutex> guard(fbk_lock_);
       last_fbk = std::chrono::steady_clock::now();
@@ -533,25 +541,27 @@ Hexapod::Hexapod(std::shared_ptr<Group> group,
         leg_count++;
         // Get from base of each leg
         int num_prev_legs = std::count_if(real_legs_.begin(), real_legs_.end(), [i](int other_leg) { return other_leg < i; });
-        auto accel = fbk[num_prev_legs * num_leg_joints].imu().accelerometer().get(); 
-        auto gyro = fbk[num_prev_legs * num_leg_joints].imu().gyro().get(); 
-        Eigen::Vector3d mod_accel;
-        mod_accel << accel.getX(), accel.getY(), accel.getZ();
-        Eigen::Vector3d mod_gyro;
-        mod_gyro << gyro.getX(), gyro.getY(), gyro.getZ();
+
+        // HEBI Quaternion
+        auto mod_orientation = fbk[num_prev_legs * num_leg_joints]
+          .imu().orientation().get();
+        // Eigen Quaternion
+        Eigen::Quaterniond mod_orientation_eig(
+          mod_orientation.getW(),
+          mod_orientation.getX(),
+          mod_orientation.getY(),
+          mod_orientation.getZ());
+        Eigen::Matrix3d mod_orientation_mat = mod_orientation_eig.toRotationMatrix();
+
         // Transform
         Eigen::Matrix4d trans = legs_[i]->getKinematics().getBaseFrame();
-        avg_accel += trans.topLeftCorner<3,3>() * mod_accel;
-        avg_gyro += trans.topLeftCorner<3,3>() * mod_gyro;
+        avg_grav += trans.topLeftCorner<3,3>() * mod_orientation_mat.transpose() * down;
       }
-      // TODO: remove the 2.0!  This just seems to stabilize the motion right now, but probably because
-      // either:
-      // 1) there are other factors we don't have in there yet (e.g., grav comp)
-      // 2) the jacobian is slightly noisy
-      // Note that the foot forces have been compared to MATLAB results, and seem
-      // reasonable. No further debugging has been done.
-      avg_accel /= num_legs_used * 2.0;
-      avg_gyro /= num_legs_used * 2.0;
+      avg_grav /= num_legs_used;
+      {
+        std::lock_guard<std::mutex> lg(grav_lock_);
+        gravity_direction_ = avg_grav;
+      }
 
       std::chrono::duration<double, std::ratio<1>> dt =
         (std::chrono::steady_clock::now() - this->pose_start_time_);

@@ -91,6 +91,8 @@ public:
   void clearLegColors();
   void setLegColor(int leg_index, uint8_t r, uint8_t g, uint8_t b);
 
+  Eigen::Vector3d getGravityDirection();
+
 private:
 
   std::chrono::time_point<std::chrono::steady_clock> last_fbk;
@@ -120,6 +122,10 @@ private:
   static constexpr float weight_ = 9.8f * 21.0f; // mass = 21 kg
 
   Eigen::Vector3d vel_xyz_;
+
+  // The orientation of gravity, as a unit vector, w.r.t. the chassis.
+  Eigen::Vector3d gravity_direction_;
+  std::mutex grav_lock_;
 
   Mode mode_;
 

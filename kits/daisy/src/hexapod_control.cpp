@@ -390,8 +390,6 @@ int main(int argc, char** argv)
   Eigen::VectorXd angles(Leg::getNumJoints());
   Eigen::VectorXd vels(Leg::getNumJoints());
   Eigen::VectorXd torques(Leg::getNumJoints());
-  Eigen::Vector3d gravity_vec;
-  gravity_vec << 0, 0, -9.8;
   Eigen::MatrixXd foot_forces(3,6); // 3 (xyz) by num legs
   foot_forces.setZero();
   std::vector<std::shared_ptr<trajectory::Trajectory>> startup_trajectories;
@@ -556,6 +554,7 @@ int main(int argc, char** argv)
         robot_model::MatrixXdVector jacobian_com;
         curr_leg->computeJacobians(angles, jacobian_ee, jacobian_com);
 
+        Eigen::Vector3d gravity_vec = hexapod->getGravityDirection() * 9.8;
         torques = curr_leg->computeTorques(jacobian_com, jacobian_ee, angles, vels, gravity_vec, /* dynamic_comp_torque,*/ foot_force); // TODO: add dynamic compensation
         // For rendering:
         if (hexapod_display)
@@ -610,6 +609,7 @@ int main(int argc, char** argv)
       
       // Get torques
       Eigen::Vector3d foot_force = foot_forces.block<3,1>(0,i);
+      Eigen::Vector3d gravity_vec = hexapod->getGravityDirection() * 9.8;
       torques = hexapod->getLeg(i)->computeTorques(jacobian_com, jacobian_ee, angles, vels, gravity_vec, /*dynamic_comp_torque,*/ foot_force); // TODO:
 
       hexapod->setCommand(i, &angles, &vels, &torques);
