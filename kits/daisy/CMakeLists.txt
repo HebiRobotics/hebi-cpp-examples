@@ -3,8 +3,7 @@ project (hexapod)
 
 SET (CMAKE_CXX_STANDARD 11)
 SET (CMAKE_CXX_STANDARD_REQUIRED ON)
-SET (CMAKE_CXX_FLAGS "-O3 -g")
-SET (SONAME "hebi")
+SET (CMAKE_CXX_FLAGS "-O3")
 
 # Instruct CMake to run moc automatically when needed.
 set(CMAKE_AUTOMOC ON)
@@ -86,9 +85,9 @@ add_executable(hexapod_control ${SOURCES} $<TARGET_OBJECTS:hexapod_core>)
 qt5_use_modules(hexapod_control Core Gui Widgets)
 
 if (WIN32) 
-target_link_libraries( hexapod_control ${SONAME} kernel32 ) # kernel32 for sleep commands.
+target_link_libraries( hexapod_control hebi kernel32 ) # kernel32 for sleep commands.
 else()
-target_link_libraries( hexapod_control ${SONAME} hebi hebic++ m pthread)
+target_link_libraries( hexapod_control hebi hebic++ m pthread)
 endif()
 
 # Add ultra-conservative warnings.
@@ -99,7 +98,7 @@ endif ( CMAKE_COMPILER_IS_GNUCC )
 if (WIN32)
 add_custom_command( TARGET hexapod_control POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
-  "${PROJECT_SOURCE_DIR}/lib/${SONAME}.dll"
+  "${PROJECT_SOURCE_DIR}/lib/hebi.dll"
   $<TARGET_FILE_DIR:hexapod_control>)
 endif()
 
@@ -120,15 +119,15 @@ add_custom_command(TARGET hexapod_control POST_BUILD
 # lines.
 #add_executable(parameter_gui ${PARAMETER_GUI_SOURCES} $<TARGET_OBJECTS:hexapod_core>)
 #qt5_use_modules(parameter_gui Core Gui Widgets 3DCore 3DExtras 3DRender 3DInput)
-#target_link_libraries(parameter_gui ${SONAME} hebi hebic++ m pthread)
+#target_link_libraries(parameter_gui hebi hebic++ m pthread)
 
 # 2D Parameter setting GUI
 add_executable(parameter_gui_2d ${PARAMETER_GUI_2D_SOURCES} $<TARGET_OBJECTS:hexapod_core>)
 qt5_use_modules(parameter_gui_2d Core Gui Widgets)
-target_link_libraries(parameter_gui_2d ${SONAME} hebi hebic++ m pthread)
+target_link_libraries(parameter_gui_2d hebi hebic++ m pthread)
 
 add_executable(input_test ${INPUT_TEST_SOURCES})
-target_link_libraries( input_test ${SONAME} hebi hebic++ m pthread )
+target_link_libraries( input_test hebi hebic++ m pthread )
 
 # Add ultra-conservative warnings.
 if ( CMAKE_COMPILER_IS_GNUCC )
