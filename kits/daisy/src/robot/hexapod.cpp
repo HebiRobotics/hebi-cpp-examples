@@ -456,6 +456,12 @@ void Hexapod::setLegColor(int leg_index, uint8_t r, uint8_t g, uint8_t b)
   group_->sendCommand(cmd);
 }
 
+Eigen::Vector3d Hexapod::getGravityDirection()
+{
+  std::lock_guard<std::mutex> lg(grav_lock_);
+  return gravity_direction_;
+}
+
 // Note -- because the "cmd_" object is a class member, we have to provide some constructor
 // here, and so we just give it a size '1' if there is no group.  This could become a smart
 // pointer instead?
@@ -501,7 +507,7 @@ Hexapod::Hexapod(std::shared_ptr<Group> group,
   last_step_legs_.insert(4);
 
   // Default to straight down w/ a level chassis
-  gravity_direction_ << 0, 0, -1;
+  gravity_direction_ = -Eigen::Vector3d::UnitZ();
 
   last_fbk = std::chrono::steady_clock::now();
   // Start a background feedback handler
@@ -552,9 +558,10 @@ Hexapod::Hexapod(std::shared_ptr<Group> group,
         avg_grav += trans.topLeftCorner<3,3>() * mod_orientation_mat.transpose() * down;
       }
       avg_grav /= num_legs_used;
-      // TODO: ideally, put a lock around this...but this is the only place
-      // we write to it, so it isn't terrible.
-      gravity_direction_ = avg_grav;
+      {
+        std::lock_guard<std::mutex> lg(grav_lock_);
+        gravity_direction_ = avg_grav;
+      }
 
       std::chrono::duration<double, std::ratio<1>> dt =
         (std::chrono::steady_clock::now() - this->pose_start_time_);

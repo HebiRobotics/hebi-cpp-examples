@@ -91,7 +91,7 @@ public:
   void clearLegColors();
   void setLegColor(int leg_index, uint8_t r, uint8_t g, uint8_t b);
 
-  Eigen::Vector3d getGravityDirection() const { return gravity_direction_; }
+  Eigen::Vector3d getGravityDirection();
 
 private:
 
@@ -125,6 +125,7 @@ private:
 
   // The orientation of gravity, as a unit vector, w.r.t. the chassis.
   Eigen::Vector3d gravity_direction_;
+  std::mutex grav_lock_;
 
   Mode mode_;
 
