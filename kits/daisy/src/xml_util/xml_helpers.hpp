@@ -3,15 +3,11 @@
 #include "pugixml.hpp"
 
 namespace hebi {
+namespace xml {
 
-class XMLHelpers
-{
-public:
-  static bool trySetFloatParameter(pugi::xml_attribute&& attr, float& param);
-  static bool trySetBoolParameter(pugi::xml_attribute&& attr, bool& param);
-  static bool trySetStringParameter(pugi::xml_attribute&& attr, std::string& param);
-private:
-  XMLHelpers() = delete;
-};
+bool trySetFloatParameter(pugi::xml_attribute&& attr, float& param);
+bool trySetBoolParameter(pugi::xml_attribute&& attr, bool& param);
+bool trySetStringParameter(pugi::xml_attribute&& attr, std::string& param);
 
+} // namespace xml
 } // namespace hebi

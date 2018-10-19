@@ -1,8 +1,9 @@
 #include "xml_helpers.hpp"
 
 namespace hebi {
+namespace xml {
 
-bool XMLHelpers::trySetFloatParameter(pugi::xml_attribute&& attr, float& param)
+bool trySetFloatParameter(pugi::xml_attribute&& attr, float& param)
 {
   if (attr)
   {
@@ -13,7 +14,7 @@ bool XMLHelpers::trySetFloatParameter(pugi::xml_attribute&& attr, float& param)
   return false;
 }
 
-bool XMLHelpers::trySetBoolParameter(pugi::xml_attribute&& attr, bool& param)
+bool trySetBoolParameter(pugi::xml_attribute&& attr, bool& param)
 {
   if (attr)
   {
@@ -24,7 +25,7 @@ bool XMLHelpers::trySetBoolParameter(pugi::xml_attribute&& attr, bool& param)
   return false;
 }
 
-bool XMLHelpers::trySetStringParameter(pugi::xml_attribute&& attr, std::string& param)
+bool trySetStringParameter(pugi::xml_attribute&& attr, std::string& param)
 {
   if (attr)
   {
@@ -35,4 +36,5 @@ bool XMLHelpers::trySetStringParameter(pugi::xml_attribute&& attr, std::string& 
   return false;
 }
 
+} // namespace xml
 } // namespace hebi

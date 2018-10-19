@@ -33,18 +33,18 @@ bool HexapodParameters::loadFromFile(std::string file)
   auto step_thresh = root.child("step_threshold");
   auto logging = root.child("logging");
   bool success =
-    XMLHelpers::trySetFloatParameter(stance.attribute("radius"), stance_radius_) &&
-    XMLHelpers::trySetFloatParameter(stance.attribute("body_height"), default_body_height_) &&
-    XMLHelpers::trySetFloatParameter(stance.attribute("min_foot_height"), min_z_) &&
-    XMLHelpers::trySetFloatParameter(stance.attribute("max_foot_height"), max_z_) &&
-    XMLHelpers::trySetFloatParameter(stance.attribute("max_shift_radius"), max_r_);
+    xml::trySetFloatParameter(stance.attribute("radius"), stance_radius_) &&
+    xml::trySetFloatParameter(stance.attribute("body_height"), default_body_height_) &&
+    xml::trySetFloatParameter(stance.attribute("min_foot_height"), min_z_) &&
+    xml::trySetFloatParameter(stance.attribute("max_foot_height"), max_z_) &&
+    xml::trySetFloatParameter(stance.attribute("max_shift_radius"), max_r_);
   success = success &&
-    XMLHelpers::trySetFloatParameter(step_thresh.attribute("rotate"), step_threshold_rotate_) &&
-    XMLHelpers::trySetFloatParameter(step_thresh.attribute("shift"), step_threshold_shift_);
+    xml::trySetFloatParameter(step_thresh.attribute("rotate"), step_threshold_rotate_) &&
+    xml::trySetFloatParameter(step_thresh.attribute("shift"), step_threshold_shift_);
   success = success &&
-    XMLHelpers::trySetBoolParameter(logging.attribute("enabled"), logging_enabled_) &&
-    XMLHelpers::trySetFloatParameter(logging.attribute("low_frequency_hz"), low_log_frequency_hz_);
-    XMLHelpers::trySetFloatParameter(logging.attribute("high_frequency_hz"), high_log_frequency_hz_);
+    xml::trySetBoolParameter(logging.attribute("enabled"), logging_enabled_) &&
+    xml::trySetFloatParameter(logging.attribute("low_frequency_hz"), low_log_frequency_hz_);
+    xml::trySetFloatParameter(logging.attribute("high_frequency_hz"), high_log_frequency_hz_);
 
   return success;
 }
