@@ -92,7 +92,7 @@ endif()
 
 # Add ultra-conservative warnings.
 if ( CMAKE_COMPILER_IS_GNUCC )
-  set_property( TARGET hexapod_control APPEND_STRING PROPERTY COMPILE_FLAGS " -Wall " )
+  set_property( TARGET hexapod_control APPEND_STRING PROPERTY COMPILE_FLAGS " -Wall -Wno-int-in-bool-context " )
 endif ( CMAKE_COMPILER_IS_GNUCC )
 # For Windows, we copy the .dll file into the binary directory so that we don't have to set the PATH variable.
 if (WIN32)
@@ -131,5 +131,5 @@ target_link_libraries( input_test hebi hebic++ m pthread )
 
 # Add ultra-conservative warnings.
 if ( CMAKE_COMPILER_IS_GNUCC )
-  set_property( TARGET input_test APPEND_STRING PROPERTY COMPILE_FLAGS -Wall )
+  set_property( TARGET input_test APPEND_STRING PROPERTY COMPILE_FLAGS " -Wall -Wno-int-in-bool-context " )
 endif ( CMAKE_COMPILER_IS_GNUCC )

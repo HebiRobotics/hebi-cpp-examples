@@ -105,7 +105,7 @@ Eigen::VectorXd Leg::computeTorques(const robot_model::MatrixXdVector& jacobian_
 
   grav_comp.setZero();
   for (int i = 0; i < masses_.size(); ++i)
-    grav_comp += - jacobian_com[i].block(0,0,3,Leg::getNumJoints()).transpose() * (gravity_vec * masses_[i]);
+    grav_comp += - jacobian_com[i].topLeftCorner<3,Leg::getNumJoints()>().transpose() * (gravity_vec * masses_[i]);
 
   return grav_comp + stance + /*dyn_comp + */ spring;
 }
