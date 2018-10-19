@@ -28,7 +28,7 @@ public:
   // TODO: pass in torques as reference instead for consistency?
   Eigen::VectorXd computeTorques(const robot_model::MatrixXdVector& jacobian_com, const Eigen::MatrixXd& jacobian_ee, const Eigen::VectorXd& angles, const Eigen::VectorXd& vels, const Eigen::Vector3d& gravity_vec, const Eigen::Vector3d& foot_force);
 
-  static int getNumJoints() { return num_joints_; };
+  static constexpr int getNumJoints() { return num_joints_; };
 
   void updateStance(const Eigen::Vector3d& trans_vel, const Eigen::Vector3d& rotate_vel, const Eigen::VectorXd& current_angles, double dt);
 
@@ -60,7 +60,7 @@ public:
 
 private:
 
-  static const int num_joints_ = 3;
+  static constexpr int num_joints_ = 3;
   float stance_radius_; // [m]
   float body_height_; // [m]
   const float spring_shift_; // [N*m] compensate for the spring torques
