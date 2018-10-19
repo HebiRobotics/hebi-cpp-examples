@@ -378,31 +378,8 @@ int main(int argc, char** argv)
   Eigen::Vector3f rotation_velocity_cmd;
   rotation_velocity_cmd.setZero();
 
-//  Eigen::Matrix3f orientation;
   double period = 5.0; // in milliseconds; e.g., 5 ms => 1000/5 = 200 Hz
 
-  // TODO: consider adding rendering of controls here.
-/* 
-  draw_controls.draw([&](paint::graphics& graph)
-  {
-    int vx = (int)(translation_velocity_cmd(0) * 200.0);
-    int vy = (int)(translation_velocity_cmd(1) * 200.0);
-    int vz = (int)(translation_velocity_cmd(2) * 200.0);
-    //int rx = (int)(rotation_velocity_cmd(0) * 200.0);
-    //int ry = (int)(rotation_velocity_cmd(1) * 200.0);
-    int rz = (int)(rotation_velocity_cmd(2) * 200.0);
-    int start_x = controls_panel.size().width / 2;
-    int start_y = 100;
-    // z/y vel
-    graph.line(point{start_x, start_y}, point{start_x + vy, start_y + vx}, colors::black);
-    // rotation
-    graph.rectangle(rectangle{(int)(start_x + std::min(rz, 0)), start_y, (unsigned)std::abs(rz), 20}, true, colors::blue );
-    // z height vel
-    graph.rectangle(rectangle{start_x, (int)(start_y + std::min(vz, 0)), 20, (unsigned)std::abs(vz)}, true, colors::red );
-  });
-
-  draw_controls.update();
-*/
   bool startup = true;
   bool first_run = true;
   bool last_connection_status = true;
@@ -499,7 +476,6 @@ int main(int argc, char** argv)
           hexapod->setLoggingFrequency(params.low_log_frequency_hz_);
       }
     }
-//    hexapod->getOrientation(orientation);
 
     // Startup phase: smoothly transition!
     if (startup)
