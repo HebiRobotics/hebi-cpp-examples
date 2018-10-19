@@ -113,12 +113,9 @@ bool InputManagerMobileIO::getQuitButtonPushed() const
   return has_quit_been_pushed_;
 }
 
-int InputManagerMobileIO::getAndResetModeToggleCount()
+size_t InputManagerMobileIO::getAndResetModeToggleCount()
 {
-  // TODO: do this atomically!
-  int tmp = num_mode_toggles_;
-  num_mode_toggles_ = 0;
-  return tmp;
+  return num_mode_toggles_.exchange(0);
 }
   
 float InputManagerMobileIO::getVerticalVelocity() const

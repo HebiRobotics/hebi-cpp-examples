@@ -355,6 +355,11 @@ void Hexapod::computeFootForces(double t, Eigen::MatrixXd& foot_forces)
 }
 
 // TODO: make this a class function and remove parameters? Make it better!
+// Because we may be using a "partial" hexapod (e.g., some physical module-backed
+// legs and some "dummy" legs to allow testing code on a few legs at a time),
+// we need to copy from a set of n feedback angles (3 for each leg) into a vector
+// of 18 positions (3 for each of the 6 legs) in the combined "dummy" + real leg
+// hexapod.
 bool copyIntoPositions(Eigen::VectorXd& positions, const hebi::GroupFeedback* fbk, const std::set<int>& real_legs)
 {
   bool valid_fbk = true;
@@ -503,9 +508,9 @@ Hexapod::Hexapod(std::shared_ptr<Group> group,
     group->addFeedbackHandler([this] (const GroupFeedback& fbk)
     {
       Eigen::Vector3d avg_accel;
-      avg_accel << 0, 0, 0; // unnecessary?
+      avg_accel.setZero(); // unnecessary?
       Eigen::Vector3d avg_gyro;
-      avg_gyro << 0, 0, 0; // unnecessary?
+      avg_gyro.setZero(); // unnecessary?
 
       std::lock_guard<std::mutex> guard(fbk_lock_);
       last_fbk = std::chrono::steady_clock::now();
@@ -536,8 +541,8 @@ Hexapod::Hexapod(std::shared_ptr<Group> group,
         mod_gyro << gyro.getX(), gyro.getY(), gyro.getZ();
         // Transform
         Eigen::Matrix4d trans = legs_[i]->getKinematics().getBaseFrame();
-        avg_accel += trans.topLeftCorner(3,3) * mod_accel;
-        avg_gyro += trans.topLeftCorner(3,3) * mod_gyro;
+        avg_accel += trans.topLeftCorner<3,3>() * mod_accel;
+        avg_gyro += trans.topLeftCorner<3,3>() * mod_gyro;
       }
       // TODO: remove the 2.0!  This just seems to stabilize the motion right now, but probably because
       // either:

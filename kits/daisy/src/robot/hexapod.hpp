@@ -26,11 +26,11 @@ using namespace Eigen;
 
 namespace hebi {
 
-typedef struct {
+struct HexapodErrors {
   bool has_valid_initial_feedback;
   bool m_stop_pressed;
   int first_out_of_range_leg;
-} HexapodErrors;
+};
 
 class Hexapod
 {

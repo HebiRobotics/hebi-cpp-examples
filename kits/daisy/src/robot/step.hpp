@@ -44,8 +44,6 @@ private:
 
   std::shared_ptr<trajectory::Trajectory> trajectory_;
   
-//  static constexpr float 
-
   // Allow Eigen member variables:
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW

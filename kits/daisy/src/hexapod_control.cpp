@@ -35,17 +35,17 @@ bool parse_parameters(int argc, char** argv, bool& visualize, bool& dummy, bool&
     std::string str_arg(argv[idx]);
     if (str_arg == "-h")
     {
-      std::cout << "Hexapod control usage:" << std::endl <<
-      "    -d" << std::endl <<
-      "        Dummy hexapod; no modules are connected to.  Incompatible with \"-p\"." << std::endl << std::endl <<
-      "    -p <list of integer leg indices>" << std::endl <<
-      "        Creates a partial dummy hexapod; only the legs with the specified indices" << std::endl <<
-      "        are connected to." << std::endl << std::endl <<
-      "    -v" << std::endl <<
-      "        Visualize -- show a simple rendering of the robot." << std::endl << std::endl <<
-      "    -q" << std::endl <<
-      "        Quiet mode (no dialog messages; waits and tries to continue on failure such as no modules on the network)." << std::endl <<
-      "    -h" << std::endl <<
+      std::cout << "Hexapod control usage:\n" <<
+      "    -d\n" <<
+      "        Dummy hexapod; no modules are connected to.  Incompatible with \"-p\".\n\n" <<
+      "    -p <list of integer leg indices>\n" <<
+      "        Creates a partial dummy hexapod; only the legs with the specified indices\n" <<
+      "        are connected to.\n\n" <<
+      "    -v\n" <<
+      "        Visualize -- show a simple rendering of the robot.\n\n" <<
+      "    -q\n" <<
+      "        Quiet mode (no dialog messages; waits and tries to continue on failure such as no modules on the network).\n\n" <<
+      "    -h\n" <<
       "        Print this help and return." << std::endl;
       return false;
     }
@@ -111,17 +111,17 @@ std::unique_ptr<Hexapod> getHexapod(const HexapodParameters& params, bool is_dum
 
   if (is_dummy)
   {
-    std::cout << "Creating dummy hexapod for testing" << std::endl;
+    std::cout << "Creating dummy hexapod for testing\n";
     hexapod = Hexapod::createDummy(params);
   }
   else if (is_partial)
   {
-    std::cout << "Creating partial hexapod for testing" << std::endl;
+    std::cout << "Creating partial hexapod for testing\n";
     hexapod = Hexapod::createPartial(params, legs, hex_errors);
   }
   else
   {
-    std::cout << "Searching network for modules..." << std::endl;
+    std::cout << "Searching network for modules...\n";
     hexapod = Hexapod::create(params, hex_errors);
   }
 
@@ -197,7 +197,7 @@ int main(int argc, char** argv)
   bool is_quiet{};
   std::set<int> legs;
   if (!parse_parameters(argc, argv, do_visualize, is_dummy, is_partial, is_quiet, legs))
-    return -1;
+    return 1;
 
   HexapodParameters params;
   if (!params.loadFromFile("hex_config.xml"))
@@ -219,7 +219,7 @@ int main(int argc, char** argv)
   }
 
   if(!hexapod && !is_quiet)
-    return -1;
+    return 1;
 
   if (!is_dummy)
   {
@@ -249,7 +249,7 @@ int main(int argc, char** argv)
   if (!is_quiet && !input->isConnected())
   {
     std::cout << "Could not find I/O board for joystick." << std::endl;
-    return -1;
+    return 1;
   }
   // Retry a "reset" multiple times! Wait for this in a loop.
   while (is_quiet && !input->isConnected())
@@ -261,7 +261,7 @@ int main(int argc, char** argv)
 
   //////////////////////////////////////////////////////////////////////////////
 
-  std::cout << "Found robot -- starting control program." << std::endl;
+  std::cout << "Found robot -- starting control program.\n";
 
   double overall_width = do_visualize ? 1100 : 300;
   double overall_height = do_visualize ? 800 : 150;
@@ -374,9 +374,9 @@ int main(int argc, char** argv)
   widget->resize(overall_width, overall_height);
 
   Eigen::Vector3f translation_velocity_cmd;
-  translation_velocity_cmd << 0, 0, 0;
+  translation_velocity_cmd.setZero();
   Eigen::Vector3f rotation_velocity_cmd;
-  rotation_velocity_cmd << 0, 0, 0;
+  rotation_velocity_cmd.setZero();
 
 //  Eigen::Matrix3f orientation;
   double period = 5.0; // in milliseconds; e.g., 5 ms => 1000/5 = 200 Hz
@@ -564,7 +564,6 @@ int main(int argc, char** argv)
       mode->setText("Startup");
      
       // Follow t_l:
-      // TODO
       for (int i = 0; i < 6; ++i)
       {
         Eigen::VectorXd v(3);

@@ -48,7 +48,7 @@ add_library(hexapod_core OBJECT
 )
 
 SET(SOURCES
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/hexapod_control.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/display/hexapod_view_2d.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/input/input_manager_mobile_io.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/xml_util/pugixml.cpp

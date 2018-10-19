@@ -4,6 +4,7 @@
 #include <Eigen/Dense>
 #include "group.hpp"
 #include <memory>
+#include <atomic>
 
 namespace hebi {
 namespace input {
@@ -36,7 +37,7 @@ public:
 
   // Gets the number of times the mode button has been toggled since the last
   // request. Resets this count after retrieving.
-  int getAndResetModeToggleCount() override;
+  size_t getAndResetModeToggleCount() override;
 
   // Is the joystick connected?
   // Return "true" if we are connected to an I/O board/app; false otherwise.
@@ -53,19 +54,19 @@ private:
 
   // Scale the joystick scale to motion of the robot in SI units (m/s, rad/s,
   // etc).
-  static constexpr float xyz_scale_ = 0.175;
-  static constexpr float rot_scale_ = 0.4;
+  static constexpr float xyz_scale_{0.175};
+  static constexpr float rot_scale_{0.4};
 
-  float left_horz_raw_ = 0; // Rotation
-  float left_vert_raw_ = 0; // Chassis tilt
+  float left_horz_raw_{0}; // Rotation
+  float left_vert_raw_{0}; // Chassis tilt
 
-  float slider_1_raw_ = 0; // Height
+  float slider_1_raw_{0}; // Height
 
-  float right_horz_raw_ = 0; // Translation (l/r)
-  float right_vert_raw_ = 0; // Translation (f/b)
+  float right_horz_raw_{0}; // Translation (l/r)
+  float right_vert_raw_{0}; // Translation (f/b)
 
-  bool prev_mode_button_state_ = false; // Mode
-  int num_mode_toggles_ = 0;            //
+  bool prev_mode_button_state_{false};      // Mode
+  std::atomic<size_t> num_mode_toggles_{0}; //
 
   bool has_quit_been_pushed_ = false; // Quit
 };
