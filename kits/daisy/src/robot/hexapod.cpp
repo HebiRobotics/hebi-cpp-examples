@@ -555,9 +555,13 @@ Hexapod::Hexapod(std::shared_ptr<Group> group,
 
         // Transform
         Eigen::Matrix4d trans = legs_[i]->getKinematics().getBaseFrame();
-        avg_grav += trans.topLeftCorner<3,3>() * mod_orientation_mat.transpose() * down;
+        Eigen::Vector3d my_grav = trans.topLeftCorner<3,3>() * mod_orientation_mat.transpose() * down;
+        // If one of the modules isn't reporting valid feedback, ignore this:
+        if (!std::isnan(my_grav[0]) && !std::isnan(my_grav[1]) && !std::isnan(my_grav[2]))
+          avg_grav += my_grav;
       }
-      avg_grav /= num_legs_used;
+      // Average the feedback from various modules and normalize.
+      avg_grav.normalize();
       {
         std::lock_guard<std::mutex> lg(grav_lock_);
         gravity_direction_ = avg_grav;
