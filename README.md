@@ -9,16 +9,7 @@ network.
 ## Downloading Dependencies
 
 If cloning the repo directly, you will need to download the C++ API to build the
-examples.  Running
-
-```
-python scripts/download_depends.py
-```
-
-will download and
-extract the API and associated binaries.
-
-If you have downloaded a tagged release, this step is unnecessary.
+examples and place it in a folder called `hebi-cpp`. If you use the CMake project, it will automatically be downloaded, assuming you have a working internet connection.
 
 ## Getting Started
 
