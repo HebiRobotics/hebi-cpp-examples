@@ -423,6 +423,8 @@ std::chrono::time_point<std::chrono::steady_clock> Hexapod::getLastFeedbackTime(
 
 void Hexapod::clearLegColors()
 {
+  if (!group_)
+    return;
   GroupCommand cmd(group_->size());
   for (int i = 0; i < group_->size(); ++i)
     cmd[i].led().set(hebi::Color(0,0,0,0));
@@ -431,6 +433,8 @@ void Hexapod::clearLegColors()
 
 void Hexapod::setLegColor(int leg_index, uint8_t r, uint8_t g, uint8_t b)
 {
+  if (!group_)
+    return;
   GroupCommand cmd(group_->size());
 
   // Fancy mapping to allow for partial sets of legs...
