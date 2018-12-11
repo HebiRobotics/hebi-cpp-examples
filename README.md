@@ -11,6 +11,8 @@ network.
 If cloning the repo directly, you will need to download the C++ API to build the
 examples and place it in a folder called `hebi-cpp`. If you use the CMake project, it will automatically be downloaded, assuming you have a working internet connection.
 
+Use the same version of the C++ API that is defined at the top of projects/cmake/DownloadHebiCpp.cmake, as this will ensure all the code is compatible.
+
 ## Getting Started
 
 The 'projects' folder contains sample project files for different IDEs/build
@@ -60,14 +62,15 @@ to compile the examples.
 
 ## Directory Layout
 
-- **hebi** The C++ API and C binaries are stored in this directory (if cloning
-the repo directly, note that this directory is created by the `download depends`
-script.
+- **hebi-cpp** The C++ API and C binaries are stored in this directory (if cloning
+the repo directly, note that this directory is created by CMake automatically, or
+you can unzip the C++ API manually into this folder, using the same version as listed
+at the top of projects/cmake/DownloadHebiCpp.cmake)
 - **basic** A set of numbered basic examples that walk through the core concepts
 of the API.  This code is the best place to start if you are new (note that to
 easily build the examples, use the project files in `projects`.
 - **advanced** A set of more involved examples that go through various topics.
+- **kits** Full-system example code for the various kits that HEBI produces.
 - **projects** The directory where IDE and build system files are found.
-- **scripts** Helper scripts for downloading the API and releasing the example
-package; this directory only exists in the directly cloned repo.
+- **util** Various utility functions that can help with control and full system examples.  For example, joystick input code and gravity compensation code are contained here.
 
