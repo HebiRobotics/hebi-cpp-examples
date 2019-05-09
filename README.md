@@ -8,8 +8,7 @@ network.
 
 ## Downloading Dependencies
 
-If cloning the repo directly, you will need to download the C++ API to build the
-examples and place it in a folder called `hebi-cpp`. If you use the CMake project, it will automatically be downloaded, assuming you have a working internet connection.
+If cloning the repo directly, you will need to download the C++ API from http://docs.hebi.us/downloads_changelogs.html#software to build the examples and place it in a folder called `hebi-cpp`. If you use the CMake project, it will automatically be downloaded, assuming you have a working internet connection.
 
 Use the same version of the C++ API that is defined at the top of projects/cmake/DownloadHebiCpp.cmake, as this will ensure all the code is compatible.
 
