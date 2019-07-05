@@ -11,7 +11,7 @@ std::vector<double> arrange(double min, double max, double spacing, double origi
   }
   if(inclusive) {
     ret.push_back(max);
-    ret.push_back(min);
+    ret.emplace(ret.begin(),min);
   }
   return ret;
 }
@@ -34,6 +34,14 @@ void adjust_limits(double* min, double* max, std::vector<double> data, double sc
     *min /= scale;
     *max /= scale;
   }
+}
+template<typename F>
+std::vector<double> f_x(std::vector<double> x, F f) {
+  std::vector<double> output;
+  for (size_t i = 0; i < x.size(); i++) {
+    output.push_back(f(x[i]));
+  }
+  return output;
 }
 
 std::vector<double> linspace(double min, double max, int count){
