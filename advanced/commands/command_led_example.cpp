@@ -56,7 +56,7 @@ int main()
 
   // Set the LED purple. Note that this override automatically sets the alpha
   // channel to "255" (e.g., arguments are RGB).
-  group_command[0].led().set(Color(0, 255, 255));
+  group_command[0].led().set(Color(255, 0, 255));
   group->sendCommand(group_command);
 
   std::this_thread::sleep_for(std::chrono::seconds(3));
