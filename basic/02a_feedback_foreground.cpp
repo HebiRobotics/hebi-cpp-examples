@@ -14,7 +14,7 @@ int main()
 {
   // Get a group
   Lookup lookup;
-  auto group = lookup.getGroupFromNames({ "HEBI" }, { "X-00147" });
+  auto group = lookup.getGroupFromNames({ "Test Family" }, { "Test Actuator" });
   if (!group)
   {
     std::cout << "Group not found!" << std::endl;

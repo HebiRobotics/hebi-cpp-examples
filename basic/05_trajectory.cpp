@@ -32,7 +32,7 @@ int main()
 {
   // Get group
   hebi::Lookup lookup;
-  auto group = lookup.getGroupFromNames({"HEBI"}, {"X-00147" });
+  auto group = lookup.getGroupFromNames({"Test Family"}, {"Test Actuator" });
 
   if (!group) {
     std::cout
@@ -94,8 +94,9 @@ int main()
     cmd.setVelocity(vel_cmd);
     group->sendCommand(cmd);
   }
-  auto x = linspace(0,time[2],100);
+  auto x = linspace(0.0,time[2],100.0);
   for (size_t i = 0; i < num_joints; i++) {
+    //these are calls to the function f_x which takes a vector of doubles, x, and a lambda, f, and returns a vector f(x)
     std::vector<double> p = f_x(x,[&, i](double t) {Eigen::VectorXd pos(num_joints); trajectory->getState(t,&pos,nullptr,nullptr); return pos[i]; });
     std::vector<double> v = f_x(x,[&, i](double t) {Eigen::VectorXd vel(num_joints); trajectory->getState(t,nullptr,&vel,nullptr); return vel[i]; });
     plt::plot(x,p,"-b",x,v,"--r");
