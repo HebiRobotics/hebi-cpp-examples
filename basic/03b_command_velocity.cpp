@@ -72,16 +72,16 @@ int main() {
 
   // Stop logging
   auto log_file = group->stopLog();
-  std::vector<std::vector<double>> pos;
-  pos.resize(group->size());
+  std::vector<std::vector<double>> vel;
+  vel.resize(group->size());
   GroupFeedback fbk(group->size());
   while(log_file->getNextFeedback(fbk)) {
     for(size_t i = 0; i < group->size(); i++){
-      pos[i].push_back(fbk.getVelocity()[i]);
+      vel[i].push_back(fbk.getVelocity()[i]);
     }
   }
   for(size_t i = 0; i < group->size(); i++){
-    plt::plot(pos[i]);
+    plt::plot(vel[i]);
   }
   plt::show();
   return 0;
