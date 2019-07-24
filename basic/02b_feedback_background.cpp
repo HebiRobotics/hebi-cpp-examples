@@ -32,7 +32,9 @@ int main()
   group->addFeedbackHandler([&y](const GroupFeedback& group_fbk)
   {
     auto gyro = group_fbk.getGyro();
-    y = {gyro(0,0),gyro(0,1), gyro(0,2) };
+    y = { gyro(0,0), gyro(0,1), gyro(0,2) };
+
+    //plot the feedback
     std::vector<std::string> x_labels = {"X","Y","Z"};
     std::vector<double> x_ticks = {0.0,1.0,2.0};
     plt::clf();

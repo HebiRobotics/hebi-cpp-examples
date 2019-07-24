@@ -179,6 +179,8 @@ int main() {
 
   // Stop logging
   auto log_file = group->stopLog();
+
+  //plot logged position, velocity and efforts for each module
   std::vector<std::vector<double>> pos;
   std::vector<std::vector<double>> vel;
   std::vector<std::vector<double>> eff;

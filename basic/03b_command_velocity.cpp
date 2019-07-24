@@ -72,6 +72,8 @@ int main() {
 
   // Stop logging
   auto log_file = group->stopLog();
+
+  //plot logged velocity
   std::vector<std::vector<double>> vel;
   vel.resize(group->size());
   GroupFeedback fbk(group->size());

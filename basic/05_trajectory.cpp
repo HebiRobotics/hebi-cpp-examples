@@ -94,6 +94,7 @@ int main()
     cmd.setVelocity(vel_cmd);
     group->sendCommand(cmd);
   }
+  //plot graph of trajectories
   auto x = linspace(0.0,time[2],100.0);
   for (size_t i = 0; i < num_joints; i++) {
     //these are calls to the function f_x which takes a vector of doubles, x, and a lambda, f, and returns a vector f(x)

@@ -89,6 +89,8 @@ int main() {
 
   // Stop logging
   auto log_file = group->stopLog();
+
+  // plot logged position
   std::vector<std::vector<double>> pos;
   pos.resize(group->size());
   GroupFeedback fbk(group->size());

@@ -37,8 +37,8 @@ using namespace hebi;
 /// gains on the modules in that group.
 std::shared_ptr<Group> getGroup() {
   // Get group
-  std::vector<std::string> families {"Hi5 Generator"};
-  std::vector<std::string> names {"Wrist","Shoulder","Elbow"};
+  std::vector<std::string> families {"family"};
+  std::vector<std::string> names {"base","shoulder","elbow"};
   Lookup lookup;
   std::shared_ptr<Group> group = lookup.getGroupFromNames(families, names);
   if (!group)
@@ -174,6 +174,8 @@ int main() {
 
   // Stop logging
   auto log_file = group->stopLog();
+
+  //plot logged position, velocity and effort for each module
   std::vector<std::vector<double>> pos;
   std::vector<std::vector<double>> vel;
   std::vector<std::vector<double>> eff;

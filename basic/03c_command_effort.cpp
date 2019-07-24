@@ -72,6 +72,8 @@ int main() {
 
   // Stop logging
   auto log_file = group->stopLog();
+
+  //plot logged effort
   std::vector<std::vector<double>> eff;
   eff.resize(group->size());
   GroupFeedback fbk(group->size());

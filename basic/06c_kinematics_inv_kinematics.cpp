@@ -24,7 +24,7 @@ int main()
   
   // Get a group
   Lookup lookup;
-  std::shared_ptr<Group> group = lookup.getGroupFromNames({ "Hi5 Generator" }, { "Wrist", "Shoulder", "Elbow" });
+  std::shared_ptr<Group> group = lookup.getGroupFromNames({ "family" }, { "base", "shoulder", "elbow" });
 
   if (!group)
   {
@@ -110,6 +110,7 @@ int main()
   hebi::robot_model::Matrix4dVector transforms;
   model->getFK(HebiFrameTypeOutput, ik_result_joint_angles, transforms);
 
+  // plot frames on a 3d graph
   transforms.emplace(transforms.begin(),Eigen::Matrix<double,4,4>::Identity());
   std::vector<std::vector<double>> lines_x;
   std::vector<std::vector<double>> lines_y;

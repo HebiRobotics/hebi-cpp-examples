@@ -14,7 +14,7 @@ int main()
 {
   // Get a group
   Lookup lookup;
-  auto group = lookup.getGroupFromNames({ "Test Family" }, { "Test Actuator" });
+  auto group = lookup.getGroupFromNames({ "Family Name" }, { "Group Name" });
   if (!group)
   {
     std::cout << "Group not found!" << std::endl;
@@ -33,14 +33,15 @@ int main()
   std::vector<double> y;
   std::vector<std::string> x_labels = {"X","Y","Z"};
   std::vector<double> x_ticks = {0.0,1.0,2.0};
-
+  
   for (size_t i = 0; i < 50; ++i)
   { 
     if (group->getNextFeedback(group_fbk))
     {
       auto gyro = group_fbk.getGyro();
       y = {gyro(0,0),gyro(0,1), gyro(0,2) };
-      
+     
+      //plot the feedback
       plt::clf();
       plt::ylim(-3.14, 3.14); 
       plt::xticks(x_ticks,x_labels);

@@ -16,7 +16,7 @@ int main()
 
     // Get a group
   Lookup lookup;
-  std::shared_ptr<Group> group = lookup.getGroupFromNames({ "Hi5 Generator" }, { "Wrist", "Shoulder", "Elbow" });
+  std::shared_ptr<Group> group = lookup.getGroupFromNames({ "family" }, { "base", "shoulder", "elbow" });
 
   if (!group)
   {
@@ -41,6 +41,7 @@ int main()
       Eigen::VectorXd angles = group_fbk.getPosition();
       model->getFK(HebiFrameTypeOutput, angles, transforms);
 
+      //plot frames on a 3d graph
       transforms.emplace(transforms.begin(),Eigen::Matrix<double,4,4>::Identity());
       std::vector<std::vector<double>> lines_x;
       std::vector<std::vector<double>> lines_y;
@@ -54,9 +55,5 @@ int main()
     }
   }
   
-  // Control the robot at 100 Hz for 30 seconds
-  //std::this_thread::sleep_for(std::chrono::seconds(30));
-  group->clearFeedbackHandlers();
-
   return 0;
 }
