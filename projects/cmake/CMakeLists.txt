@@ -64,7 +64,9 @@ SET(EXAMPLES_SOURCES
   ${ROOT_DIR}/advanced/demos/master_slave_async_example.cpp
 # Kits
   ${ROOT_DIR}/kits/arm/gravity_compensation.cpp
-  ${ROOT_DIR}/kits/arm/teach_repeat.cpp)
+  ${ROOT_DIR}/kits/arm/teach_repeat.cpp
+  ${ROOT_DIR}/kits/rosie/rosie_demo.cpp)
+  
 
 # Make one metatarget for all examples
 add_custom_target(examples)
