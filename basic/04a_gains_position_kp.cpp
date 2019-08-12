@@ -19,6 +19,10 @@
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
+#include "log_file.hpp"
+#include "plot_functions.h"
+
+namespace plt = matplotlibcpp;
 
 using namespace hebi;
 
@@ -86,5 +90,18 @@ int main() {
   // Stop logging
   auto log_file = group->stopLog();
 
+  // plot logged position
+  std::vector<std::vector<double>> pos;
+  pos.resize(group->size());
+  GroupFeedback fbk(group->size());
+  while(log_file->getNextFeedback(fbk)) {
+    for(size_t i = 0; i < group->size(); i++){
+      pos[i].push_back(fbk.getPosition()[i]);
+    }
+  }
+  for(size_t i = 0; i < group->size(); i++){
+    plt::plot(pos[i]);
+  }
+  plt::show();
   return 0;
 }

@@ -6,6 +6,7 @@
 #include "group_command.hpp"
 #include "group_feedback.hpp"
 #include "robot_model.hpp"
+#include "plot_functions.h"
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
@@ -106,8 +107,19 @@ int main()
 
   std::cout << "Target position: " << std::endl << target_xyz.transpose() << std::endl;
   std::cout << "IK joint angles: " << std::endl << ik_result_joint_angles.transpose() << std::endl;
-  model->getEndEffector(ik_result_joint_angles, transform);
-  std::cout << "FK of IK joint angles: " << std::endl << transform.topRightCorner<3,1>().transpose() << std::endl << std::endl;
+  hebi::robot_model::Matrix4dVector transforms;
+  model->getFK(HebiFrameTypeOutput, ik_result_joint_angles, transforms);
+
+  // plot frames on a 3d graph
+  transforms.emplace(transforms.begin(),Eigen::Matrix<double,4,4>::Identity());
+  std::vector<std::vector<double>> lines_x;
+  std::vector<std::vector<double>> lines_y;
+  std::vector<std::vector<double>> lines_z;
+
+  for(size_t j = 0; j < transforms.size(); ++j) {
+    plot_3dtriad(transforms[j],&lines_x,&lines_y,&lines_z, static_cast<bool>(j));
+  }
+  plt::pause(1);
 
   //////////////////////////////////////
   // Send commands to the physical robot

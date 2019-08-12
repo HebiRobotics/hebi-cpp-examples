@@ -5,12 +5,16 @@
 #include "lookup.hpp"
 #include "group_feedback.hpp"
 #include "robot_model.hpp"
+#include "plot_functions.h"
 
 using namespace hebi;
 
+namespace plt = matplotlibcpp;
+
 int main()
 {
-  // Get a group
+
+    // Get a group
   Lookup lookup;
   std::shared_ptr<Group> group = lookup.getGroupFromNames({ "family" }, { "base", "shoulder", "elbow" });
 
@@ -30,20 +34,26 @@ int main()
   }
 
   // Add a callback function to print (x,y,z) position
-  Eigen::Matrix4d transform;
-  group->addFeedbackHandler([&model, &transform](const GroupFeedback& group_fbk)
-  {
-    Eigen::VectorXd angles = group_fbk.getPosition();
-    model->getEndEffector(angles, transform);
-    std::cout << std::setw(0.2) <<
-       "x " << transform(0,3) <<
-      " y " << transform(1,3) <<
-      " z " << transform(2,3) << std::endl;
-  });
-  
-  // Control the robot at 100 Hz for 30 seconds
-  std::this_thread::sleep_for(std::chrono::seconds(30));
-  group->clearFeedbackHandlers();
+  hebi::robot_model::Matrix4dVector transforms;
+  GroupFeedback group_fbk(group->size());
+  for(size_t i = 0; i < 50; i++) {
+    if (group->getNextFeedback(group_fbk)){
+      Eigen::VectorXd angles = group_fbk.getPosition();
+      model->getFK(HebiFrameTypeOutput, angles, transforms);
 
+      //plot frames on a 3d graph
+      transforms.emplace(transforms.begin(),Eigen::Matrix<double,4,4>::Identity());
+      std::vector<std::vector<double>> lines_x;
+      std::vector<std::vector<double>> lines_y;
+      std::vector<std::vector<double>> lines_z;
+
+      plt::clf();
+      for(size_t j = 0; j < transforms.size(); ++j) {
+	plot_3dtriad(transforms[j],&lines_x,&lines_y,&lines_z, static_cast<bool>(j));
+      }
+      plt::pause(1);
+    }
+  }
+  
   return 0;
 }

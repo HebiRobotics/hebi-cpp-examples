@@ -26,6 +26,10 @@
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
+#include "log_file.hpp"
+#include "plot_functions.h"
+
+namespace plt = matplotlibcpp;
 
 using namespace hebi;
 
@@ -33,8 +37,8 @@ using namespace hebi;
 /// gains on the modules in that group.
 std::shared_ptr<Group> getGroup() {
   // Get group
-  std::vector<std::string> families {"3-DoF Arm"};
-  std::vector<std::string> names {"Base","Shoulder","Elbow"};
+  std::vector<std::string> families {"family"};
+  std::vector<std::string> names {"base","shoulder","elbow"};
   Lookup lookup;
   std::shared_ptr<Group> group = lookup.getGroupFromNames(families, names);
   if (!group)
@@ -171,5 +175,34 @@ int main() {
   // Stop logging
   auto log_file = group->stopLog();
 
+  //plot logged position, velocity and effort for each module
+  std::vector<std::vector<double>> pos;
+  std::vector<std::vector<double>> vel;
+  std::vector<std::vector<double>> eff;
+  pos.resize(group->size());
+  vel.resize(group->size());
+  eff.resize(group->size());
+  GroupFeedback fbk(group->size());
+  while(log_file->getNextFeedback(fbk)) {
+    for(size_t i = 0; i < group->size(); i++){
+      pos[i].push_back(fbk.getPosition()[i]);
+      vel[i].push_back(fbk.getVelocity()[i]);
+      eff[i].push_back(fbk.getEffort()[i]);
+    }
+  }
+  plt::figure(1);
+  for(size_t i = 0; i < group->size(); i++){
+    plt::plot(pos[i]);
+  }
+  plt::figure(2);
+  for(size_t i = 0; i < group->size(); i++){
+    plt::plot(vel[i]);
+  }
+  plt::figure(3);
+  for(size_t i = 0; i < group->size(); i++){
+    plt::plot(eff[i]);
+  }
+  plt::show();
+  
   return 0;
 }

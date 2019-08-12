@@ -66,6 +66,8 @@ SET(EXAMPLES_SOURCES
   ${ROOT_DIR}/kits/arm/gravity_compensation.cpp
   ${ROOT_DIR}/kits/arm/teach_repeat.cpp)
 
+find_package(PythonLibs 3.6)
+
 # Make one metatarget for all examples
 add_custom_target(examples)
 
@@ -96,6 +98,8 @@ foreach (EXAMPLE ${EXAMPLES_SOURCES})
   add_dependencies(examples ${EX_NAME})
   target_include_directories(${EX_NAME} PRIVATE ${ROOT_DIR})
 
+  target_include_directories(${EX_NAME} PRIVATE ${PYTHON_INCLUDE_DIRS})
+  target_link_libraries(${EX_NAME} ${PYTHON_LIBRARIES})
   if(WIN32)
     target_link_libraries(${EX_NAME} hebi kernel32)
     target_include_directories(${EX_NAME} PRIVATE ${HEBI_DIR}/src ${HEBI_DIR}/include ${HEBI_DIR}/Eigen)
@@ -114,3 +118,5 @@ foreach (EXAMPLE ${EXAMPLES_SOURCES})
   endif()
 
 endforeach (EXAMPLE ${EXAMPLES_SOURCES})
+
+

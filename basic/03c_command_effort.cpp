@@ -15,6 +15,10 @@
 #include "lookup.hpp"
 #include "group_command.hpp"
 #include "group_feedback.hpp"
+#include "log_file.hpp"
+#include "plot_functions.h"
+
+namespace plt = matplotlibcpp;
 
 using namespace hebi;
 
@@ -68,6 +72,20 @@ int main() {
 
   // Stop logging
   auto log_file = group->stopLog();
+
+  //plot logged effort
+  std::vector<std::vector<double>> eff;
+  eff.resize(group->size());
+  GroupFeedback fbk(group->size());
+  while(log_file->getNextFeedback(fbk)) {
+    for(size_t i = 0; i < group->size(); i++){
+      eff[i].push_back(fbk.getEffort()[i]);
+    }
+  }
+  for(size_t i = 0; i < group->size(); i++){
+    plt::plot(eff[i]);
+  }
+  plt::show();
 
   return 0;
 }
