@@ -3,7 +3,7 @@
 
 using namespace hebi;
 
-class GripperArm{
+class GripperArm {
   public:
   std::unique_ptr<robot_model::RobotModel> model;
   std::vector<std::string> arm_module_names_;
