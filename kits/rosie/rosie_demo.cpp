@@ -14,6 +14,58 @@
 
 using namespace hebi;
 
+Eigen::VectorXd setVectorSegment(Eigen::VectorXd vect, std::vector<uint32_t> indices, Eigen::VectorXd values){
+  for(size_t i = 0; i < indices.size(); i++){
+    vect[indices[i]] = values[i];
+  }
+  return vect;
+}
+Eigen::VectorXd getVectorSegment(Eigen::VectorXd vect, std::vector<uint32_t> indices, Eigen::VectorXd values){
+  for(size_t i = 0; i < indices.size(); i++){
+    vect[i] = values[indices[i]];
+  }
+  return vect;
+}
+void setPositionSegment(GroupCommand& cmd, std::vector<uint32_t> indices, Eigen::VectorXd values){
+      Eigen::VectorXd pos_tmp = cmd.getPosition();
+      for(size_t i = 0; i < indices.size(); i++){
+          pos_tmp[indices[i]] = values[i];
+      }
+      cmd.setPosition(pos_tmp);
+}
+void setVelocitySegment(GroupCommand& cmd, std::vector<uint32_t> indices, Eigen::VectorXd values){
+      Eigen::VectorXd vel_tmp = cmd.getVelocity();
+      for(size_t i = 0; i < indices.size(); i++){
+          vel_tmp[indices[i]] = values[i];
+      }
+      cmd.setVelocity(vel_tmp);
+}
+void setEffortSegment(GroupCommand& cmd, std::vector<uint32_t> indices, Eigen::VectorXd values){
+      Eigen::VectorXd effort_tmp = cmd.getEffort();
+      for(size_t i = 0; i < indices.size(); i++){
+          effort_tmp[indices[i]] = values[i];
+      }
+      cmd.setEffort(effort_tmp);
+}
+
+void getTrajectoryCommand(std::shared_ptr<hebi::trajectory::Trajectory> traj,GroupCommand& cmd,
+                          std::vector<uint32_t> indices, double t, Eigen::VectorXd* pos=nullptr,
+                          Eigen::VectorXd* vel=nullptr, Eigen::VectorXd* acc=nullptr){
+  auto len = indices.size();
+  Eigen::VectorXd position(len);
+  Eigen::VectorXd velocity(len);
+  Eigen::VectorXd acceleration(len);
+  traj->getState(t, &position, &velocity, &acceleration);
+  setPositionSegment(cmd,indices,position);
+  setVelocitySegment(cmd,indices,velocity);
+  if(pos!=nullptr)
+    *pos = position;
+  if(vel!=nullptr)
+    *vel = velocity;
+  if(acc!=nullptr)
+    *acc = acceleration;
+}
+
 int main(){
   Lookup lookup;
   
@@ -172,18 +224,7 @@ int main(){
       auto temp_t = fbk.getTime();
       t = (fbk.getTime() - t0) > arm.min_traj_duration_ ? arm.min_traj_duration_ : fbk.getTime() - t0;
 
-      Eigen::VectorXd pos(len);
-      Eigen::VectorXd vel(len);
-      Eigen::VectorXd accel(len);
-      arm_traj->getState(t, &pos, &vel, &accel);
-      Eigen::VectorXd pos_tmp = cmd.getPosition();
-      Eigen::VectorXd vel_tmp = cmd.getVelocity();
-      for(size_t i = 0; i < arm_dofs.size(); i++){
-          pos_tmp[arm_dofs[i]] = pos[i];
-          vel_tmp[arm_dofs[i]] = vel[i];
-      }
-      cmd.setPosition(pos_tmp);
-      cmd.setVelocity(vel_tmp);
+      getTrajectoryCommand(arm_traj, cmd, arm_dofs, t);
   
       //         TODO:   dynamicsComp
       Eigen::VectorXd masses;
@@ -197,13 +238,9 @@ int main(){
       for(size_t i = 0; i < arm_positions.size(); ++i){
         arm_positions[i] = fbk.getPosition()[arm_dofs[i]];
       }
-      effort = hebi::util::GravityCompensation::getEfforts(*arm.model, masses, arm_positions, gravity);
+      effort = hebi::util::getGravityCompensationEfforts(*arm.model, masses, arm_positions, gravity);
       /*TODO add dynamic_comp*/
-      auto effort_tmp = cmd.getEffort();
-      for(size_t i = 0; i < arm_dofs.size(); i++){
-          effort_tmp[arm_dofs[i]] = effort[i] + arm.effort_offset_[i];
-      }
-      cmd.setEffort(effort_tmp);
+      setEffortSegment(cmd, arm_dofs, effort + arm.effort_offset_);
       robot_group->sendCommand(cmd);
     }
     //        % Grab initial pose
@@ -233,7 +270,7 @@ int main(){
 
     auto time_last = t0;
 
-    auto chassis_traj_start_time = t0;
+    auto chassis_traj_start_time = t0;  
 
     GroupCommand wheel_cmd(wheel_group->size());
     //
@@ -317,24 +354,15 @@ int main(){
       Eigen::VectorXd vel(arm_dofs.size());
       Eigen::VectorXd acc(arm_dofs.size());
       if(first_run){
-        for(size_t i = 0; i < arm_dofs.size(); i++){
-          pos[i] = fbk.getPositionCommand()[arm_dofs[i]];
-        }
+        pos = getVectorSegment(pos,arm_dofs,fbk.getPositionCommand());
         vel = end_velocities;
         acc = end_accels;
+        setPositionSegment(cmd,arm_dofs,pos);
+        setVelocitySegment(cmd,arm_dofs,vel);
         first_run = false;
       } else {
-        arm_traj->getState(t, &pos, &vel, &acc);
+        getTrajectoryCommand(arm_traj,cmd,arm_dofs,t,&pos,&vel,&acc);
       }
-
-      Eigen::VectorXd pos_tmp = cmd.getPosition();
-      Eigen::VectorXd vel_tmp = cmd.getVelocity();
-      for(size_t i = 0; i < arm_dofs.size(); i++){
-          pos_tmp[arm_dofs[i]] = pos[i];
-          vel_tmp[arm_dofs[i]] = vel[i];
-      }
-      cmd.setPosition(pos_tmp);
-      cmd.setVelocity(vel_tmp);
       //
       //            TODO:dynamicsComp
       Eigen::VectorXd masses;
@@ -347,13 +375,9 @@ int main(){
       for(size_t i = 0; i < arm_positions.size(); ++i){
         arm_positions[i] = fbk.getPosition()[arm_dofs[i]];
       }
-      Eigen::VectorXd grav_comp = hebi::util::GravityCompensation::getEfforts(*arm.model, masses, arm_positions, gravity);
+      Eigen::VectorXd grav_comp = hebi::util::getGravityCompensationEfforts(*arm.model, masses, arm_positions, gravity);
 
-      Eigen::VectorXd effort_tmp = cmd.getEffort();
-      for(size_t i = 0; i < arm_dofs.size(); i++){
-          effort_tmp[arm_dofs[i]] = grav_comp[i] + arm.effort_offset_[i];
-      }
-      cmd.setEffort(effort_tmp);
+      setEffortSegment(cmd, arm_dofs, grav_comp + arm.effort_offset_);
       //            % Force elbow up config
       auto seed_pos_ik = pos;
       seed_pos_ik[2] = abs(seed_pos_ik[2]);
@@ -378,7 +402,7 @@ int main(){
       //            %%%%%%%%%%%%%%%%%%%
       //            % Gripper Control %
       //            %%%%%%%%%%%%%%%%%%%
-      effort_tmp = cmd.getEffort();
+      auto effort_tmp = cmd.getEffort();
       effort_tmp[gripper_dof[0]] = arm.gripper_close_effort_ * (latest_phone_fbk[0].io().a().hasInt(6) ? latest_phone_fbk[0].io().a().getInt(6) : latest_phone_fbk[0].io().a().getFloat(6)); 
       cmd.setEffort(effort_tmp);
       //
@@ -402,17 +426,10 @@ int main(){
       wheel_cmd.setPosition(wheel_cmd.getPosition() + wheel_cmd.getVelocity() * dt);  
       wheel_cmd.setEffort(base.wheel_effort_matrix_ * (chassis_mass_matrix * chassis_cmd_acc));
 
-      pos_tmp = cmd.getPosition();
-      vel_tmp = cmd.getVelocity();
-      effort_tmp = cmd.getEffort();   
-      for(size_t i = 0; i < wheel_dofs.size(); i++){
-        pos_tmp[wheel_dofs[i]] = wheel_cmd.getPosition()[i];
-        vel_tmp[wheel_dofs[i]] = wheel_cmd.getVelocity()[i];
-        effort_tmp[wheel_dofs[i]] = wheel_cmd.getEffort()[i];
-      }
-      cmd.setPosition(pos_tmp);
-      cmd.setVelocity(vel_tmp);
-      cmd.setEffort(effort_tmp);
+      setPositionSegment(cmd,wheel_dofs,wheel_cmd.getPosition());
+      setVelocitySegment(cmd,wheel_dofs,wheel_cmd.getVelocity());
+      setEffortSegment(cmd,wheel_dofs,wheel_cmd.getEffort());
+      
       //            % Hold down button 8 to put the arm in a compliant grav-comp mode
       double b_8 = (latest_phone_fbk[0].io().b().hasInt(8) ? latest_phone_fbk[0].io().b().getInt(8) : latest_phone_fbk[0].io().b().getFloat(8));
       if(b_8 == 1){

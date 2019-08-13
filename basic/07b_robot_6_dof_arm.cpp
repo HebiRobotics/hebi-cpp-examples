@@ -85,7 +85,7 @@ void executeTrajectory(
     // compensate for the weight of the arm.  Dynamic Compensation uses the
     // kinematics and mass to compensate for the commanded accelerations of
     // the arm.
-    eff_cmd = hebi::util::GravityCompensation::getEfforts(model, masses, feedback);
+    eff_cmd = hebi::util::getGravityCompensationEfforts(model, masses, feedback);
     // NOTE: dynamic compensation effort computation has not yet been added to
     // the C++ API utility functions.  These are coming soon! TODO
     // eff_cmd += hebi::util::DynamicCompensation::getEfforts(...);

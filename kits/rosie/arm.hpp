@@ -26,6 +26,6 @@ class GripperArm{
 	  min_traj_duration_(.50),
 	  default_speed_factor_(.9)
 	{
-    model = robot_model::RobotModel::loadHRDF("/home/hebi/hebi-cpp-examples/build/hrdf/6-dof_arm_w_gripper.hrdf");
+    model = robot_model::RobotModel::loadHRDF("hrdf/6-dof_arm_w_gripper.hrdf");
   }
 };
