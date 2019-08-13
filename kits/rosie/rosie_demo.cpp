@@ -10,9 +10,19 @@
 #include "group_command.hpp"
 #include "robot_model.hpp"
 #include "base.hpp"
-#include "arm.hpp"
+#include "trajectory.hpp"
 
 using namespace hebi;
+
+const std::unique_ptr<robot_model::RobotModel> arm_model = robot_model::RobotModel::loadHRDF("hrdf/6-dof_arm_w_gripper.hrdf");
+const std::vector<std::string> arm_module_names = {"Base","Shoulder", "Elbow", "Wrist1", "Wrist2", "Wrist3"};
+const std::vector<std::string> arm_gripper_module_name = {"Spool"};
+const double arm_shoulder_joint_comp = 0;
+const Eigen::Matrix<double,6,1> arm_effort_offset = (Eigen::VectorXd(6) << 0, arm_shoulder_joint_comp, 0,0,0,0).finished();
+const double arm_gripper_open_effort = 1;
+const double arm_gripper_close_effort = -5;
+const Eigen::Matrix<double,6,1> arm_ik_seed_pos = (Eigen::VectorXd(6) << 0,1,2.5,1.5,-1.5,1).finished();
+const double arm_min_traj_duration = .5;
 
 Eigen::VectorXd setVectorSegment(Eigen::VectorXd vect, std::vector<uint32_t> indices, Eigen::VectorXd values){
   for(size_t i = 0; i < indices.size(); i++){
@@ -88,7 +98,6 @@ int main(){
   //    %%%%%%%%%%%%%
   //    % Setup Arm %
   //    %%%%%%%%%%%%%
-  GripperArm arm;
 
   //    % Assume that gravity points up
   Eigen::Vector3d gravity_vec(0, 0, -1);
@@ -99,8 +108,8 @@ int main(){
   //    %%%%%%%%%%%%%%%
   std::vector<std::string> robot_family = {"Rosie"};
   std::vector<std::string> robot_names = base.wheel_module_names_;
-  robot_names.insert(robot_names.end(), arm.arm_module_names_.begin(), arm.arm_module_names_.end());
-  robot_names.insert(robot_names.end(), arm.gripper_module_name_.begin(), arm.gripper_module_name_.end());
+  robot_names.insert(robot_names.end(), arm_module_names.begin(), arm_module_names.end());
+  robot_names.insert(robot_names.end(), arm_gripper_module_name.begin(), arm_gripper_module_name.end());
   
   auto num_modules_ = robot_names.size();
 
@@ -128,7 +137,7 @@ int main(){
     return -1;
   }
   
-  auto arm_group = lookup.getGroupFromNames(robot_family, arm.arm_module_names_);
+  auto arm_group = lookup.getGroupFromNames(robot_family, arm_module_names);
   GroupCommand arm_gains_command(arm_group->size());
   if (!arm_gains_command.readGains("/home/hebi/hebi-cpp-examples/build/gains/6-dof_arm_gains.xml")){
     printf("Could not read 6 dof arm gains");
@@ -139,7 +148,7 @@ int main(){
     return -1;
   }
   
-  auto gripper_group = lookup.getGroupFromNames(robot_family, arm.gripper_module_name_);
+  auto gripper_group = lookup.getGroupFromNames(robot_family, arm_gripper_module_name);
   GroupCommand gripper_gains_command(gripper_group->size());
   if (!gripper_gains_command.readGains("/home/hebi/hebi-cpp-examples/build/gains/gripper_gains.xml")){
     printf("Could not read gripper gains");
@@ -205,30 +214,30 @@ int main(){
     }
     Eigen::VectorXd ik_result_joint_angles(arm_dofs.size());
   
-    arm.model->solveIK(arm.ik_seed_pos_, ik_result_joint_angles, robot_model::EndEffectorPositionObjective(xyz_target_init), robot_model::EndEffectorSO3Objective(rot_mat_target_init));
+    arm_model->solveIK(arm_ik_seed_pos, ik_result_joint_angles, robot_model::EndEffectorPositionObjective(xyz_target_init), robot_model::EndEffectorSO3Objective(rot_mat_target_init));
     const size_t len = arm_dofs.size();  
     Eigen::MatrixXd position(len,2);
     position.col(0) = arm_fbk_pos;
     position.col(1) = ik_result_joint_angles;
     Eigen::VectorXd time(2);
-    time << 0, arm.min_traj_duration_;
+    time << 0, arm_min_traj_duration;
   
     auto arm_traj = hebi::trajectory::Trajectory::createUnconstrainedQp(time, position);
 
     auto t0 = fbk.getTime();
     auto t = 0.0; 
   
-    while(t < arm.min_traj_duration_){
+    while(t < arm_min_traj_duration){
       //
       if(!robot_group->getNextFeedback(fbk)) printf("no feedback recieved\n");
       auto temp_t = fbk.getTime();
-      t = (fbk.getTime() - t0) > arm.min_traj_duration_ ? arm.min_traj_duration_ : fbk.getTime() - t0;
+      t = (fbk.getTime() - t0) > arm_min_traj_duration ? arm_min_traj_duration : fbk.getTime() - t0;
 
       getTrajectoryCommand(arm_traj, cmd, arm_dofs, t);
   
       //         TODO:   dynamicsComp
       Eigen::VectorXd masses;
-      arm.model->getMasses(masses);
+      arm_model->getMasses(masses);
       Eigen::VectorXd effort(arm_dofs.size());
       auto base_accel = fbk[base.num_wheels_ + 0].imu().accelerometer().get();
       Eigen::Vector3d gravity(-base_accel.getX(),
@@ -238,9 +247,9 @@ int main(){
       for(size_t i = 0; i < arm_positions.size(); ++i){
         arm_positions[i] = fbk.getPosition()[arm_dofs[i]];
       }
-      effort = hebi::util::getGravityCompensationEfforts(*arm.model, masses, arm_positions, gravity);
+      effort = hebi::util::getGravityCompensationEfforts(*arm_model, masses, arm_positions, gravity);
       /*TODO add dynamic_comp*/
-      setEffortSegment(cmd, arm_dofs, effort + arm.effort_offset_);
+      setEffortSegment(cmd, arm_dofs, effort + arm_effort_offset);
       robot_group->sendCommand(cmd);
     }
     //        % Grab initial pose
@@ -366,7 +375,7 @@ int main(){
       //
       //            TODO:dynamicsComp
       Eigen::VectorXd masses;
-      arm.model->getMasses(masses);
+      arm_model->getMasses(masses);
       auto base_accel = fbk[base.num_wheels_ + 0].imu().accelerometer().get();
       Eigen::Vector3d gravity(-base_accel.getX(),
                      -base_accel.getY(),
@@ -375,16 +384,16 @@ int main(){
       for(size_t i = 0; i < arm_positions.size(); ++i){
         arm_positions[i] = fbk.getPosition()[arm_dofs[i]];
       }
-      Eigen::VectorXd grav_comp = hebi::util::getGravityCompensationEfforts(*arm.model, masses, arm_positions, gravity);
+      Eigen::VectorXd grav_comp = hebi::util::getGravityCompensationEfforts(*arm_model, masses, arm_positions, gravity);
 
-      setEffortSegment(cmd, arm_dofs, grav_comp + arm.effort_offset_);
+      setEffortSegment(cmd, arm_dofs, grav_comp + arm_effort_offset);
       //            % Force elbow up config
       auto seed_pos_ik = pos;
       seed_pos_ik[2] = abs(seed_pos_ik[2]);
       //            % Find target using inverse kinematics
       Eigen::VectorXd ik_position(arm_dofs.size());
   
-      arm.model->solveIK(seed_pos_ik, ik_position, robot_model::EndEffectorPositionObjective(xyz_target), robot_model::EndEffectorSO3Objective(rot_mat_target));
+      arm_model->solveIK(seed_pos_ik, ik_position, robot_model::EndEffectorPositionObjective(xyz_target), robot_model::EndEffectorSO3Objective(rot_mat_target));
   
       //            % Start new trajectory at the current state
       Eigen::MatrixXd traj_pos(arm_dofs.size(),2);
@@ -403,7 +412,7 @@ int main(){
       //            % Gripper Control %
       //            %%%%%%%%%%%%%%%%%%%
       auto effort_tmp = cmd.getEffort();
-      effort_tmp[gripper_dof[0]] = arm.gripper_close_effort_ * (latest_phone_fbk[0].io().a().hasInt(6) ? latest_phone_fbk[0].io().a().getInt(6) : latest_phone_fbk[0].io().a().getFloat(6)); 
+      effort_tmp[gripper_dof[0]] = arm_gripper_close_effort * (latest_phone_fbk[0].io().a().hasInt(6) ? latest_phone_fbk[0].io().a().getInt(6) : latest_phone_fbk[0].io().a().getFloat(6)); 
       cmd.setEffort(effort_tmp);
       //
       //            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
