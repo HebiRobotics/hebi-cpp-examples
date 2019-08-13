@@ -1,4 +1,5 @@
 #define EIGEN_INITIALIZE_MATRICES_BY_NAN
+#define PI 3.141592653592
 
 #include <iostream>
 #include <chrono>
@@ -9,20 +10,10 @@
 #include "group_feedback.hpp"
 #include "group_command.hpp"
 #include "robot_model.hpp"
-#include "base.hpp"
 #include "trajectory.hpp"
 
 using namespace hebi;
 
-const std::unique_ptr<robot_model::RobotModel> arm_model = robot_model::RobotModel::loadHRDF("hrdf/6-dof_arm_w_gripper.hrdf");
-const std::vector<std::string> arm_module_names = {"Base","Shoulder", "Elbow", "Wrist1", "Wrist2", "Wrist3"};
-const std::vector<std::string> arm_gripper_module_name = {"Spool"};
-const double arm_shoulder_joint_comp = 0;
-const Eigen::Matrix<double,6,1> arm_effort_offset = (Eigen::VectorXd(6) << 0, arm_shoulder_joint_comp, 0,0,0,0).finished();
-const double arm_gripper_open_effort = 1;
-const double arm_gripper_close_effort = -5;
-const Eigen::Matrix<double,6,1> arm_ik_seed_pos = (Eigen::VectorXd(6) << 0,1,2.5,1.5,-1.5,1).finished();
-const double arm_min_traj_duration = .5;
 
 Eigen::VectorXd setVectorSegment(Eigen::VectorXd vect, std::vector<uint32_t> indices, Eigen::VectorXd values){
   for(size_t i = 0; i < indices.size(); i++){
@@ -77,6 +68,58 @@ void getTrajectoryCommand(std::shared_ptr<hebi::trajectory::Trajectory> traj,Gro
 }
 
 int main(){
+  const std::unique_ptr<robot_model::RobotModel> arm_model = robot_model::RobotModel::loadHRDF("hrdf/6-dof_arm_w_gripper.hrdf");
+  const std::vector<std::string> arm_module_names = {"Base","Shoulder", "Elbow", "Wrist1", "Wrist2", "Wrist3"};
+  const std::vector<std::string> arm_gripper_module_name = {"Spool"};
+  const double arm_shoulder_joint_comp = 0;
+  const Eigen::Matrix<double,6,1> arm_effort_offset = (Eigen::VectorXd(6) << 0, arm_shoulder_joint_comp, 0,0,0,0).finished();
+  const double arm_gripper_open_effort = 1;
+  const double arm_gripper_close_effort = -5;
+  const Eigen::Matrix<double,6,1> arm_ik_seed_pos = (Eigen::VectorXd(6) << 0,1,2.5,1.5,-1.5,1).finished();
+  const double arm_min_traj_duration = .5;
+
+  const double base_wheel_radius = .15/2.0;
+  const double base_wheel_base = 0.470;
+  const double base_max_lin_speed = 0.6;
+  const double base_max_rot_speed = base_max_lin_speed*(base_wheel_base/2.0);
+  const Eigen::Matrix<double, 4, 4> base_chassis_com = (Eigen::MatrixXd(4,4) << 1,0,0,0, 0,1,0,0, 0,0,1, base_wheel_radius +.005, 0,0,0,1).finished();
+  const double base_chassis_mass = 12.0;
+  const double base_chassis_inertia_zz = .5*base_chassis_mass*base_wheel_base*base_wheel_base*.25;
+  const std::vector<std::string> base_wheel_module_names = {"_Wheel1","_Wheel2","_Wheel3"};
+  const uint32_t base_num_wheels  = 3;
+  const std::vector<Eigen::Matrix<double,4,4>> base_wheel_base_frames = 
+            {(Eigen::MatrixXd(4,4) << 
+            1,0,0,base_wheel_base/2.0*cos(-60*PI/180.0),
+            0,1,0,base_wheel_base/2.0*sin(-60*PI/180.0),
+            0,0,1,base_wheel_radius,
+            0,0,0,1).finished(),
+
+            (Eigen::MatrixXd(4,4) << 
+            1,0,0,base_wheel_base/2.0*cos(60*PI/180.0),
+            0,1,0,base_wheel_base/2.0*sin(60*PI/180.0),
+            0,0,1,base_wheel_radius,
+            0,0,0,1).finished(),
+
+            (Eigen::MatrixXd(4,4) <<
+            1,0,0,base_wheel_base/2.0*cos(180*PI/180.0),
+            0,1,0,base_wheel_base/2.0*cos(180*PI/180.0),
+            0,0,1,base_wheel_radius,
+            0,0,0,1).finished()};  
+
+  double a1 = -60*PI/180;
+  double a2 = 60*PI/180;
+  double a3 = 180*PI/180;
+
+  const Eigen::Matrix3d base_wheel_transform = 
+                    (Eigen::MatrixXd(3,3) <<
+                    sin(a1), -cos(a1), base_wheel_base/2,
+                    sin(a2), -cos(a2), base_wheel_base/2,
+                    sin(a3), -cos(a3), base_wheel_base/2).finished();
+
+  const Eigen::Matrix<double, 3, 3> base_wheel_velocity_matrix = base_wheel_transform / base_wheel_radius;
+  const Eigen::Matrix<double, 3, 3> base_wheel_effort_matrix = base_wheel_transform * base_wheel_radius;
+  const double base_ramp_time = .33;
+
   Lookup lookup;
   
   //    % Optional step to limit the lookup to a set of interfaces or modules
@@ -87,12 +130,10 @@ int main(){
   //    %%%%%%%%%%%%%%%%%%%%%
   //    % Setup Mobile Base %
   //   %%%%%%%%%%%%%%%%%%%%%
-  
-  OmniBase base;
   // 
   //    % Maps XYZ chassis velocities to wheel velocities
   Eigen::MatrixXd chassis_mass_matrix(3,3);
-  chassis_mass_matrix << base.chassis_mass_,0,0, 0,base.chassis_mass_,0, 0,0,base.chassis_inertia_zz_;
+  chassis_mass_matrix << base_chassis_mass,0,0, 0,base_chassis_mass,0, 0,0,base_chassis_inertia_zz;
 
   //    %%
   //    %%%%%%%%%%%%%
@@ -107,7 +148,7 @@ int main(){
   //    % Setup Robot %
   //    %%%%%%%%%%%%%%%
   std::vector<std::string> robot_family = {"Rosie"};
-  std::vector<std::string> robot_names = base.wheel_module_names_;
+  std::vector<std::string> robot_names = base_wheel_module_names;
   robot_names.insert(robot_names.end(), arm_module_names.begin(), arm_module_names.end());
   robot_names.insert(robot_names.end(), arm_gripper_module_name.begin(), arm_gripper_module_name.end());
   
@@ -126,9 +167,9 @@ int main(){
   //    % Set the Gains %
   //    %%%%%%%%%%%%%%%%%
      
-  auto wheel_group = lookup.getGroupFromNames(robot_family, base.wheel_module_names_);
+  auto wheel_group = lookup.getGroupFromNames(robot_family, base_wheel_module_names);
   GroupCommand base_gains_command(wheel_group->size());
-  if (!base_gains_command.readGains("/home/hebi/hebi-cpp-examples/build/gains/omni-drive-wheel-gains.xml")){
+  if (!base_gains_command.readGains("gains/omni-drive-wheel-gains.xml")){
     printf("Could not read omni base gains");
     return -1;
   }
@@ -139,7 +180,7 @@ int main(){
   
   auto arm_group = lookup.getGroupFromNames(robot_family, arm_module_names);
   GroupCommand arm_gains_command(arm_group->size());
-  if (!arm_gains_command.readGains("/home/hebi/hebi-cpp-examples/build/gains/6-dof_arm_gains.xml")){
+  if (!arm_gains_command.readGains("gains/6-dof_arm_gains.xml")){
     printf("Could not read 6 dof arm gains");
     return -1;
   }
@@ -150,7 +191,7 @@ int main(){
   
   auto gripper_group = lookup.getGroupFromNames(robot_family, arm_gripper_module_name);
   GroupCommand gripper_gains_command(gripper_group->size());
-  if (!gripper_gains_command.readGains("/home/hebi/hebi-cpp-examples/build/gains/gripper_gains.xml")){
+  if (!gripper_gains_command.readGains("gains/gripper_gains.xml")){
     printf("Could not read gripper gains");
     return -1;
   }
@@ -239,7 +280,7 @@ int main(){
       Eigen::VectorXd masses;
       arm_model->getMasses(masses);
       Eigen::VectorXd effort(arm_dofs.size());
-      auto base_accel = fbk[base.num_wheels_ + 0].imu().accelerometer().get();
+      auto base_accel = fbk[base_num_wheels + 0].imu().accelerometer().get();
       Eigen::Vector3d gravity(-base_accel.getX(),
                      -base_accel.getY(),
                      -base_accel.getZ());
@@ -285,7 +326,7 @@ int main(){
     //
     //        % Replan Trajectory for the mobile base
     Eigen::Vector2d omni_base_traj_time;
-    omni_base_traj_time << 0, base.ramp_time_;
+    omni_base_traj_time << 0, base_ramp_time;
     //
     //        % Initialize trajectory for Omnibase
     Eigen::MatrixXd positions(3,2); 
@@ -339,9 +380,9 @@ int main(){
       }
       //
       //            % Joystick Input for Omnibase Control        
-      double x_vel = base.max_lin_speed_ * (latest_phone_fbk[0].io().a().hasInt(8) ? latest_phone_fbk[0].io().a().getInt(8) : latest_phone_fbk[0].io().a().getFloat(8)); 
-      double y_vel = -1*base.max_lin_speed_ * (latest_phone_fbk[0].io().a().hasInt(7) ? latest_phone_fbk[0].io().a().getInt(7) : latest_phone_fbk[0].io().a().getFloat(7));
-      double rot_vel = base.max_rot_speed_ * (latest_phone_fbk[0].io().a().hasInt(1) ? latest_phone_fbk[0].io().a().getInt(1) : latest_phone_fbk[0].io().a().getFloat(1)); 
+      double x_vel = base_max_lin_speed * (latest_phone_fbk[0].io().a().hasInt(8) ? latest_phone_fbk[0].io().a().getInt(8) : latest_phone_fbk[0].io().a().getFloat(8)); 
+      double y_vel = -1*base_max_lin_speed * (latest_phone_fbk[0].io().a().hasInt(7) ? latest_phone_fbk[0].io().a().getInt(7) : latest_phone_fbk[0].io().a().getFloat(7));
+      double rot_vel = base_max_rot_speed * (latest_phone_fbk[0].io().a().hasInt(1) ? latest_phone_fbk[0].io().a().getInt(1) : latest_phone_fbk[0].io().a().getFloat(1)); 
   
       //
       //            % Pose Information for Arm Control
@@ -376,7 +417,7 @@ int main(){
       //            TODO:dynamicsComp
       Eigen::VectorXd masses;
       arm_model->getMasses(masses);
-      auto base_accel = fbk[base.num_wheels_ + 0].imu().accelerometer().get();
+      auto base_accel = fbk[base_num_wheels + 0].imu().accelerometer().get();
       Eigen::Vector3d gravity(-base_accel.getX(),
                      -base_accel.getY(),
                      -base_accel.getZ());
@@ -424,16 +465,16 @@ int main(){
       } else {
         t = omni_base_traj->getDuration();
       }
-      Eigen::VectorXd chassis_cmd_vel(base.num_wheels_);
-      Eigen::VectorXd chassis_cmd_acc(base.num_wheels_);
-      Eigen::VectorXd chassis_cmd_jerk(base.num_wheels_);
+      Eigen::VectorXd chassis_cmd_vel(base_num_wheels);
+      Eigen::VectorXd chassis_cmd_acc(base_num_wheels);
+      Eigen::VectorXd chassis_cmd_jerk(base_num_wheels);
       omni_base_traj->getState(t, &chassis_cmd_vel, &chassis_cmd_acc, &chassis_cmd_jerk);
       //
       //            % Chassis (convert linear to joint velocities)
       GroupCommand wheel_cmd(wheel_dofs.size());
-      wheel_cmd.setVelocity(base.wheel_velocity_matrix_ * chassis_cmd_vel);
+      wheel_cmd.setVelocity(base_wheel_velocity_matrix * chassis_cmd_vel);
       wheel_cmd.setPosition(wheel_cmd.getPosition() + wheel_cmd.getVelocity() * dt);  
-      wheel_cmd.setEffort(base.wheel_effort_matrix_ * (chassis_mass_matrix * chassis_cmd_acc));
+      wheel_cmd.setEffort(base_wheel_effort_matrix * (chassis_mass_matrix * chassis_cmd_acc));
 
       setPositionSegment(cmd,wheel_dofs,wheel_cmd.getPosition());
       setVelocitySegment(cmd,wheel_dofs,wheel_cmd.getVelocity());
@@ -454,15 +495,15 @@ int main(){
       Eigen::Vector3d chassis_desired_vel;
       chassis_desired_vel << x_vel, y_vel, rot_vel;
       
-      Eigen::MatrixXd velocities(base.num_wheels_, 2);
+      Eigen::MatrixXd velocities(base_num_wheels, 2);
       velocities.col(0) = chassis_cmd_vel;
       velocities.col(1) = chassis_desired_vel;
       
-      Eigen::MatrixXd accelerations(base.num_wheels_, 2);
+      Eigen::MatrixXd accelerations(base_num_wheels, 2);
       accelerations.col(0) = chassis_cmd_acc;
       accelerations.col(1) = Eigen::Vector3d::Zero();
   
-      Eigen::MatrixXd jerks(base.num_wheels_, 2);
+      Eigen::MatrixXd jerks(base_num_wheels, 2);
       jerks.col(0) = chassis_cmd_jerk;
       jerks.col(1) = Eigen::Vector3d::Zero();
 
