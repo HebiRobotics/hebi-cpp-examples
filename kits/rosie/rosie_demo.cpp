@@ -1,4 +1,3 @@
-#define EIGEN_INITIALIZE_MATRICES_BY_NAN
 #define PI 3.141592653592
 
 #include <iostream>
@@ -72,35 +71,35 @@ int main(){
   const std::vector<std::string> arm_module_names = {"Base","Shoulder", "Elbow", "Wrist1", "Wrist2", "Wrist3"};
   const std::vector<std::string> arm_gripper_module_name = {"Spool"};
   const double arm_shoulder_joint_comp = 0;
-  const Eigen::Matrix<double,6,1> arm_effort_offset = (Eigen::VectorXd(6) << 0, arm_shoulder_joint_comp, 0,0,0,0).finished();
+  const Eigen::VectorXd arm_effort_offset = (Eigen::VectorXd(6) << 0, arm_shoulder_joint_comp, 0,0,0,0).finished();
   const double arm_gripper_open_effort = 1;
   const double arm_gripper_close_effort = -5;
-  const Eigen::Matrix<double,6,1> arm_ik_seed_pos = (Eigen::VectorXd(6) << 0,1,2.5,1.5,-1.5,1).finished();
+  const Eigen::VectorXd arm_ik_seed_pos = (Eigen::VectorXd(6) << 0,1,2.5,1.5,-1.5,1).finished();
   const double arm_min_traj_duration = .5;
 
   const double base_wheel_radius = .15/2.0;
   const double base_wheel_base = 0.470;
   const double base_max_lin_speed = 0.6;
   const double base_max_rot_speed = base_max_lin_speed*(base_wheel_base/2.0);
-  const Eigen::Matrix<double, 4, 4> base_chassis_com = (Eigen::MatrixXd(4,4) << 1,0,0,0, 0,1,0,0, 0,0,1, base_wheel_radius +.005, 0,0,0,1).finished();
+  const Eigen::Matrix4d base_chassis_com = (Eigen::Matrix4d() << 1,0,0,0, 0,1,0,0, 0,0,1, base_wheel_radius +.005, 0,0,0,1).finished();
   const double base_chassis_mass = 12.0;
   const double base_chassis_inertia_zz = .5*base_chassis_mass*base_wheel_base*base_wheel_base*.25;
   const std::vector<std::string> base_wheel_module_names = {"_Wheel1","_Wheel2","_Wheel3"};
   const uint32_t base_num_wheels  = 3;
-  const std::vector<Eigen::Matrix<double,4,4>> base_wheel_base_frames = 
-            {(Eigen::MatrixXd(4,4) << 
+  const std::vector<Eigen::Matrix4d> base_wheel_base_frames = 
+            {(Eigen::Matrix4d() << 
             1,0,0,base_wheel_base/2.0*cos(-60*PI/180.0),
             0,1,0,base_wheel_base/2.0*sin(-60*PI/180.0),
             0,0,1,base_wheel_radius,
             0,0,0,1).finished(),
 
-            (Eigen::MatrixXd(4,4) << 
+            (Eigen::Matrix4d() << 
             1,0,0,base_wheel_base/2.0*cos(60*PI/180.0),
             0,1,0,base_wheel_base/2.0*sin(60*PI/180.0),
             0,0,1,base_wheel_radius,
             0,0,0,1).finished(),
 
-            (Eigen::MatrixXd(4,4) <<
+            (Eigen::Matrix4d() <<
             1,0,0,base_wheel_base/2.0*cos(180*PI/180.0),
             0,1,0,base_wheel_base/2.0*cos(180*PI/180.0),
             0,0,1,base_wheel_radius,
@@ -116,8 +115,8 @@ int main(){
                     sin(a2), -cos(a2), base_wheel_base/2,
                     sin(a3), -cos(a3), base_wheel_base/2).finished();
 
-  const Eigen::Matrix<double, 3, 3> base_wheel_velocity_matrix = base_wheel_transform / base_wheel_radius;
-  const Eigen::Matrix<double, 3, 3> base_wheel_effort_matrix = base_wheel_transform * base_wheel_radius;
+  const Eigen::Matrix3d base_wheel_velocity_matrix = base_wheel_transform / base_wheel_radius;
+  const Eigen::Matrix3d base_wheel_effort_matrix = base_wheel_transform * base_wheel_radius;
   const double base_ramp_time = .33;
 
   Lookup lookup;
@@ -280,7 +279,7 @@ int main(){
       Eigen::VectorXd masses;
       arm_model->getMasses(masses);
       Eigen::VectorXd effort(arm_dofs.size());
-      auto base_accel = fbk[base_num_wheels + 0].imu().accelerometer().get();
+      auto base_accel = fbk[base_num_wheels].imu().accelerometer().get();
       Eigen::Vector3d gravity(-base_accel.getX(),
                      -base_accel.getY(),
                      -base_accel.getZ());
@@ -417,7 +416,7 @@ int main(){
       //            TODO:dynamicsComp
       Eigen::VectorXd masses;
       arm_model->getMasses(masses);
-      auto base_accel = fbk[base_num_wheels + 0].imu().accelerometer().get();
+      auto base_accel = fbk[base_num_wheels].imu().accelerometer().get();
       Eigen::Vector3d gravity(-base_accel.getX(),
                      -base_accel.getY(),
                      -base_accel.getZ());
