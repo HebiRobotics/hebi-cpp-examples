@@ -111,9 +111,9 @@ int main(){
 
   const Eigen::Matrix3d base_wheel_transform = 
                     (Eigen::MatrixXd(3,3) <<
-                    sin(a1), -cos(a1), base_wheel_base/2,
-                    sin(a2), -cos(a2), base_wheel_base/2,
-                    sin(a3), -cos(a3), base_wheel_base/2).finished();
+                    sin(a1), -cos(a1), 2/base_wheel_base,
+                    sin(a2), -cos(a2), 2/base_wheel_base/2,
+                    sin(a3), -cos(a3), 2/base_wheel_base/2).finished();
 
   const Eigen::Matrix3d base_wheel_velocity_matrix = base_wheel_transform / base_wheel_radius;
   const Eigen::Matrix3d base_wheel_effort_matrix = base_wheel_transform * base_wheel_radius;
@@ -472,7 +472,7 @@ int main(){
       //            % Chassis (convert linear to joint velocities)
       GroupCommand wheel_cmd(wheel_dofs.size());
       wheel_cmd.setVelocity(base_wheel_velocity_matrix * chassis_cmd_vel);
-      wheel_cmd.setPosition(wheel_cmd.getPosition() + wheel_cmd.getVelocity() * dt);  
+      wheel_cmd.setPosition(wheel_cmd.getPosition() + wheel_cmd.getVelocity() * dt);
       wheel_cmd.setEffort(base_wheel_effort_matrix * (chassis_mass_matrix * chassis_cmd_acc));
 
       setPositionSegment(cmd,wheel_dofs,wheel_cmd.getPosition());
