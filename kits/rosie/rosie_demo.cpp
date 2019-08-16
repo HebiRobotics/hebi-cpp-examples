@@ -321,7 +321,8 @@ int main(){
 
     auto chassis_traj_start_time = t0;  
 
-    GroupCommand wheel_cmd(wheel_group->size());
+    GroupCommand wheel_cmd(wheel_group->size());\
+    wheel_cmd.setPosition(getVectorSegment(wheel_cmd.getPosition(),wheel_dofs, fbk.getPosition()));
     //
     //        % Replan Trajectory for the mobile base
     Eigen::Vector2d omni_base_traj_time;
@@ -470,7 +471,6 @@ int main(){
       omni_base_traj->getState(t, &chassis_cmd_vel, &chassis_cmd_acc, &chassis_cmd_jerk);
       //
       //            % Chassis (convert linear to joint velocities)
-      GroupCommand wheel_cmd(wheel_dofs.size());
       wheel_cmd.setVelocity(base_wheel_velocity_matrix * chassis_cmd_vel);
       wheel_cmd.setPosition(wheel_cmd.getPosition() + wheel_cmd.getVelocity() * dt);
       wheel_cmd.setEffort(base_wheel_effort_matrix * (chassis_mass_matrix * chassis_cmd_acc));
