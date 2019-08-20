@@ -1,4 +1,4 @@
-/**
+/*
  * Initialize the lookup of modules and display information for any modules
  * on the network. A 'module' can be an actuator, an I/O board, or a 
  * mobile device running the Mobile I/O app.
