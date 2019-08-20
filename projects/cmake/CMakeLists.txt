@@ -51,7 +51,9 @@ SET(EXAMPLES_SOURCES
   ${ROOT_DIR}/basic/06c_kinematics_inv_kinematics.cpp
   ${ROOT_DIR}/basic/07a_robot_3_dof_arm.cpp
   ${ROOT_DIR}/basic/07b_robot_6_dof_arm.cpp
-# Advanced examples
+# Mobile IO Examples
+  ${ROOT_DIR}/basic/mobile_io/01a_mobile_io_lookup.cpp
+# Advanced Examples
   ${ROOT_DIR}/advanced/lookup/lookup_general_example.cpp
   ${ROOT_DIR}/advanced/lookup/lookup_example.cpp
   ${ROOT_DIR}/advanced/feedback/feedback_async_example.cpp
