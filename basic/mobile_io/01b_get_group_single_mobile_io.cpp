@@ -1,7 +1,6 @@
 /*
- * Initialize the lookup of modules and display information for any modules
- * on the network. A 'module' can be an actuator, an I/O board, or a 
- * mobile device running the Mobile I/O app.
+ * Make a group consisting of a single module.  A 'module' can be an actuator,
+ * an I/O board, or a mobile device running the Mobile I/O app.
  *
  * For more information, go to http://docs.hebi.us/tools.html#cpp-api
  *
@@ -22,21 +21,25 @@ int main() {
   // Create a Lookup Object
   Lookup lookup;
 
-  // Wait 2 seconds for the module list to populate, and then print out its contents
-  std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+  // Use Scope to select a module and change the name and family to 
+  // match the names below. Following examples will use the same names.
+  std::string family_name("HEBI");
+  std::string module_name("Mobile IO");
 
-  std::cout << std::endl;
-  auto entry_list = lookup.getEntryList();
-  for (auto entry : *entry_list)
-    std::cout
-      << "Name: " << entry.name_ << std::endl
-      << "Family: " << entry.family_ << std::endl << std::endl;
+  // Actually create the group
+  // (The "{}" are C++11 initializer braces that convert from a string to a
+  // vector of strings)
+  auto group = lookup.getGroupFromNames({family_name}, {module_name});
 
+  if (!group) {
     std::cout << std::endl
-      << " NOTE: " << std::endl
-      << "  The listing above should show the information for all the modules" << std::endl
-      << "  on the local network.  If this is empty make sure that the modules" << std::endl
-      << "  are connected, powered on, and that the status LEDs are displaying" << std::endl
-      << "  a green soft-fade." << std::endl;
+      << "Group not found! Check that the family and name of a module on the network" << std::endl
+      << "matches what is given in the source file." << std::endl;
+    return -1;
+  }
+
+  std::cout << std::endl << "Created group from module " << family_name << " | " << module_name << "." << std::endl;
+  return 0;
+
 }
 

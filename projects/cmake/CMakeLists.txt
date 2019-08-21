@@ -26,7 +26,6 @@ string(TOLOWER ${hebi_cpp_build_dir} hebi_cpp_build_dir)
 get_filename_component(hebi_cpp_build_dir "${CMAKE_CURRENT_BINARY_DIR}/${hebi_cpp_build_dir}" REALPATH)
 
 add_subdirectory(${HEBI_DIR} ${hebi_cpp_build_dir})
-#file(MAKE_DIRECTORY basic)
 
 find_package(PythonLibs 3.6)
 
@@ -81,10 +80,6 @@ foreach (EXAMPLE ${X_SERIES_SOURCES})
                      COMMAND ${CMAKE_COMMAND} -E make_directory
                          $<TARGET_FILE_DIR:${EX_NAME}>/logs)
 
-#  add_custom_commmand(TARGET ${EX_NAME} POST_BUILD
-#		     COMMAND ${CMAKE_COMMAND} -E make_directory
-#			 $<TARGET_FILE_DIR:${EX_NAME}
-
   endif()
   add_dependencies(examples ${EX_NAME})
   target_include_directories(${EX_NAME} PRIVATE ${ROOT_DIR})
@@ -115,7 +110,9 @@ endforeach (EXAMPLE ${X_SERIES_SOURCES})
 
 # Mobile IO Examples
 SET(MOBILE_IO_SOURCES
-  ${ROOT_DIR}/basic/mobile_io/01a_mobile_io_lookup.cpp)
+  ${ROOT_DIR}/basic/mobile_io/01a_mobile_io_lookup.cpp
+  ${ROOT_DIR}/basic/mobile_io/01b_get_group_single_mobile_io.cpp
+  ${ROOT_DIR}/basic/mobile_io/01c_get_group_multiple_mobile_io.cpp)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY basic/mobile_io)
 foreach (EXAMPLE ${MOBILE_IO_SOURCES})
@@ -127,14 +124,6 @@ foreach (EXAMPLE ${MOBILE_IO_SOURCES})
     add_executable(${EX_NAME} ${EXAMPLE} $<TARGET_OBJECTS:_hebic++-obj>)
   else()
     add_executable(${EX_NAME} ${EXAMPLE})
-
-  # Copy over resource files potentially used by the examples
-  add_custom_command(TARGET ${EX_NAME} POST_BUILD
-                     COMMAND ${CMAKE_COMMAND} -E copy_directory
-                         ${ROOT_DIR}/basic/hrdf $<TARGET_FILE_DIR:${EX_NAME}>/hrdf)
-  add_custom_command(TARGET ${EX_NAME} POST_BUILD
-                     COMMAND ${CMAKE_COMMAND} -E copy_directory
-                         ${ROOT_DIR}/basic/gains $<TARGET_FILE_DIR:${EX_NAME}>/gains)
 
   # Create logs directory in case the example logs data.
   add_custom_command(TARGET ${EX_NAME} POST_BUILD
@@ -192,19 +181,6 @@ foreach (EXAMPLE ${ADVANCED_SOURCES})
     add_executable(${EX_NAME} ${EXAMPLE} $<TARGET_OBJECTS:_hebic++-obj>)
   else()
     add_executable(${EX_NAME} ${EXAMPLE})
-
-  # Copy over resource files potentially used by the examples
-  add_custom_command(TARGET ${EX_NAME} POST_BUILD
-                     COMMAND ${CMAKE_COMMAND} -E copy_directory
-                         ${ROOT_DIR}/basic/hrdf $<TARGET_FILE_DIR:${EX_NAME}>/hrdf)
-  add_custom_command(TARGET ${EX_NAME} POST_BUILD
-                     COMMAND ${CMAKE_COMMAND} -E copy_directory
-                         ${ROOT_DIR}/basic/gains $<TARGET_FILE_DIR:${EX_NAME}>/gains)
-
-  # Create logs directory in case the example logs data.
-  add_custom_command(TARGET ${EX_NAME} POST_BUILD
-                     COMMAND ${CMAKE_COMMAND} -E make_directory
-                         $<TARGET_FILE_DIR:${EX_NAME}>/logs)
   endif()
   add_dependencies(examples ${EX_NAME})
   target_include_directories(${EX_NAME} PRIVATE ${ROOT_DIR})
@@ -247,19 +223,6 @@ foreach (EXAMPLE ${KIT_SOURCES})
     add_executable(${EX_NAME} ${EXAMPLE} $<TARGET_OBJECTS:_hebic++-obj>)
   else()
     add_executable(${EX_NAME} ${EXAMPLE})
-
- # Copy over resource files potentially used by the examples
-  add_custom_command(TARGET ${EX_NAME} POST_BUILD
-                     COMMAND ${CMAKE_COMMAND} -E copy_directory
-                         ${ROOT_DIR}/basic/hrdf $<TARGET_FILE_DIR:${EX_NAME}>/hrdf)
-  add_custom_command(TARGET ${EX_NAME} POST_BUILD
-                     COMMAND ${CMAKE_COMMAND} -E copy_directory
-                         ${ROOT_DIR}/basic/gains $<TARGET_FILE_DIR:${EX_NAME}>/gains)
-
-  # Create logs directory in case the example logs data.
-  add_custom_command(TARGET ${EX_NAME} POST_BUILD
-                     COMMAND ${CMAKE_COMMAND} -E make_directory
-                         $<TARGET_FILE_DIR:${EX_NAME}>/logs)
   endif()
   add_dependencies(examples ${EX_NAME})
   target_include_directories(${EX_NAME} PRIVATE ${ROOT_DIR})
@@ -284,6 +247,7 @@ foreach (EXAMPLE ${KIT_SOURCES})
   endif()
 
 endforeach (EXAMPLE ${KIT_SOURCES})
+
 
 
 

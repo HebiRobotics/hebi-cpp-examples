@@ -21,8 +21,8 @@ int main() {
   // Create a Lookup object
   Lookup lookup;
 
-  // Use Scope to change select a module and change the name and family to
-  // match the names below.  Following examples will use the same names.
+  // Use Scope to select a module and change the name and family to
+  // match the names below. Following examples will use the same names.
   std::string family_name("Test Family");
   std::string module_name("Test Actuator");
 

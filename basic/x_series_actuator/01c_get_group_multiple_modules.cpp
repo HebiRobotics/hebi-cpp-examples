@@ -20,7 +20,7 @@ int main() {
   // Create a Lookup object
   Lookup lookup;
 
-  // Use Scope to change select a module and change the name and family to
+  // Use Scope to select a module and change the name and family to
   // match the names below.
   std::string family_name("Test Family");
   std::vector<std::string> module_names({"Actuator1", "Actuator2", "Actuator3"});
