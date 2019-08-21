@@ -112,7 +112,11 @@ endforeach (EXAMPLE ${X_SERIES_SOURCES})
 SET(MOBILE_IO_SOURCES
   ${ROOT_DIR}/basic/mobile_io/01a_mobile_io_lookup.cpp
   ${ROOT_DIR}/basic/mobile_io/01b_get_group_single_mobile_io.cpp
-  ${ROOT_DIR}/basic/mobile_io/01c_get_group_multiple_mobile_io.cpp)
+  ${ROOT_DIR}/basic/mobile_io/01c_get_group_multiple_mobile_io.cpp
+  ${ROOT_DIR}/basic/mobile_io/02a_feedback_mobile_io.cpp
+  ${ROOT_DIR}/basic/mobile_io/02b_feedback_mobile_io_w_logging.cpp
+
+  ${ROOT_DIR}/basic/mobile_io/02f_feedback_background_mobile_io.cpp)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY basic/mobile_io)
 foreach (EXAMPLE ${MOBILE_IO_SOURCES})
