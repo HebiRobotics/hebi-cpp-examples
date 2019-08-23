@@ -10,7 +10,6 @@
  * August 2019
  */
 
-
 #include <chrono>
 #include <iostream>
 #include <thread>
@@ -22,7 +21,6 @@
 namespace plt = matplotlibcpp;
 
 using namespace hebi;
-
 
 int main() {
 
@@ -40,7 +38,6 @@ int main() {
     return -1;
   }
 
-
   // Set the feedback frequency. 
   // This is by default "100"; setting this to 5 here allows the console output
   // to be more reasonable.
@@ -51,7 +48,7 @@ int main() {
   // for about 10 seconds here
   GroupFeedback group_fbk(group->size());
 
-  std::vector<double> y;
+  std::vector<double> gyro_data;
   std::vector<std::string> x_labels = {"X", "Y", "Z"};
   std::vector<double> x_ticks = {0.0, 1.0, 2.0};
 
@@ -59,16 +56,18 @@ int main() {
   {
     if (group -> getNextFeedback(group_fbk))
     {
+      // Use the Hebi API to extract gyro data from the module
       auto gyro = group_fbk.getGyro();
-      y = {gyro(0,0), gyro(0,1), gyro(0,2) };
+      gyro_data = {gyro(0,0), gyro(0,1), gyro(0,2)};
 
-      // Now we plot the collected feedback
+      // Plot the collected feedback
       plt::clf();
       plt::ylim(-3.14, 3.14);
       plt::xticks(x_ticks, x_labels);
+      plt::title("Mobile I/O Gyro Feedback");
       plt::xlabel("Axis");
       plt::ylabel("Angular Velocity (rad/s)");
-      plt::bar(y);
+      plt::bar(gyro_data);
       plt::pause(0.01);
     }
   }
