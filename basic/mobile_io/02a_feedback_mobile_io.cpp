@@ -32,7 +32,7 @@ int main() {
   std::string module_name("Mobile IO");
   auto group = lookup.getGroupFromNames({family_name}, {module_name});
 
-  // Confirm the module is found before preceding
+  // Confirm the module is found before proceeding
   if (!group) {
     std::cout << "Group not found!" << std::endl;
     return -1;
