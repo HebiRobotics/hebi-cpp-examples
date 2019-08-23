@@ -10,7 +10,6 @@
  * August 2019
  */
 
-
 #include <chrono>
 #include <iostream>
 #include <thread>
