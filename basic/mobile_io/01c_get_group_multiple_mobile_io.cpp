@@ -17,8 +17,6 @@
 
 using namespace hebi;
 
-
-
 int main() {
   // Create a Lookup Object
   Lookup lookup;
@@ -39,7 +37,6 @@ int main() {
       << "match those given in the source file." << std::endl;
     return -1;
   }
-
 
   std::cout << std::endl << "Found group on network with " << group->size() << " modules." << std::endl;
   return 0;
