@@ -73,6 +73,7 @@ int main() {
       q.z() = orient.getZ();
       auto rot_matrix = q.toRotationMatrix();
 
+      // Construct a complete 4x4 transform
       Eigen::Matrix4d final_transform;
       final_transform << rot_matrix(0,0), rot_matrix(0,1), rot_matrix(0,2), pos.getX(),
                          rot_matrix(1,0), rot_matrix(1,1), rot_matrix(1,2), pos.getY(),
