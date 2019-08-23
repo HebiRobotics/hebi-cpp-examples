@@ -11,7 +11,6 @@
  * August 2019
  */
 
-
 #include <chrono>
 #include <iostream>
 #include <thread>
@@ -24,22 +23,20 @@ namespace plt = matplotlibcpp;
 
 using namespace hebi;
 
-
 int main() {
   // Find your module on the network 
   // You can also plot feedback from multiple modules by including multiple modules
-  // in your group. Look at example 01c on how to do that.
+  // in your group.
   Lookup lookup;
   std::string family_name("HEBI");
   std::string module_name("Mobile IO");
   auto group = lookup.getGroupFromNames({family_name}, {module_name});
 
-  // Confirm the module is found before preceding
+  // Confirm the module is found before proceeding
   if (!group) {
     std::cout << "Group not found!" << std::endl;
     return -1;
   }
-
 
   // Set the feedback frequency. 
   // This is by default "100"; setting this to 5 here allows the console output
@@ -58,7 +55,6 @@ int main() {
 
   std::cout << "\n Drag the Sliders and press some buttons on the app screen!" 
             << std::endl;
-
 
   // Start logging (you can also specify log file name as second parameter)
   std::string full_log_path = group -> startLog("./logs/");
@@ -88,7 +84,7 @@ int main() {
       // As such, we convert any ints we encounter back to float
       for (size_t i = 0; i < 8; ++i)
       {
-        // we check pins i+1 because the pins are numbered 1-8
+        // we check pins i+1 because the pins are numbered 1-8, not 0-7
         if (buttons_data.a().hasFloat(i+1)) {
           sliders[i] = buttons_data.a().getFloat(i+1);
         } else {
