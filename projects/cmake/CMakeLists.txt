@@ -115,8 +115,11 @@ SET(MOBILE_IO_SOURCES
   ${ROOT_DIR}/basic/mobile_io/01c_get_group_multiple_mobile_io.cpp
   ${ROOT_DIR}/basic/mobile_io/02a_feedback_mobile_io.cpp
   ${ROOT_DIR}/basic/mobile_io/02b_feedback_mobile_io_w_logging.cpp
-
-  ${ROOT_DIR}/basic/mobile_io/02f_feedback_background_mobile_io.cpp)
+  ${ROOT_DIR}/basic/mobile_io/02c_feedback_orientation.cpp
+  ${ROOT_DIR}/basic/mobile_io/02d_feedback_full_pose.cpp
+  ${ROOT_DIR}/basic/mobile_io/02e_feedback_pose_w_logging.cpp
+  ${ROOT_DIR}/basic/mobile_io/02f_feedback_background_mobile_io.cpp
+  ${ROOT_DIR}/basic/mobile_io/03a_feedback_io_and_mobile.cpp)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY basic/mobile_io)
 foreach (EXAMPLE ${MOBILE_IO_SOURCES})
@@ -157,6 +160,57 @@ foreach (EXAMPLE ${MOBILE_IO_SOURCES})
   endif()
 
 endforeach (EXAMPLE ${MOBILE_IO_SOURCES})
+
+
+
+
+# IO Board Examples
+SET(IO_BOARD_SOURCES
+  ${ROOT_DIR}/basic/io_board/01a_io_board_lookup.cpp
+  ${ROOT_DIR}/basic/io_board/01b_get_group_single_io_board.cpp
+  ${ROOT_DIR}/basic/io_board/01c_get_group_multiple_io_board.cpp
+  ${ROOT_DIR}/basic/io_board/02a_feedback_io_board.cpp
+  ${ROOT_DIR}/basic/io_board/02b_io_feedback_io_board.cpp)
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY basic/io_board)
+foreach (EXAMPLE ${IO_BOARD_SOURCES})
+
+  # The target for the individual example is based on the filename
+  get_filename_component(EX_NAME ${EXAMPLE} NAME_WE)
+  
+  if(WIN32)
+    add_executable(${EX_NAME} ${EXAMPLE} $<TARGET_OBJECTS:_hebic++-obj>)
+  else()
+    add_executable(${EX_NAME} ${EXAMPLE})
+
+  # Create logs directory in case the example logs data.
+  add_custom_command(TARGET ${EX_NAME} POST_BUILD
+                     COMMAND ${CMAKE_COMMAND} -E make_directory
+                         $<TARGET_FILE_DIR:${EX_NAME}>/logs)
+  endif()
+  add_dependencies(examples ${EX_NAME})
+  target_include_directories(${EX_NAME} PRIVATE ${ROOT_DIR})
+
+  target_include_directories(${EX_NAME} PRIVATE ${PYTHON_INCLUDE_DIRS})
+  target_link_libraries(${EX_NAME} ${PYTHON_LIBRARIES})
+  if(WIN32)
+    target_link_libraries(${EX_NAME} hebi kernel32)
+    target_include_directories(${EX_NAME} PRIVATE ${HEBI_DIR}/src ${HEBI_DIR}/include ${HEBI_DIR}/Eigen)
+    # For Windows, we copy the .dll file into the binary directory so that we
+    # don't have to set the PATH variable.
+
+    set(LIBHEBI_LOCATION "lib/win_${LIBHEBI_TARGET_ARCHITECTURE}")
+    set(HEBI_CPP_LIB_DIRECTORY ${HEBI_DIR}/hebi/${LIBHEBI_LOCATION}/)
+
+    add_custom_command(TARGET ${EX_NAME} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "${HEBI_CPP_LIB_DIRECTORY}/hebi.dll"
+      $<TARGET_FILE_DIR:${EX_NAME}>)
+  elseif(UNIX)
+    target_link_libraries(${EX_NAME} hebi hebic++ m pthread)
+  endif()
+
+endforeach (EXAMPLE ${IO_BOARD_SOURCES})
 
 
 

@@ -1,9 +1,5 @@
 /*
- * Get feedback from a singular mobile io module and plot it live.
- * Generate and save a log file for the 10 seconds this is run
- *
- * This example uses blocking. For a non-blocking example, please check
- * example 02f_feedback_background_mobile_io
+ * Get feedback from a singular io_board and plot it live.
  * 
  * For more information, go to http://docs.hebi.us/tools.html#cpp-api
  *
@@ -26,12 +22,13 @@ using namespace hebi;
 
 
 int main() {
+
   // Find your module on the network 
   // You can also plot feedback from multiple modules by including multiple modules
   // in your group. Look at example 01c on how to do that.
   Lookup lookup;
   std::string family_name("HEBI");
-  std::string module_name("Mobile IO");
+  std::string module_name("IO Board");
   auto group = lookup.getGroupFromNames({family_name}, {module_name});
 
   // Confirm the module is found before preceding
@@ -51,14 +48,9 @@ int main() {
   // for about 10 seconds here
   GroupFeedback group_fbk(group->size());
 
-  std::vector<int64_t> buttons;
-  std::vector<float> sliders(8); // we know we have 8 pins
+  std::vector<float> pin_values(8); // we know we have 8 pins
   std::vector<std::string> x_labels = {"1", "2", "3", "4", "5", "6", "7", "8"};
   std::vector<double> x_ticks = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0};
-
-  std::cout << "\n Drag the Sliders and press some buttons on the app screen!" 
-            << std::endl;
-
 
   // Start logging (you can also specify log file name as second parameter)
   std::string full_log_path = group -> startLog("./logs/");
@@ -69,30 +61,17 @@ int main() {
   {
     if (group -> getNextFeedback(group_fbk))
     {
-      // Obtain feedback for a singular module from the groupFeedback object
-      auto& buttons_data = group_fbk[0].io();
+      auto& pin_data = group_fbk[0].io();
 
-      // Digital Feedback (Buttons) 
-      // We can safely assume that all buttons return an int value
-      buttons = {buttons_data.b().getInt(1),
-                 buttons_data.b().getInt(2),
-                 buttons_data.b().getInt(3),
-                 buttons_data.b().getInt(4),
-                 buttons_data.b().getInt(5),
-                 buttons_data.b().getInt(6),
-                 buttons_data.b().getInt(7),
-                 buttons_data.b().getInt(8)};
-
-      // Analog Feedback (Sliders) 
-      // We expect float values, but may recieve an int in certain cases.
-      // As such, we convert any ints we encounter back to float
+      // Analog Feedback
+      // In this case, we gather only the values for A pins
       for (size_t i = 0; i < 8; ++i)
       {
         // we check pins i+1 because the pins are numbered 1-8
-        if (buttons_data.a().hasFloat(i+1)) {
-          sliders[i] = buttons_data.a().getFloat(i+1);
+        if (pin_data.a().hasFloat(i+1)) {
+          pin_values[i] = pin_data.a().getFloat(i+1);
         } else {
-          sliders[i] = (float)buttons_data.a().getInt(i+1);
+          pin_values[i] = (float) pin_data.a().getInt(i+1);
         }
       }
 
@@ -100,10 +79,10 @@ int main() {
       plt::clf();
       plt::ylim(-1, 1);
       plt::xticks(x_ticks, x_labels);
-      plt::xlabel("Digital Inputs and Analog Inputs");
-      plt::ylabel("[-1 to 1]"); 
-      plt::bar(sliders);
-      plt::bar(buttons);
+      plt::title("IO Board Feedback from IO pins");
+      plt::xlabel("Pin Number");
+      plt::ylabel("[-1 to 1]");
+      plt::bar(pin_values);
       plt::pause(0.01);
     }
   }
@@ -112,6 +91,9 @@ int main() {
   std::shared_ptr<LogFile> log_file = group -> stopLog();
 
   group -> clearFeedbackHandlers();
+
+  // Insert Things for the final plot
+
   return 0;
 }
 

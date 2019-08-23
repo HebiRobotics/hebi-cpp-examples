@@ -1,6 +1,6 @@
 /*
- * Get feedback from a singular mobile io module and plot it live.
- * Generate and save a log file for the 10 seconds this is run
+ * Simultaneously read analog, digital inputs, and gyro feedback and 
+ * visualize online
  *
  * This example uses blocking. For a non-blocking example, please check
  * example 02f_feedback_background_mobile_io
@@ -10,7 +10,6 @@
  * HEBI Robotics
  * August 2019
  */
-
 
 #include <chrono>
 #include <iostream>
@@ -26,9 +25,7 @@ using namespace hebi;
 
 
 int main() {
-  // Find your module on the network 
-  // You can also plot feedback from multiple modules by including multiple modules
-  // in your group. Look at example 01c on how to do that.
+  // Find your mobile device on the network 
   Lookup lookup;
   std::string family_name("HEBI");
   std::string module_name("Mobile IO");
@@ -39,7 +36,6 @@ int main() {
     std::cout << "Group not found!" << std::endl;
     return -1;
   }
-
 
   // Set the feedback frequency. 
   // This is by default "100"; setting this to 5 here allows the console output
@@ -53,17 +49,15 @@ int main() {
 
   std::vector<int64_t> buttons;
   std::vector<float> sliders(8); // we know we have 8 pins
-  std::vector<std::string> x_labels = {"1", "2", "3", "4", "5", "6", "7", "8"};
-  std::vector<double> x_ticks = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0};
+  std::vector<std::string> x1_labels = {"1", "2", "3", "4", "5", "6", "7", "8"};
+  std::vector<double> x1_ticks = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0};
 
-  std::cout << "\n Drag the Sliders and press some buttons on the app screen!" 
+  std::vector<double> y;
+  std::vector<std::string> x2_labels = {"X", "Y", "Z"};
+  std::vector<double> x2_ticks = {0.0, 1.0, 2.0};
+
+  std::cout << "\n Drag the Sliders, press some buttons, and move the device..." 
             << std::endl;
-
-
-  // Start logging (you can also specify log file name as second parameter)
-  std::string full_log_path = group -> startLog("./logs/");
-  // NOTE: This will NOT save if there is no 'logs' folder in the 
-  // location you are running this from
 
   for (size_t i = 0; i < 50; ++i)
   {
@@ -96,20 +90,28 @@ int main() {
         }
       }
 
-      // Now we plot the collected feedback
+      // Gyro Feedback
+      auto gyro = group_fbk.getGyro();
+      y = {gyro(0,0), gyro(0,1), gyro(0,2)};
+
+      // Now we plot
       plt::clf();
-      plt::ylim(-1, 1);
-      plt::xticks(x_ticks, x_labels);
-      plt::xlabel("Digital Inputs and Analog Inputs");
-      plt::ylabel("[-1 to 1]"); 
-      plt::bar(sliders);
-      plt::bar(buttons);
+      plt::subplot(2, 1, 1); // io feedback
+        plt::ylim(-1, 1);
+        plt::xticks(x1_ticks, x1_labels);
+        plt::xlabel("Digital Inputs and Analog Inputs");
+        plt::ylabel("[-1 to 1]");
+        plt::bar(sliders);
+        plt::bar(buttons);
+      plt::subplot(2, 1, 2); // gyro feedback
+        plt::ylim(-3.14, 3.14);
+        plt::xticks(x2_ticks, x2_labels);
+        plt::xlabel("Axis");
+        plt::ylabel("Angular Velocity (rad/s)");
+        plt::bar(y);
       plt::pause(0.01);
     }
   }
-
-  // Stop logging
-  std::shared_ptr<LogFile> log_file = group -> stopLog();
 
   group -> clearFeedbackHandlers();
   return 0;
