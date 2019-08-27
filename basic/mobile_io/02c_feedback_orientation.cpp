@@ -23,7 +23,6 @@ namespace plt = matplotlibcpp;
 
 using namespace hebi;
 
-
 int main() {
   // Find your module on the network 
   // You can also plot feedback from multiple modules by including multiple modules
@@ -38,7 +37,6 @@ int main() {
     std::cout << "Group not found!" << std::endl;
     return -1;
   }
-
 
   // Set the feedback frequency. 
   // This is by default "100"; setting this to 5 here allows the console output
@@ -85,7 +83,6 @@ int main() {
       plt::clf();
       plot_3dtriad(final_transform, &lines_x, &lines_y, &lines_z);
       plt::pause(0.01);
-
     }
   }
 
