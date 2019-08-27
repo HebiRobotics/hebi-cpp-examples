@@ -7,7 +7,6 @@
  * August 2019
  */
 
-
 #include <chrono>
 #include <iostream>
 #include <thread>
@@ -20,7 +19,6 @@
 namespace plt = matplotlibcpp;
 
 using namespace hebi;
-
 
 int main() {
   // Find your module on the network 
@@ -36,7 +34,6 @@ int main() {
     std::cout << "Group not found!" << std::endl;
     return -1;
   }
-
 
   // Set the feedback frequency. 
   // This is by default "100"; setting this to 5 here allows the console output
@@ -80,11 +77,10 @@ int main() {
       std::vector<std::vector<double>> lines_y;
       std::vector<std::vector<double>> lines_z;      
 
-      // Plot the 6Dof Pose
+      // Plot the 6-Dof Pose
       plt::clf();
       plot_3dtriad(final_transform, &lines_x, &lines_y, &lines_z);
       plt::pause(0.01);
-
     }
   }
 
