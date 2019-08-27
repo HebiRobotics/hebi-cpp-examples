@@ -7,7 +7,6 @@
  * August 2019
  */
 
-
 #include <chrono>
 #include <iostream>
 #include <thread>
@@ -20,9 +19,7 @@ namespace plt = matplotlibcpp;
 
 using namespace hebi;
 
-
 int main() {
-
   // Find your module on the network 
   // You can also plot feedback from multiple modules by including multiple modules
   // in your group. Look at example 01c on how to do that.
@@ -36,7 +33,6 @@ int main() {
     std::cout << "Group not found!" << std::endl;
     return -1;
   }
-
 
   // Set the feedback frequency. 
   // This is by default "100"; setting this to 5 here allows the console output
@@ -61,7 +57,8 @@ int main() {
   {
     if (group -> getNextFeedback(group_fbk))
     {
-      auto& pin_data = group_fbk[0].io();
+     // Obtain I/O feedback from the groupFeedback object 
+     auto& pin_data = group_fbk[0].io();
 
       // Analog Feedback
       // In this case, we gather only the values for A pins
@@ -91,9 +88,6 @@ int main() {
   std::shared_ptr<LogFile> log_file = group -> stopLog();
 
   group -> clearFeedbackHandlers();
-
-  // Insert Things for the final plot
-
   return 0;
 }
 
