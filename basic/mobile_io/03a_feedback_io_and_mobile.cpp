@@ -23,7 +23,6 @@ namespace plt = matplotlibcpp;
 
 using namespace hebi;
 
-
 int main() {
   // Find your mobile device on the network 
   Lookup lookup;
@@ -94,7 +93,7 @@ int main() {
       auto gyro = group_fbk.getGyro();
       y = {gyro(0,0), gyro(0,1), gyro(0,2)};
 
-      // Now we plot
+      // Now we plot the collected data
       plt::clf();
       plt::subplot(2, 1, 1); // io feedback
         plt::ylim(-1, 1);
