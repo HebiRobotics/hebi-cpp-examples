@@ -57,8 +57,9 @@ int main() {
   {
     if (group -> getNextFeedback(group_fbk))
     {
+      // Obtain gryo feedback from the groupFeedback object
       auto gyro = group_fbk.getGyro();
-      gyro_data = {gyro(0,0), gyro(0,1), gyro(0,2) };
+      gyro_data = {gyro(0,0), gyro(0,1), gyro(0,2)};
 
       // Now we plot the collected feedback
       plt::clf();
