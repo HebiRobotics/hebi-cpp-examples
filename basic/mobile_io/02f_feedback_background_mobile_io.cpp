@@ -7,7 +7,6 @@
  * August 2019
  */
 
-
 #include <chrono>
 #include <iostream>
 #include <thread>
@@ -19,7 +18,6 @@
 namespace plt = matplotlibcpp;
 
 using namespace hebi;
-
 
 int main() {
 
@@ -35,12 +33,10 @@ int main() {
     return -1;
   }
 
-
   // Set the feedback frequency. 
   // This is by default "100"; setting this to 5 here allows the console output
   // to be more reasonable.
   group -> setFeedbackFrequencyHz(5);
-
 
   // Add a callback to react to feedback received on a background thread
   // Note: We use a C++11 "lambda function" here to pass in a function pointer,
@@ -69,6 +65,5 @@ int main() {
   group -> clearFeedbackHandlers();
 
   return 0;
-
 }
 
