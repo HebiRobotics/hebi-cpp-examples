@@ -7,7 +7,6 @@
  * August 2019
  */
 
-
 #include <chrono>
 #include <iostream>
 #include <thread>
@@ -20,9 +19,7 @@ namespace plt = matplotlibcpp;
 
 using namespace hebi;
 
-
 int main() {
-
   // Find your module on the network 
   // You can also plot feedback from multiple modules by including multiple modules
   // in your group. Look at example 01c on how to do that.
@@ -37,7 +34,6 @@ int main() {
     return -1;
   }
 
-
   // Set the feedback frequency. 
   // This is by default "100"; setting this to 5 here allows the console output
   // to be more reasonable.
@@ -48,7 +44,7 @@ int main() {
   // for about 10 seconds here
   GroupFeedback group_fbk(group->size());
 
-  std::vector<double> y;
+  std::vector<double> gyro_data;
   std::vector<std::string> x_labels = {"X", "Y", "Z"};
   std::vector<double> x_ticks = {0.0, 1.0, 2.0};
 
@@ -62,7 +58,7 @@ int main() {
     if (group -> getNextFeedback(group_fbk))
     {
       auto gyro = group_fbk.getGyro();
-      y = {gyro(0,0), gyro(0,1), gyro(0,2) };
+      gyro_data = {gyro(0,0), gyro(0,1), gyro(0,2) };
 
       // Now we plot the collected feedback
       plt::clf();
@@ -71,7 +67,7 @@ int main() {
       plt::title("IO Board Gyro Feedback");
       plt::xlabel("Axis");
       plt::ylabel("Angular Velocity (rad/s)");
-      plt::bar(y);
+      plt::bar(gyro_data);
       plt::pause(0.01);
     }
   }
@@ -80,9 +76,6 @@ int main() {
   std::shared_ptr<LogFile> log_file = group -> stopLog();
 
   group -> clearFeedbackHandlers();
-
-  // Insert Things for the final plot
-
   return 0;
 }
 
