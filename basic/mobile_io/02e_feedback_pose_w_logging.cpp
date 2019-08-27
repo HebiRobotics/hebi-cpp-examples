@@ -22,7 +22,6 @@ namespace plt = matplotlibcpp;
 
 using namespace hebi;
 
-
 int main() {
   // Find your module on the network 
   // You can also plot feedback from multiple modules by including multiple modules
@@ -85,22 +84,20 @@ int main() {
       std::vector<std::vector<double>> lines_y;
       std::vector<std::vector<double>> lines_z;      
 
-      // Plot the 6Dof Pose
+      // Plot the 6-Dof Pose
       plt::clf();
       plot_3dtriad(final_transform, &lines_x, &lines_y, &lines_z);
       plt::pause(0.01);
-
     }
   }
   
   // Stop logging
   std::shared_ptr<LogFile> log_file = group -> stopLog();
 
-  // Gather and plot the logged Position data
+  // Gather the logged Position data
   std::vector<double> x_pos;
   std::vector<double> y_pos;
   std::vector<double> z_pos;
-  std::vector<double> time(log_file->size());
   GroupFeedback fbk(group->size());
   while (log_file -> getNextFeedback(fbk)) 
   {
@@ -115,7 +112,7 @@ int main() {
   plt::named_plot("Y Position", y_pos, "b-");
   plt::named_plot("Z Position", z_pos, "k-");
   plt::legend();
-  plt::ylabel("Position(m)");
+  plt::ylabel("Position (m)");
   plt::title("Device Position by Axis (x/y/z)");
   plt::show();
 
