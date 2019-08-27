@@ -55,6 +55,7 @@ int main() {
   std::string full_log_path = group -> startLog("./logs/");
   // NOTE: This will NOT save if there is no 'logs' folder in the 
   // location you are running this from
+  // If you encounter a segmentation fault error, ^ this is the issue!
 
   for (size_t i = 0; i < 50; ++i)
   {
@@ -106,6 +107,7 @@ int main() {
     z_pos.push_back(fbk[0].mobile().arPosition().get().getZ());
   }
 
+  // Plot the logged Position data
   plt::clf();
   plt::figure_size(1200,780);
   plt::named_plot("X Position", x_pos, "r-");
