@@ -266,7 +266,8 @@ endforeach (EXAMPLE ${ADVANCED_SOURCES})
 
 
 
-# Kits
+
+# Kit Examples
 SET(KIT_SOURCES
   ${ROOT_DIR}/kits/arm/gravity_compensation.cpp
   ${ROOT_DIR}/kits/arm/teach_repeat.cpp)
