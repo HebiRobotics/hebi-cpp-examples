@@ -51,7 +51,7 @@ int main() {
   std::vector<std::string> x1_labels = {"1", "2", "3", "4", "5", "6", "7", "8"};
   std::vector<double> x1_ticks = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0};
 
-  std::vector<double> y;
+  std::vector<double> gyro_data;
   std::vector<std::string> x2_labels = {"X", "Y", "Z"};
   std::vector<double> x2_ticks = {0.0, 1.0, 2.0};
 
@@ -91,7 +91,7 @@ int main() {
 
       // Gyro Feedback
       auto gyro = group_fbk.getGyro();
-      y = {gyro(0,0), gyro(0,1), gyro(0,2)};
+      gyro_data = {gyro(0,0), gyro(0,1), gyro(0,2)};
 
       // Now we plot the collected data
       plt::clf();
@@ -107,7 +107,7 @@ int main() {
         plt::xticks(x2_ticks, x2_labels);
         plt::xlabel("Axis");
         plt::ylabel("Angular Velocity (rad/s)");
-        plt::bar(y);
+        plt::bar(gyro_data);
       plt::pause(0.01);
     }
   }
