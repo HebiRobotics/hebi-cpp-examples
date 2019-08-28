@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\basic\05_trajectory.cpp">
+    <ClCompile Include="..\..\..\basic\x_series_actuator\05_trajectory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

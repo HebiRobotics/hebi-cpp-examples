@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\basic\01c_get_group_multiple_modules.cpp">
+    <ClCompile Include="..\..\..\basic\x_series_actuator\01c_get_group_multiple_modules.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
