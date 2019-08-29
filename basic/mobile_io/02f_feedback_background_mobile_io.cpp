@@ -13,7 +13,7 @@
  
 #include "lookup.hpp"
 #include "group_feedback.hpp"
-#include "plot_functions.h"
+#include "util/plot_functions.h"
 
 namespace plt = matplotlibcpp;
 

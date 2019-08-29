@@ -1,5 +1,5 @@
 #pragma once
-#include "util/matplotlibcpp.h"
+#include "matplotlibcpp.h"
 
 namespace plt = matplotlibcpp;
 

@@ -5,7 +5,7 @@
 #include "lookup.hpp"
 #include "group_feedback.hpp"
 #include "robot_model.hpp"
-#include "plot_functions.h"
+#include "util/plot_functions.h"
 
 using namespace hebi;
 

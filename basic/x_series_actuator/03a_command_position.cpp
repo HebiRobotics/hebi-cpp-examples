@@ -16,7 +16,7 @@
 #include "group_command.hpp"
 #include "group_feedback.hpp"
 #include "log_file.hpp"
-#include "plot_functions.h"
+#include "util/plot_functions.h"
 
 namespace plt = matplotlibcpp;
 using namespace hebi;
