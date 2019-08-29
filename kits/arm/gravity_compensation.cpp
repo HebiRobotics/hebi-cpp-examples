@@ -12,6 +12,7 @@
 #include "group_feedback.hpp"
 #include "util/grav_comp.hpp"
 #include "arm_container.hpp"
+#include "lookup.hpp"
 #include <chrono>
 #include <thread>
 
@@ -20,7 +21,45 @@ int main(int argc, char* argv[])
   // Note: this demo is written for a simple 3DOF arm with the kinematics
   // given below.  You can adapt to other systems by creating the correct
   // robot_model object and mass vector.
-  std::unique_ptr<hebi::ArmContainer> arm = hebi::ArmContainer::create3Dof();
+  // std::unique_ptr<hebi::ArmContainer> arm = hebi::ArmContainer::create3Dof();
+/////////////////
+  hebi::Lookup lookup;
+  std::vector<std::string> family = {"Arm Example"};
+  std::vector<std::string> names = {"Base", "Shoulder", "Elbow", "Wrist 1"};//, "Wrist 2", "Wrist 3"};
+
+
+  using ActuatorType = hebi::robot_model::RobotModel::ActuatorType;
+  using BracketType = hebi::robot_model::RobotModel::BracketType;
+  using LinkType = hebi::robot_model::RobotModel::LinkType;
+
+  // hebi::robot_model::RobotModel model;
+  // std::unique_ptr<hebi::robot_model::RobotModel> model;
+  std::unique_ptr<hebi::robot_model::RobotModel> model(
+    new hebi::robot_model::RobotModel());
+
+  model -> addActuator(ActuatorType::X8_9);
+  model -> addBracket(BracketType::X5HeavyRightInside);
+  model -> addActuator(ActuatorType::X8_16);
+  model -> addLink(LinkType::X5, 0.3, M_PI);
+  model -> addActuator(ActuatorType::X8_9);
+  model -> addLink(LinkType::X5, 0.3, 0);
+  model -> addActuator(ActuatorType::X5_9);
+  model -> addBracket(BracketType::X5LightRight);
+  // model -> addActuator(ActuatorType::X5_4);
+  // model -> addBracket(BracketType::X5LightLeft);
+  // model -> addActuator(ActuatorType::X5_4);
+
+
+  // std::unique_ptr<hebi::robot_model::RobotModel> *robo = &model;
+
+  std::shared_ptr<hebi::Group> group = lookup.getGroupFromNames(family, names);
+  if (!group)
+    {
+      std::cout << "Could not find arm group - check names!" << std::endl;
+    }
+
+  std::unique_ptr<hebi::ArmContainer> arm(new hebi::ArmContainer(group, std::move(model)));
+ ///////////
   if (!arm)
     return -1;
 

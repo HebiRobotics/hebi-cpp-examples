@@ -40,8 +40,8 @@ namespace hebi {
       // Look on the network for the requested modules
       Lookup lookup;
       std::shared_ptr<Group> arm = lookup.getGroupFromNames(
-        {"HEBI"},
-        {"base", "shoulder", "elbow"});
+        {"Arm Example"},
+        {"Base", "Shoulder", "Elbow"});
 
       if (!arm)
       {
@@ -52,12 +52,12 @@ namespace hebi {
       // Create a simple kinematic description of the arm 
       std::unique_ptr<robot_model::RobotModel> model(
         new robot_model::RobotModel());
-      model->addActuator(ActuatorType::X5_4);
-      model->addBracket(BracketType::X5LightRight);
-      model->addActuator(ActuatorType::X5_4);
-      model->addLink(LinkType::X5, 0.18, M_PI);
-      model->addActuator(ActuatorType::X5_4);
-      model->addLink(LinkType::X5, 0.15, 0);
+      model->addActuator(ActuatorType::X8_9);
+      model->addBracket(BracketType::X5HeavyRightInside);
+      model->addActuator(ActuatorType::X8_16);
+      model->addLink(LinkType::X5, 0.3, M_PI);
+      model->addActuator(ActuatorType::X8_9);
+      // model->addLink(LinkType::X5, 0.3, 0);
 
       // The degrees of freedom on the arm should match the kinematic
       // description!
