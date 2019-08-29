@@ -6,7 +6,7 @@
 #include "group_command.hpp"
 #include "group_feedback.hpp"
 #include "robot_model.hpp"
-#include "plot_functions.h"
+#include "util/plot_functions.h"
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif

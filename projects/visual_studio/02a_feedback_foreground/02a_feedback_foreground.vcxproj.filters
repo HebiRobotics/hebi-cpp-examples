@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\basic\02a_feedback_foreground.cpp">
+    <ClCompile Include="..\..\..\basic\x_series_actuator\02a_feedback_foreground.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

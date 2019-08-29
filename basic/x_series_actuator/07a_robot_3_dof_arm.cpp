@@ -1,5 +1,5 @@
 /**
- * Put everything together to control a 6-DoF arm.
+ * Put everything together to control a 3-DoF arm.
  *
  * For more information, go to http://docs.hebi.us/tools.html#cpp-api
  *
@@ -27,7 +27,7 @@
 #define M_PI 3.14159265358979323846
 #endif
 #include "log_file.hpp"
-#include "plot_functions.h"
+#include "util/plot_functions.h"
 
 namespace plt = matplotlibcpp;
 
@@ -37,8 +37,8 @@ using namespace hebi;
 /// gains on the modules in that group.
 std::shared_ptr<Group> getGroup() {
   // Get group
-  std::vector<std::string> families {"6-DoF Arm"};
-  std::vector<std::string> names {"Base","Shoulder","Elbow","Wrist1","Wrist2","Wrist3"};
+  std::vector<std::string> families {"family"};
+  std::vector<std::string> names {"base","shoulder","elbow"};
   Lookup lookup;
   std::shared_ptr<Group> group = lookup.getGroupFromNames(families, names);
   if (!group)
@@ -46,7 +46,7 @@ std::shared_ptr<Group> getGroup() {
 
   // Set gains
   GroupCommand gains_command(group->size());
-  if (!gains_command.readGains("gains/6-DoF_arm_gains.xml"))
+  if (!gains_command.readGains("gains/3-DoF_arm_gains.xml"))
     return nullptr;
   if (!group->sendCommandWithAcknowledgement(gains_command))
     return nullptr;
@@ -115,29 +115,25 @@ int main() {
   }
 
   // Load robot model/kinematics and gains
-  auto model = robot_model::RobotModel::loadHRDF("hrdf/6-DoF_arm_example.hrdf");
+  auto model = robot_model::RobotModel::loadHRDF("hrdf/3-DoF_arm_example.hrdf");
   if (!model)
   {
     std::cout << "Could not load HRDF!" << std::endl;
     return -1;
   }
  
-  // Go to the XYZ positions at four corners of the box, and create a rotation
-  // matrix that has the end effector point straight forward.
+  // Go to the XYZ positions at four corners of the box.
   Eigen::MatrixXd xyz_targets(3, 4);
-  xyz_targets << 0.40,  0.40,  0.40,  0.40, // x [m]
-                 0.20,  0.20, -0.20, -0.20, // y [m]
-                 0.10,  0.50,  0.50,  0.10; // z [m]
-  Eigen::Matrix3d rotation_target =
-    Eigen::AngleAxisd(M_PI / 2.0, Eigen::Vector3d::UnitY()).toRotationMatrix();
+  xyz_targets << 0.20,  0.40,  0.40,  0.20, // x [m]
+                 0.30,  0.30, -0.30, -0.30, // y [m]
+                 0.10,  0.10,  0.10,  0.10; // z [m]
 
   // Convert these to joint angle waypoints using IK solutions for each of the
-  // xyz locations, as well as the desired orientation of the end effector.
-  // Copy the initial waypoint at the end so we close the square
+  // xyz locations.  Copy the initial waypoint at the end so we close the square
 
   // Choose an "elbow up" initial configuration for IK
-  Eigen::VectorXd elbow_up_angles(6);
-  elbow_up_angles << 0, M_PI/4.0, M_PI/2.0, M_PI/4.0, -M_PI, M_PI/2.0; // [rad]
+  Eigen::Vector3d elbow_up_angles;
+  elbow_up_angles << 0, -M_PI/4, -M_PI/2;
 
   Eigen::MatrixXd joint_targets(group->size(), xyz_targets.cols() + 1);
   Eigen::VectorXd ik_res_angles;
@@ -145,7 +141,6 @@ int main() {
     model->solveIK(
       elbow_up_angles, // Initial joint angles
       ik_res_angles, // IK result
-      robot_model::EndEffectorSO3Objective(rotation_target), // Objective
       robot_model::EndEffectorPositionObjective(xyz_targets.col(col))); // Objective
     joint_targets.col(col) = ik_res_angles;
   }
@@ -180,7 +175,7 @@ int main() {
   // Stop logging
   auto log_file = group->stopLog();
 
-  //plot logged position, velocity and efforts for each module
+  //plot logged position, velocity and effort for each module
   std::vector<std::vector<double>> pos;
   std::vector<std::vector<double>> vel;
   std::vector<std::vector<double>> eff;
@@ -208,6 +203,6 @@ int main() {
     plt::plot(eff[i]);
   }
   plt::show();
-
+  
   return 0;
 }
