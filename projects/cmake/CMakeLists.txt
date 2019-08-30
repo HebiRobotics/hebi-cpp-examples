@@ -21,13 +21,17 @@ else()
   set(HEBI_DIR ${HEBI_CPP_DIR})
 endif()
 
+set(CMAKE_MODULES_PATH ${CMAKE_CURRENT_SOURCE_DIR})
+
 set(hebi_cpp_build_dir hebi-cpp-${CMAKE_BUILD_TYPE})
 string(TOLOWER ${hebi_cpp_build_dir} hebi_cpp_build_dir)
 get_filename_component(hebi_cpp_build_dir "${CMAKE_CURRENT_BINARY_DIR}/${hebi_cpp_build_dir}" REALPATH)
 
 add_subdirectory(${HEBI_DIR} ${hebi_cpp_build_dir})
 
+find_package(PythonInterp 3.6)
 find_package(PythonLibs 3.6)
+find_package(NumPy 1.7)
 
 # Make one metatarget for all examples
 add_custom_target(examples)
@@ -84,7 +88,7 @@ foreach (EXAMPLE ${X_SERIES_SOURCES})
   add_dependencies(examples ${EX_NAME})
   target_include_directories(${EX_NAME} PRIVATE ${ROOT_DIR})
 
-  target_include_directories(${EX_NAME} PRIVATE ${PYTHON_INCLUDE_DIRS})
+  target_include_directories(${EX_NAME} PRIVATE ${PYTHON_INCLUDE_DIRS} ${PYTHON_NUMPY_INCLUDE_DIR})
   target_link_libraries(${EX_NAME} ${PYTHON_LIBRARIES})
   if(WIN32)
     target_link_libraries(${EX_NAME} hebi kernel32)
@@ -140,7 +144,7 @@ foreach (EXAMPLE ${MOBILE_IO_SOURCES})
   add_dependencies(examples ${EX_NAME})
   target_include_directories(${EX_NAME} PRIVATE ${ROOT_DIR})
 
-  target_include_directories(${EX_NAME} PRIVATE ${PYTHON_INCLUDE_DIRS})
+  target_include_directories(${EX_NAME} PRIVATE ${PYTHON_INCLUDE_DIRS} ${PYTHON_NUMPY_INCLUDE_DIR})
   target_link_libraries(${EX_NAME} ${PYTHON_LIBRARIES})
   if(WIN32)
     target_link_libraries(${EX_NAME} hebi kernel32)
@@ -191,7 +195,7 @@ foreach (EXAMPLE ${IO_BOARD_SOURCES})
   add_dependencies(examples ${EX_NAME})
   target_include_directories(${EX_NAME} PRIVATE ${ROOT_DIR})
 
-  target_include_directories(${EX_NAME} PRIVATE ${PYTHON_INCLUDE_DIRS})
+  target_include_directories(${EX_NAME} PRIVATE ${PYTHON_INCLUDE_DIRS} ${PYTHON_NUMPY_INCLUDE_DIR})
   target_link_libraries(${EX_NAME} ${PYTHON_LIBRARIES})
   if(WIN32)
     target_link_libraries(${EX_NAME} hebi kernel32)
@@ -243,7 +247,7 @@ foreach (EXAMPLE ${ADVANCED_SOURCES})
   add_dependencies(examples ${EX_NAME})
   target_include_directories(${EX_NAME} PRIVATE ${ROOT_DIR})
 
-  target_include_directories(${EX_NAME} PRIVATE ${PYTHON_INCLUDE_DIRS})
+  target_include_directories(${EX_NAME} PRIVATE ${PYTHON_INCLUDE_DIRS} ${PYTHON_NUMPY_INCLUDE_DIR})
   target_link_libraries(${EX_NAME} ${PYTHON_LIBRARIES})
   if(WIN32)
     target_link_libraries(${EX_NAME} hebi kernel32)
