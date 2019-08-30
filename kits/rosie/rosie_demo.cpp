@@ -4,7 +4,10 @@
 #include <chrono>
 #include <thread>
 #include <iomanip>
-#include <util/grav_comp.hpp>
+
+#include "util/grav_comp.hpp"
+#include "util/vector_utils.h"
+
 #include "lookup.hpp"
 #include "group_feedback.hpp"
 #include "group_command.hpp"
@@ -13,51 +16,16 @@
 
 using namespace hebi;
 
-
-Eigen::VectorXd setVectorSegment(Eigen::VectorXd vect, std::vector<uint32_t> indices, Eigen::VectorXd values){
-  for(size_t i = 0; i < indices.size(); i++){
-    vect[indices[i]] = values[i];
-  }
-  return vect;
-}
-Eigen::VectorXd getVectorSegment(Eigen::VectorXd vect, std::vector<uint32_t> indices, Eigen::VectorXd values){
-  for(size_t i = 0; i < indices.size(); i++){
-    vect[i] = values[indices[i]];
-  }
-  return vect;
-}
-void setPositionSegment(GroupCommand& cmd, std::vector<uint32_t> indices, Eigen::VectorXd values){
-      Eigen::VectorXd pos_tmp = cmd.getPosition();
-      for(size_t i = 0; i < indices.size(); i++){
-          pos_tmp[indices[i]] = values[i];
-      }
-      cmd.setPosition(pos_tmp);
-}
-void setVelocitySegment(GroupCommand& cmd, std::vector<uint32_t> indices, Eigen::VectorXd values){
-      Eigen::VectorXd vel_tmp = cmd.getVelocity();
-      for(size_t i = 0; i < indices.size(); i++){
-          vel_tmp[indices[i]] = values[i];
-      }
-      cmd.setVelocity(vel_tmp);
-}
-void setEffortSegment(GroupCommand& cmd, std::vector<uint32_t> indices, Eigen::VectorXd values){
-      Eigen::VectorXd effort_tmp = cmd.getEffort();
-      for(size_t i = 0; i < indices.size(); i++){
-          effort_tmp[indices[i]] = values[i];
-      }
-      cmd.setEffort(effort_tmp);
-}
-
 void getTrajectoryCommand(std::shared_ptr<hebi::trajectory::Trajectory> traj,GroupCommand& cmd,
                           std::vector<uint32_t> indices, double t, Eigen::VectorXd* pos=nullptr,
-                          Eigen::VectorXd* vel=nullptr, Eigen::VectorXd* acc=nullptr){
+                          Eigen::VectorXd* vel=nullptr, Eigen::VectorXd* acc=nullptr) {
   auto len = indices.size();
   Eigen::VectorXd position(len);
   Eigen::VectorXd velocity(len);
   Eigen::VectorXd acceleration(len);
   traj->getState(t, &position, &velocity, &acceleration);
-  setPositionSegment(cmd,indices,position);
-  setVelocitySegment(cmd,indices,velocity);
+  hebi::util::setPositionScattered(cmd, indices, position);
+  hebi::util::setVelocityScattered(cmd, indices, velocity);
   if(pos!=nullptr)
     *pos = position;
   if(vel!=nullptr)
@@ -66,7 +34,7 @@ void getTrajectoryCommand(std::shared_ptr<hebi::trajectory::Trajectory> traj,Gro
     *acc = acceleration;
 }
 
-int main(){
+int main() {
   const std::unique_ptr<robot_model::RobotModel> arm_model = robot_model::RobotModel::loadHRDF("hrdf/6-dof_arm_w_gripper.hrdf");
   const std::vector<std::string> arm_module_names = {"Base","Shoulder", "Elbow", "Wrist1", "Wrist2", "Wrist3"};
   const std::vector<std::string> arm_gripper_module_name = {"Spool"};
@@ -168,35 +136,35 @@ int main(){
      
   auto wheel_group = lookup.getGroupFromNames(robot_family, base_wheel_module_names);
   GroupCommand base_gains_command(wheel_group->size());
-  if (!base_gains_command.readGains("gains/omni-drive-wheel-gains.xml")){
+  if (!base_gains_command.readGains("gains/omni-drive-wheel-gains.xml")) {
     printf("Could not read omni base gains");
-    return -1;
+    return 1;
   }
-  if (!wheel_group->sendCommandWithAcknowledgement(base_gains_command)){
+  if (!wheel_group->sendCommandWithAcknowledgement(base_gains_command)) {
     printf("Could not send omni base gains");
-    return -1;
+    return 1;
   }
   
   auto arm_group = lookup.getGroupFromNames(robot_family, arm_module_names);
   GroupCommand arm_gains_command(arm_group->size());
-  if (!arm_gains_command.readGains("gains/6-dof_arm_gains.xml")){
+  if (!arm_gains_command.readGains("gains/6-dof_arm_gains.xml")) {
     printf("Could not read 6 dof arm gains");
-    return -1;
+    return 1;
   }
-  if (!arm_group->sendCommandWithAcknowledgement(arm_gains_command)){
+  if (!arm_group->sendCommandWithAcknowledgement(arm_gains_command)) {
     printf("Could not send 6 dof arm gains");
-    return -1;
+    return 1;
   }
   
   auto gripper_group = lookup.getGroupFromNames(robot_family, arm_gripper_module_name);
   GroupCommand gripper_gains_command(gripper_group->size());
-  if (!gripper_gains_command.readGains("gains/gripper_gains.xml")){
+  if (!gripper_gains_command.readGains("gains/gripper_gains.xml")) {
     printf("Could not read gripper gains");
-    return -1;
+    return 1;
   }
-  if (!gripper_group->sendCommandWithAcknowledgement(gripper_gains_command)){
+  if (!gripper_group->sendCommandWithAcknowledgement(gripper_gains_command)) {
     printf("Could not send gripper gains");
-    return -1;
+    return 1;
   }
 
   //    %%
@@ -209,12 +177,11 @@ int main(){
 
   std::printf("Searching for phone Controller...\n");
   std::shared_ptr<Group> phone_group;
-  while(true){
-    if(phone_group = lookup.getGroupFromNames(phone_family, phone_name)){
+  while(true) {
+    if(phone_group = lookup.getGroupFromNames(phone_family, phone_name)) {
       break;
     }
     std::printf("Searching for phone Controller...\n");
-
   }
   std::printf("Phone Found. Starting up\n");
   //    % Get the initial feedback objects that we'll reuse later
@@ -227,12 +194,12 @@ int main(){
   //    %%%%%%%%%%%%%%%%%%%%%%%
   //    
   //    % Start background logging
-  if(enable_logging){
+  if(enable_logging) {
     robot_group->startLog("logs");
     phone_group->startLog("logs");
   }	
   //    % This outer loop is what we fall back to anytime we 're-home' the arm
-  while(true){ 
+  while(true) { 
     GroupFeedback fbk(robot_group->size());
     GroupCommand cmd(robot_group->size());
     robot_group->getNextFeedback(fbk);
@@ -267,7 +234,7 @@ int main(){
     auto t0 = fbk.getTime();
     auto t = 0.0; 
   
-    while(t < arm_min_traj_duration){
+    while(t < arm_min_traj_duration) {
       //
       if(!robot_group->getNextFeedback(fbk)) printf("no feedback recieved\n");
       auto temp_t = fbk.getTime();
@@ -289,7 +256,9 @@ int main(){
       }
       effort = hebi::util::getGravityCompensationEfforts(*arm_model, masses, arm_positions, gravity);
       /*TODO add dynamic_comp*/
-      setEffortSegment(cmd, arm_dofs, effort + arm_effort_offset);
+      // Apply the effort offset as well
+      effort += arm_effort_offset;
+      hebi::util::setEffortScattered(cmd, arm_dofs, effort);
       robot_group->sendCommand(cmd);
     }
     //        % Grab initial pose
@@ -322,7 +291,7 @@ int main(){
     auto chassis_traj_start_time = t0;  
 
     GroupCommand wheel_cmd(wheel_group->size());\
-    wheel_cmd.setPosition(getVectorSegment(wheel_cmd.getPosition(),wheel_dofs, fbk.getPosition()));
+    wheel_cmd.setPosition(hebi::util::vectorGather(wheel_cmd.getPosition(),wheel_dofs, fbk.getPosition()));
     //
     //        % Replan Trajectory for the mobile base
     Eigen::Vector2d omni_base_traj_time;
@@ -337,12 +306,12 @@ int main(){
     auto omni_base_traj = hebi::trajectory::Trajectory::createUnconstrainedQp(time, velocities, &accelerations, &jerks);
     bool first_run = true;
     
-    while(true){
+    while(true) {
       //            %%%%%%%%%%%%%%%%%%%
       //            % Gather Feedback %
       //            %%%%%%%%%%%%%%%%%%%
 
-      if(!robot_group->getNextFeedback(fbk)){
+      if(!robot_group->getNextFeedback(fbk)) {
         printf("Could not get robot feedback!");
         break;
       }
@@ -403,12 +372,12 @@ int main(){
       Eigen::VectorXd pos(arm_dofs.size());
       Eigen::VectorXd vel(arm_dofs.size());
       Eigen::VectorXd acc(arm_dofs.size());
-      if(first_run){
-        pos = getVectorSegment(pos,arm_dofs,fbk.getPositionCommand());
+      if(first_run) {
+        pos = hebi::util::vectorGather(pos,arm_dofs,fbk.getPositionCommand());
         vel = end_velocities;
         acc = end_accels;
-        setPositionSegment(cmd,arm_dofs,pos);
-        setVelocitySegment(cmd,arm_dofs,vel);
+        hebi::util::setPositionScattered(cmd, arm_dofs, pos);
+        hebi::util::setVelocityScattered(cmd, arm_dofs, vel);
         first_run = false;
       } else {
         getTrajectoryCommand(arm_traj,cmd,arm_dofs,t,&pos,&vel,&acc);
@@ -422,12 +391,13 @@ int main(){
                      -base_accel.getY(),
                      -base_accel.getZ());
       Eigen::VectorXd arm_positions(arm_dofs.size());
-      for(size_t i = 0; i < arm_positions.size(); ++i){
+      for(size_t i = 0; i < arm_positions.size(); ++i) {
         arm_positions[i] = fbk.getPosition()[arm_dofs[i]];
       }
       Eigen::VectorXd grav_comp = hebi::util::getGravityCompensationEfforts(*arm_model, masses, arm_positions, gravity);
-
-      setEffortSegment(cmd, arm_dofs, grav_comp + arm_effort_offset);
+      // Apply the effort offset as well
+      grav_comp += arm_effort_offset;
+      hebi::util::setEffortScattered(cmd, arm_dofs, grav_comp);
       //            % Force elbow up config
       auto seed_pos_ik = pos;
       seed_pos_ik[2] = abs(seed_pos_ik[2]);
@@ -460,7 +430,7 @@ int main(){
       //            % Evaluate Trajectory State %
       //            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
       //            % Chassis (linear velocity)
-      if(time_now - chassis_traj_start_time < omni_base_traj->getDuration()){
+      if(time_now - chassis_traj_start_time < omni_base_traj->getDuration()) {
         t = time_now - chassis_traj_start_time;
       } else {
         t = omni_base_traj->getDuration();
@@ -475,9 +445,9 @@ int main(){
       wheel_cmd.setPosition(wheel_cmd.getPosition() + wheel_cmd.getVelocity() * dt);
       wheel_cmd.setEffort(base_wheel_effort_matrix * (chassis_mass_matrix * chassis_cmd_acc));
 
-      setPositionSegment(cmd,wheel_dofs,wheel_cmd.getPosition());
-      setVelocitySegment(cmd,wheel_dofs,wheel_cmd.getVelocity());
-      setEffortSegment(cmd,wheel_dofs,wheel_cmd.getEffort());
+      hebi::util::setPositionScattered(cmd, wheel_dofs, wheel_cmd.getPosition());
+      hebi::util::setVelocityScattered(cmd, wheel_dofs, wheel_cmd.getVelocity());
+      hebi::util::setEffortScattered(cmd, wheel_dofs, wheel_cmd.getEffort());
       
       //            % Hold down button 8 to put the arm in a compliant grav-comp mode
       double b_8 = (latest_phone_fbk[0].io().b().hasInt(8) ? latest_phone_fbk[0].io().b().getInt(8) : latest_phone_fbk[0].io().b().getFloat(8));
