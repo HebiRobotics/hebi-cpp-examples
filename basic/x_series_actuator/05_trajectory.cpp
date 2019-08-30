@@ -18,12 +18,15 @@
 #include "command.hpp"
 #include <math.h>
 #include <chrono>
+#include "util/plot_functions.h"
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
 #ifndef M_PI_2
 #define M_PI_2 1.57079632679489661923
 #endif
+
+namespace plt = matplotlibcpp;
 
 int main()
 {
@@ -68,7 +71,7 @@ int main()
 
   auto trajectory = hebi::trajectory::Trajectory::createUnconstrainedQp(time, positions);
 
-  // Start logging in the background
+    // Start logging in the background
   group->startLog("logs");
 
   // Follow the trajectory
@@ -90,6 +93,15 @@ int main()
     cmd.setPosition(pos_cmd);
     cmd.setVelocity(vel_cmd);
     group->sendCommand(cmd);
+  }
+  //plot graph of trajectories
+  auto x = linspace(0.0,time[2],100.0);
+  for (size_t i = 0; i < num_joints; i++) {
+    //these are calls to the function f_x which takes a vector of doubles, x, and a lambda, f, and returns a vector f(x)
+    std::vector<double> p = f_x(x,[&, i](double t) {Eigen::VectorXd pos(num_joints); trajectory->getState(t,&pos,nullptr,nullptr); return pos[i]; });
+    std::vector<double> v = f_x(x,[&, i](double t) {Eigen::VectorXd vel(num_joints); trajectory->getState(t,nullptr,&vel,nullptr); return vel[i]; });
+    plt::plot(x,p,"-b",x,v,"--r");
+    plt::show();
   }
 
   // Stop logging

@@ -26,6 +26,10 @@
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
+#include "log_file.hpp"
+#include "util/plot_functions.h"
+
+namespace plt = matplotlibcpp;
 
 using namespace hebi;
 
@@ -175,6 +179,35 @@ int main() {
 
   // Stop logging
   auto log_file = group->stopLog();
+
+  //plot logged position, velocity and efforts for each module
+  std::vector<std::vector<double>> pos;
+  std::vector<std::vector<double>> vel;
+  std::vector<std::vector<double>> eff;
+  pos.resize(group->size());
+  vel.resize(group->size());
+  eff.resize(group->size());
+  GroupFeedback fbk(group->size());
+  while(log_file->getNextFeedback(fbk)) {
+    for(size_t i = 0; i < group->size(); i++){
+      pos[i].push_back(fbk.getPosition()[i]);
+      vel[i].push_back(fbk.getVelocity()[i]);
+      eff[i].push_back(fbk.getEffort()[i]);
+    }
+  }
+  plt::figure(1);
+  for(size_t i = 0; i < group->size(); i++){
+    plt::plot(pos[i]);
+  }
+  plt::figure(2);
+  for(size_t i = 0; i < group->size(); i++){
+    plt::plot(vel[i]);
+  }
+  plt::figure(3);
+  for(size_t i = 0; i < group->size(); i++){
+    plt::plot(eff[i]);
+  }
+  plt::show();
 
   return 0;
 }

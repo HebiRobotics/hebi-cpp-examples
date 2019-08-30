@@ -3,8 +3,11 @@
 #include <thread>
 #include "lookup.hpp"
 #include "group_feedback.hpp"
+#include "util/plot_functions.h"
 
 using namespace hebi;
+
+namespace plt = matplotlibcpp;
 
 int main()
 {
@@ -25,9 +28,20 @@ int main()
   // Note: We use a C++11 "lambda function" here to pass in a function pointer,
   // but you can also pass in a C-style function pointer with the signature:
   //   void func(const hebi::GroupFeedback& group_fbk);
-  group->addFeedbackHandler([](const GroupFeedback& group_fbk)
+  std::vector<double> y;
+  group->addFeedbackHandler([&y](const GroupFeedback& group_fbk)
   {
-    std::cout << "Got feedback. Positions are: " << std::endl << group_fbk.getPosition() << std::endl;
+    auto gyro = group_fbk.getGyro();
+    y = { gyro(0,0), gyro(0,1), gyro(0,2) };
+
+    //plot the feedback
+    std::vector<std::string> x_labels = {"X","Y","Z"};
+    std::vector<double> x_ticks = {0.0,1.0,2.0};
+    plt::clf();
+    plt::ylim(-3.14, 3.14); 
+    plt::xticks(x_ticks,x_labels);
+    plt::bar(y);
+    plt::pause(0.01);
   });
 
   // Wait for 10 seconds, and then stop.

@@ -1,5 +1,5 @@
 /**
- * Send velocity commands and log in the background.
+ * Send position commands and log in the background.
  *
  * For more information, go to http://docs.hebi.us/tools.html#cpp-api
  *
@@ -15,8 +15,12 @@
 #include "lookup.hpp"
 #include "group_command.hpp"
 #include "group_feedback.hpp"
+#include "log_file.hpp"
+#include "util/plot_functions.h"
 
+namespace plt = matplotlibcpp;
 using namespace hebi;
+
 
 int main() {
   // Get group
@@ -30,7 +34,7 @@ int main() {
     return -1;
   }
 
-  //// Open-loop controller (velocity)
+  //// Open-loop controller (position)
 
   // The command struct has fields for various commands and settings; for the
   // actuator, we will primarily use position, velocity, and effort.
@@ -38,7 +42,7 @@ int main() {
   // Fields that are not filled in will be ignored when sending.
   GroupCommand group_command(group->size());
   // GroupCommand uses Eigen types for data interchange
-  Eigen::VectorXd velocities(1);
+  Eigen::VectorXd positions(1);
   // Allocate feedback
   GroupFeedback group_feedback(group->size());
   
@@ -48,7 +52,7 @@ int main() {
   // Parameters for sin/cos function
   double freq_hz = 0.5;               // [Hz]
   double freq = freq_hz * 2.0 * M_PI; // [rad / sec]
-  double amp = 1.0;                   // [rad / sec]
+  double amp = M_PI / 4.0;            // [rad] (45 degrees)
 
   double duration = 10;               // [sec]
   auto start = std::chrono::system_clock::now();
@@ -59,15 +63,28 @@ int main() {
     // limits the loop rate to the feedback frequency
     group->getNextFeedback(group_feedback);
 
-    // Update velocity set point
+    // Update position set point
     t = std::chrono::system_clock::now() - start;
-    velocities[0] = amp * std::sin(freq * t.count());
-    group_command.setVelocity(velocities);
+    positions[0] = amp * std::sin(freq * t.count());
+    group_command.setPosition(positions);
     group->sendCommand(group_command);
   }
 
   // Stop logging
   auto log_file = group->stopLog();
 
+  //plot the logged position data
+  std::vector<std::vector<double>> pos;
+  pos.resize(group->size());
+  GroupFeedback fbk(group->size());
+  while(log_file->getNextFeedback(fbk)) {
+    for(size_t i = 0; i < group->size(); i++){
+      pos[i].push_back(fbk.getPosition()[i]);
+    }
+  }
+  for(size_t i = 0; i < group->size(); i++){
+    plt::plot(pos[i]);
+  }
+  plt::show();
   return 0;
 }

@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\basic\03f_command_vel_w_feedback.cpp">
+    <ClCompile Include="..\..\..\basic\x_series_actuator\03f_command_vel_w_feedback.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
