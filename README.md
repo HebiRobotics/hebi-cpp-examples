@@ -8,11 +8,23 @@ network.
 
 ## Downloading Dependencies
 
+### HEBI C++ API:
+
 If cloning the repo directly, you will need to download the C++ API from http://docs.hebi.us/downloads_changelogs.html#software to build the examples and place it in a folder called `hebi-cpp`. If you use the CMake project, it will automatically be downloaded, assuming you have a working internet connection.
 
-For examples which use plotting, python is needed. To install it, execute "sudo apt-get install python3-matplotlib python3-numpy python3.6-dev" in terminal. (Plotting is enabled using a header file matplotlib.h which is a modified version of the one found at https://github.com/lava/matplotlib-cpp)
-
 Use the same version of the C++ API that is defined at the top of projects/cmake/DownloadHebiCpp.cmake, as this will ensure all the code is compatible.
+
+### Python + matplotlib
+
+For examples which use plotting, Python and a Python plotting packages are needed. (Plotting is enabled using a header file matplotlib.h which is a modified version of the one found at https://github.com/lava/matplotlib-cpp)  To install:
+
+**Linux**
+```sudo apt-get install python3-matplotlib python3-numpy python3.6-dev```
+
+**Windows**
+- Install a Python 3 install via https://www.python.org/downloads/.  We recommend selecting "add to path" during installation, as it makes future use of Python easier on the PC.
+- Run `python -m pip install numpy` in a command prompt
+- Run `python -m pip install -U matplotlib` in a command prompt
 
 ## Getting Started
 
@@ -52,6 +64,13 @@ directory, you can run
 mkdir build
 cd build
 cmake -DARCH=x86_64 ../projects/cmake/
+```
+
+Note that you may need to add your Python directories if they are not included on the path
+(Python is used for the plotting library).  For example, on Windows, you may have to do something like this:
+
+```
+cmake -G "Visual Studio 15 2017 Win64" ..\projects\cmake\ -DPYTHON_INCLUDE_DIR=C:\<path_to_python>\include -DPYTHON_LIBRARY=c:\<path_to_python>\libs\python37.lib -DPYTHON_EXECUTABLE=C:\<path_to_python>\python.exe
 ```
 
 If CMake is configured to create a Makefile project (the default for Linux), you
