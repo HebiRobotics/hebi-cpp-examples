@@ -105,7 +105,7 @@ static void commandProc(State* state)
 
     // Add gravity compensation no matter what
     state->_current_position = feedback.getPosition();
-    VectorXd effort = GravityCompensation::getEfforts(
+    VectorXd effort = getGravityCompensationEfforts(
       state->_arm.getRobotModel(),
       state->_arm.getMasses(),
       feedback);
