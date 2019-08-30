@@ -22,7 +22,7 @@ For examples which use plotting, Python and a Python plotting packages are neede
 ```sudo apt-get install python3-matplotlib python3-numpy python3.6-dev```
 
 **Windows**
-- Install a Python 3 install via https://www.python.org/downloads/.  We recommend selecting "add to path" during installation, as it makes future use of Python easier on the PC.
+- Install Python 3 via https://www.python.org/downloads/.  We recommend selecting "add to path" during installation, as it makes future use of Python easier on the PC.
 - **ENSURE YOU INSTALL A 64 BIT VERSION OF PYTHON**
 - Run `python -m pip install numpy` in a command prompt
 - Run `python -m pip install -U matplotlib` in a command prompt
