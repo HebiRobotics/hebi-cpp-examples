@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
 /////////////////
   hebi::Lookup lookup;
   std::vector<std::string> family = {"Arm Example"};
-  std::vector<std::string> names = {"Base", "Shoulder", "Elbow", "Wrist 1"};//, "Wrist 2", "Wrist 3"};
+  std::vector<std::string> names = {"Base", "Shoulder", "Elbow", "Wrist1"};//, "Wrist 2", "Wrist 3"};
 
 
   using ActuatorType = hebi::robot_model::RobotModel::ActuatorType;
