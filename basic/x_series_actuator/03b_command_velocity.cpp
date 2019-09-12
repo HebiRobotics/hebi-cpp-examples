@@ -25,7 +25,7 @@ using namespace hebi;
 int main() {
   // Get group
   Lookup lookup;
-  auto group = lookup.getGroupFromNames({"Arm Example"}, {"Wrist1"});
+  auto group = lookup.getGroupFromNames({"Test Family"}, {"Test Actuator"});
 
   if (!group) {
     std::cout
