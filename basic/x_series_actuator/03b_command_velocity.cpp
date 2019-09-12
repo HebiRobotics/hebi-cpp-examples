@@ -25,7 +25,7 @@ using namespace hebi;
 int main() {
   // Get group
   Lookup lookup;
-  auto group = lookup.getGroupFromNames({"Test Family"}, {"Test Actuator"});
+  auto group = lookup.getGroupFromNames({"Test Family"}, {"Test Actutator"});
 
   if (!group) {
     std::cout
@@ -51,7 +51,7 @@ int main() {
 
   if (log_path.empty()) {
     std::cout << "~~ERROR~~\n"
-              << "Target directory for log_file not found!\n"
+              << "Target directory for log file not found!\n"
               << "HINT: Remember that the path declared in 'group->startLog()' "
               << "is relative to your current working directory...\n";
     return 0;

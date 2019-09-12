@@ -52,10 +52,15 @@ int main() {
             << std::endl;
 
   // Start logging (you can also specify log file name as second parameter)
-  std::string full_log_path = group -> startLog("./logs/");
-  // NOTE: This will NOT save if there is no 'logs' folder in the 
-  // location you are running this from
-  // If you encounter a segmentation fault error, ^ this is the issue!
+  std::string log_path = group->startLog("./logs");
+
+  if (log_path.empty()) {
+    std::cout << "~~ERROR~~\n"
+              << "Target directory for log file not found!\n"
+              << "HINT: Remember that the path declared in 'group->startLog()' "
+              << "is relative to your current working directory...\n";
+    return 0;
+  }
 
   for (size_t i = 0; i < 50; ++i)
   {
