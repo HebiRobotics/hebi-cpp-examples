@@ -160,7 +160,7 @@ int main() {
               << "Target directory for log file not found!\n"
               << "HINT: Remember that the path declared in 'group->startLog()' "
               << "is relative to your current working directory...\n";
-    return 0;
+    return 1;
   }
 
   // Get a trajectory from the current position to the first corner of the box: 

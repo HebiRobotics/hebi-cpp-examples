@@ -43,7 +43,7 @@ int main() {
               << "Target directory for log file not found!\n"
               << "HINT: Remember that the path declared in 'group->startLog()' "
               << "is relative to your current working directory...\n";
-    return 0;
+    return 1;
   }
 
   std::cout << "  Move the module to make the output move..." << std::endl;
