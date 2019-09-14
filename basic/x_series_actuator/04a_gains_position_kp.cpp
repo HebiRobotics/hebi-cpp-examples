@@ -47,7 +47,15 @@ int main() {
   GroupFeedback feedback(group->size());
  
   // Start logging in the background
-  group->startLog("logs");
+  std::string log_path = group->startLog("./logs");
+
+  if (log_path.empty()) {
+    std::cout << "~~ERROR~~\n"
+              << "Target directory for log file not found!\n"
+              << "HINT: Remember that the path declared in 'group->startLog()' "
+              << "is relative to your current working directory...\n";
+    return 1;
+  }
 
   // Parameters for step function
   double step_period = 1.0;                  // sec
