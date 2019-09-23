@@ -5,7 +5,7 @@
 
 trigger:
 - master
-- hardik/CI_Test
+- hardik/arm_examples_2
 
 pool:
   vmImage: 'ubuntu-latest'
