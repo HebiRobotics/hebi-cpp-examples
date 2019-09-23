@@ -28,7 +28,8 @@ steps:
 
 - bash: |
     apt
-    pip3 install numpy
+    # pip3 install numpy
+    apt install python-numpy
     mkdir build
     cd build
     cmake ../projects/cmake/
