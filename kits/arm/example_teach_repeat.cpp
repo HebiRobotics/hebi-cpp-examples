@@ -20,59 +20,57 @@ using namespace hebi::experimental; // For all things mobileIO
 
 struct Waypoint
 {
-  Eigen::VectorXd _positions;
-  Eigen::VectorXd _vels;
-  Eigen::VectorXd _accels;
+  Eigen::VectorXd positions;
+  Eigen::VectorXd vels;
+  Eigen::VectorXd accels;
 };
   
 struct State
 {
-  int _num_modules;
-  std::vector<Waypoint> _waypoints;
-  std::vector<bool> _stops;
+  int num_modules;
+  std::vector<Waypoint> waypoints;
 };
 
 void addWaypoint (State& state, const GroupFeedback& feedback, bool stop) {
   printf("Adding a Waypoint.\n");
-  state._waypoints.push_back(Waypoint {feedback.getPosition(),
-                                       VectorXd::Constant(state._num_modules, 0),
-                                       VectorXd::Constant(state._num_modules, 0)});
-  state._stops.push_back(stop);
-
-
-
+  
+  if (stop) { // stop waypoint
+    state.waypoints.push_back(Waypoint {feedback.getPosition(),
+                              VectorXd::Constant(state.num_modules, 0),
+                              VectorXd::Constant(state.num_modules, 0)});
+  }
+  else { // through waypoint
+    state.waypoints.push_back(Waypoint {feedback.getPosition(),
+                      VectorXd::Constant(state.num_modules, std::numeric_limits<double>::quiet_NaN()),
+                      VectorXd::Constant(state.num_modules, std::numeric_limits<double>::quiet_NaN())});
+  }
 }
 
-// TODO: Add functionality to make it so that its possible to slide through the different Trajectories as well.
 arm::Goal playWaypoints (State& state) {
+  // We know that if we are here, there is at least one waypoint
 
   // Set up the required variables
-  Eigen::MatrixXd targets_pos(state._num_modules, state._waypoints.size());
-  Eigen::MatrixXd targets_vels(state._num_modules, state._waypoints.size());
-  Eigen::MatrixXd targets_accels(state._num_modules, state._waypoints.size());
-  Eigen::VectorXd times(state._waypoints.size());
+  Eigen::MatrixXd target_pos(state.num_modules, state.waypoints.size());
+  Eigen::MatrixXd target_vels(state.num_modules, state.waypoints.size());
+  Eigen::MatrixXd target_accels(state.num_modules, state.waypoints.size());
+  Eigen::VectorXd times(state.waypoints.size());
 
-  // Fill up the matrix
-  for (int i = 0; i < state._waypoints.size(); i++)
+  // Fill up the relevant matrices
+  for (int i = 0; i < state.waypoints.size(); i++)
   {
     // map each waypoint vector to a column in the targets matrix
-    targets_pos.col(i) << state._waypoints[i]._positions;
-    if (state._stops[i]) {
-      targets_vels.col(i) << Eigen::VectorXd::Constant(state._num_modules, 0);
-      targets_accels.col(i) << Eigen::VectorXd::Constant(state._num_modules, 0);
-    } else {
-      targets_vels.col(i) << Eigen::VectorXd::Constant(state._num_modules, std::numeric_limits<double>::quiet_NaN());
-      targets_accels.col(i) << Eigen::VectorXd::Constant(state._num_modules, std::numeric_limits<double>::quiet_NaN());
-    }
-    // times[i] = 3*(i+1); // Each movement will take 3 seconds.
+    target_pos.col(i) << state.waypoints[i].positions;
+    target_vels.col(i) << state.waypoints[i].vels;
+    target_accels.col(i) << state.waypoints[i].accels;
   }
 
-  auto goal = arm::Goal(targets_pos, targets_vels, targets_accels);
+  // For better motion, we ensure the last waypoint is a stop waypoint
+  target_vels.col(state.waypoints.size()-1) << 
+                  Eigen::VectorXd::Constant(state.num_modules, 0);
+  target_accels.col(state.waypoints.size()-1) << 
+                    Eigen::VectorXd::Constant(state.num_modules, 0);
 
-  // auto goal = arm::Goal(targets, 
-     // Eigen::MatrixXd::Constant(state._num_modules, state._waypoints.size(), 0),
-     // Eigen::MatrixXd::Constant(state._num_modules, state._waypoints.size(), 0));
-  return goal;
+  return arm::Goal(target_pos, target_vels, target_accels);
 }
 
 
@@ -86,24 +84,21 @@ int main(int argc, char* argv[])
   // Setup Module Family and Module Names
   std::vector<std::string> family = {"Arm Example"};
   std::vector<std::string> names = {"Base", "Shoulder", "Elbow",
-                                    "Wrist1", "Wrist2", "Wrist3"};
+                                            "Wrist1", "Wrist2", "Wrist3"};
 
   // Read HRDF file to setup a RobotModel object for the 6-DoF Arm
+  // Make sure you are running this from the correct directory!
   std::unique_ptr<robot_model::RobotModel> model = 
-                      robot_model::RobotModel::loadHRDF("kits/hrdf/6-dof_arm.hrdf");
-  //TODO: Check if the HRDF needs to be updated back to something appropriate
-  // for the user. AKA back into the form that we ship ou the 6-dofs in.
-
-  // TODO: HRDF description on the Doxygen generated page is incorrectly copy pasted
+                      robot_model::RobotModel::loadHRDF("hrdf/6-dof_arm.hrdf");
 
   // Setup Time Variables
   auto start_time = std::chrono::steady_clock::now();
-  std::chrono::duration<double> time_from_start = 
-                                  std::chrono::steady_clock::now() - start_time;
-  double arm_start_time = time_from_start.count();
+  std::chrono::duration<double> arm_time = std::chrono::steady_clock::now() - start_time;
+  double arm_start_time = arm_time.count();
   
   // Create the Arm Object
   auto arm = arm::Arm::create(arm_start_time, family, names, std::move(model));
+
 
   //////////////////////////
   //// MobileIO Setup //////
@@ -112,32 +107,29 @@ int main(int argc, char* argv[])
   // Create the MobileIO object
   std::unique_ptr<MobileIO> mobile = MobileIO::create("HEBI", "Mobile IO");
 
-  std::string instructions;
-  instructions = "B1 - Add Waypoint\nB2 - Clear Waypoints\nB5 - Playback Mode\nB6 - Grav Comp Mode\nB8 - Quit\n";
   // Clear any garbage on screen
   mobile -> clearText(); 
+
+  // Setup instructions for display
+  std::string instructions;
+  instructions = ("B1 - Add stop WP\nB2 - Clear waypoints\n"
+                  "B3 - Add through WP\nB5 - Playback mode\n"
+                  "B6 - Grav comp mode\nB8 - Quit\n");
 
   // Display instructions on screen
   mobile -> sendText(instructions); 
 
-  // Setup instructions
+  // Setup state variable for mobile device
   auto last_mobile_state = mobile->getState();
 
-  /////////////////////////////
-  // Control Variables Setup //
-  /////////////////////////////
-
-  // Teach Repeat Variables
-  State state;
-  state._num_modules = arm -> robotModel().getDoFCount();
 
   //////////////////////////
   //// Main Control Loop ///
   //////////////////////////
 
-
-  // instructions = "B1 - Add Waypoint\nB2 - Clear Waypoints\nB5 - Play Waypoints\nB6 - Return to Grav Comp\n";
-
+  // Teach Repeat Variables
+  State state;
+  state.num_modules = arm -> robotModel().getDoFCount();
 
   while(arm->update(arm->currentTime(start_time)))
   {
@@ -145,33 +137,30 @@ int main(int argc, char* argv[])
     auto mobile_state = mobile->getState();
     MobileIODiff diff(last_mobile_state, mobile_state);
 
-    // Buttton B1 - Home Position
+    // Buttton B1 - Add Stop Waypoint
     if (diff.get(1) == MobileIODiff::ButtonState::ToOn) {
       addWaypoint(state, arm -> lastFeedback(), true);
     }
 
     // Button B2 - Clear Waypoints
     if (diff.get(2) == MobileIODiff::ButtonState::ToOn) {
-      state._waypoints.clear();
-      state._stops.clear();
+      state.waypoints.clear();
     }
 
-    // Button B3 - Through Waypoint
+    // Button B3 - Add Through Waypoint
     if (diff.get(3) == MobileIODiff::ButtonState::ToOn) {
       addWaypoint(state, arm -> lastFeedback(), false);
     }
 
-
-    // Button B5 - Switch to replay mode
+    // Button B5 - Playback Waypoints
     if (diff.get(5) == MobileIODiff::ButtonState::ToOn) {
-      if (state._waypoints.size() == 0){
+      if (state.waypoints.size() == 0){
         printf("You have not added any Waypoints!\n");
       } 
       else {
-        const arm::Goal trajectory = playWaypoints(state);
-        arm -> setGoal(trajectory);       
+        const arm::Goal playback = playWaypoints(state);
+        arm -> setGoal(playback);       
       }
-
     }
 
     // Button B6 - Grav Comp Mode
