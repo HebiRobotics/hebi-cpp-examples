@@ -6,6 +6,7 @@
 trigger:
 - master
 - hardik/arm_examples_2
+- CI_Test
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -28,7 +29,6 @@ steps:
 
 - bash: |
     apt
-    # pip3 install numpy
     sudo apt install python-numpy
     mkdir build
     cd build
