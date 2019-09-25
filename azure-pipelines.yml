@@ -9,29 +9,49 @@ trigger:
 - CI_Test
 
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: 'ubuntu-16.04'
+  name: Hosted Ubuntu 1604
 
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
-
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
-
-- task: UsePythonVersion@0
-  inputs:
-    versionSpec: '3.x'
-    addToPath: true
-    architecture: 'x64'
+container:
 
 
-- bash: |
-    apt
-    sudo apt install python-numpy
-    mkdir build
-    cd build
-    cmake ../projects/cmake/
-    make
-  displayName: 'Testing build on latest ubuntu'
+# These steps are the only job being run, in every container.
+
+jobs:
+- job: test_linux
+
+  pool: 
+    vmImage: 'ubuntu-latest'
+    name: Hosted Ubuntu Latest
+
+  strategy:
+    matrix:
+      ubuntu14:
+        containerImage: ubuntu:14.04
+      ubuntu16:
+        containerImage: ubuntu:16.04
+      ubuntu18:
+        containerImage: ubuntu:18.04
+
+  container: 
+    image: $[variables['containerImage']]
+    options: --user root
+
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.x'
+      addToPath: true
+      architecture: 'x64'
+
+  - bash: |
+      apt
+      sudo apt-get install python-numpy
+      mkdir build
+      cd build
+      cmake ../projects/cmake/
+      make
+    displayName: 'Testing build on ubuntu'
+
+
+    
