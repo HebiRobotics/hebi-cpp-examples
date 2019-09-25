@@ -20,12 +20,12 @@ pool:
 
 strategy:
   matrix:
-    ubuntu14:
-      containerImage: ubuntu:14.04
-    ubuntu16:
-      containerImage: ubuntu:16.04
-    ubuntu18:
-      containerImage: ubuntu:18.04
+    test_ubuntu14:
+      containerImage: ubuntu-14.04
+    test_ubuntu16:
+      containerImage: ubuntu-16.04
+    test_ubuntu18:
+      containerImage: ubuntu-18.04
 
 container: 
     image: $[variables['containerImage']]
