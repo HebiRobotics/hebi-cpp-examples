@@ -12,11 +12,7 @@ pool:
   vmImage: 'ubuntu-16.04'
   name: Hosted Ubuntu 1604
 
-container:
-
-
 # These steps are the only job being run, in every container.
-
 jobs:
 - job: test_linux
 
@@ -54,7 +50,6 @@ jobs:
     displayName: 'Testing build on ubuntu'
 
 - job: print_success
-
   steps:
   - script: printenv
 
