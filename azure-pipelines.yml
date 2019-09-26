@@ -39,52 +39,71 @@
 #     make
 #   displayName: 'Testing build on ubuntu'
 
-
-
-
-resources:
-  containers:
-  - container: u14
-    image: ubuntu:14.04
-
-  - container: u16
-    image: ubuntu:16.04
-
-  - container: u18
-    image: ubuntu:18.04
-
 jobs:
-- job: RunInContainer
+- job: test_linux
+  
   pool:
     vmImage: 'ubuntu-16.04'
-
-  strategy:
-    matrix:
-      ubuntu14:
-        containerResource: u14
-      ubuntu16:
-        containerResource: u16
-      ubuntu18:
-        containerResource: u18
-
-  container: $[ variables['containerResource'] ]
+    name: Hosted Ubuntu 1604
+  container:
+    image: $(containerImage)
+    options: --user root
 
   steps:
-    - bash: |
-        apt
-        sudo apt-get install python-numpy
-        mkdir build
-        cd build
-        echo $PATH
-      displayName: 'Testing build on main ubuntu14/16/18'
+  - checkout: none
+
+  - download: current
+    artifact: cmake
+  - download: current
+    artifact: ci
+
+  - bash: |
+      mkdir build
+      cd build
+      cmake ../projects/cmake/
+      make
+    displayName: 'Build Linux x86_64'
+
+
+
+
+###
+# Kind of working
+###
+# resources:
+#   containers:
+#   - container: u14
+#     image: ubuntu:14.04
+
+#   - container: u16
+#     image: ubuntu:16.04
+
+#   - container: u18
+#     image: ubuntu:18.04
+
+# jobs:
+# - job: RunInContainer
+#   pool:
+#     vmImage: 'ubuntu-16.04'
+
+#   strategy:
+#     matrix:
+#       ubuntu14:
+#         containerResource: u14
+#       ubuntu16:
+#         containerResource: u16
+#       ubuntu18:
+#         containerResource: u18
+
+#   container: $[ variables['containerResource'] ]
+
+#   steps:
+#     - bash: |
+#         apt
+#         sudo apt-get install python-numpy
+#         mkdir build
+#         cd build
+#         echo $PATH
+#       displayName: 'Testing build on main ubuntu14/16/18'
 
     
-
-    # - bash: |
-#     apt
-#     apt-get install python-numpy
-#     mkdir build
-#     cd build
-#     cmake ../projects/cmake/
-#     make
-#   displayName: 'Testing build on ubuntu'
