@@ -18,17 +18,18 @@ trigger:
 pool: 
   vmImage: 'ubuntu-16.04'
 
-strategy:
-  matrix:
-    test_ubuntu14:
-      containerImage: 'ubuntu-14.04'
-    test_ubuntu16:
-      containerImage: 'ubuntu-16.04'
-    test_ubuntu18:
-      containerImage: 'ubuntu-18.04'
+# strategy:
+#   matrix:
+#     test_ubuntu14:
+#       containerImage: 'ubuntu-14.04'
+#     test_ubuntu16:
+#       containerImage: 'ubuntu-16.04'
+#     test_ubuntu18:
+#       containerImage: 'ubuntu-18.04'
 
 container: 
-    image: $[variables['containerImage']]
+    # image: $[variables['containerImage']]
+    image: ubuntu:18.04
     options: --user root
 
 steps:
