@@ -55,10 +55,11 @@ jobs:
     options: --user root
 
   steps:
-  - checkout: none
+#   - checkout: none
 
 #   - download: current
 #     artifact: cmake
+
 #   - download: current
 #     artifact: ci
 
@@ -69,7 +70,9 @@ jobs:
       make
     displayName: 'Build Linux x86_64'
 
-
+  - task: CMake@1
+    inputs:
+      cmakeArgs: '../projects/cmake/'
 
 
 ###
