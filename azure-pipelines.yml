@@ -65,9 +65,9 @@ jobs:
 
   - bash: |
       mkdir build
-      cd build
-      cmake ../projects/cmake/
-      make
+    #   cd build
+    #   cmake ../projects/cmake/
+    #   make
     displayName: 'Build Linux x86_64'
 
   - task: CMake@1
