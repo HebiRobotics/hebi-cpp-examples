@@ -40,7 +40,6 @@ steps:
     architecture: 'x64'
 
 - bash: |
-    apt 
     sudo apt-get install python-numpy
     mkdir build
     cd build
