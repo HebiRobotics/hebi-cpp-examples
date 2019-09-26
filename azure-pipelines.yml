@@ -57,10 +57,10 @@ jobs:
   steps:
   - checkout: none
 
-  - download: current
-    artifact: cmake
-  - download: current
-    artifact: ci
+#   - download: current
+#     artifact: cmake
+#   - download: current
+#     artifact: ci
 
   - bash: |
       mkdir build
