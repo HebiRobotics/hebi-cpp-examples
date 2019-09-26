@@ -70,14 +70,12 @@ jobs:
   container: $[ variables['containerResource'] ]
 
   steps:
-    - script: printenv
-
     - bash: |
         apt
         sudo apt-get install python-numpy
         mkdir build
         cd build
-        printenv
+        echo $PATH
       displayName: 'Testing build on main ubuntu14/16/18'
 
     
