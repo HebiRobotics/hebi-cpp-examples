@@ -73,9 +73,12 @@ jobs:
     - script: printenv
 
     - bash: |
+        apt
+        sudo apt-get install python-numpy
         mkdir build
         cd build
         printenv
+      displayName: 'Testing build on main ubuntu14/16/18'
 
     
 
