@@ -51,7 +51,7 @@ jobs:
     vmImage: 'ubuntu-16.04'
     name: Hosted Ubuntu 1604
   container:
-    image: ubuntu18
+    image: $(ubuntu18)
     options: --user root
 
   steps:
