@@ -72,4 +72,18 @@ jobs:
   steps:
     - script: printenv
 
+    - bash: |
+        mkdir build
+        cd build
+        printenv
+
     
+
+    # - bash: |
+#     apt
+#     apt-get install python-numpy
+#     mkdir build
+#     cd build
+#     cmake ../projects/cmake/
+#     make
+#   displayName: 'Testing build on ubuntu'
