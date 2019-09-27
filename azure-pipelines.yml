@@ -31,7 +31,7 @@ jobs:
       make
     # displayName: 'Build Linux x86_64'
 
-- job: test_macos
+- job: test_macos_currently_broken
 
   pool:
     vmImage: 'macos-10.13'
