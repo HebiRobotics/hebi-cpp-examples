@@ -36,6 +36,7 @@ steps:
 
 - bash: |
     sudo apt install python-numpy 
+    pip install numpy
     mkdir build
     cd build
     echo $PATH
