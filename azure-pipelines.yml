@@ -8,23 +8,23 @@ trigger:
 - hardik/arm_examples_2
 - CI_Test
 
-# variables:
-#   ubuntu14: 'ubuntu:14.04'
-#   ubuntu16: 'ubuntu:16.04'
-#   ubuntu18: 'ubuntu:18.04'
+variables:
+  # ubuntu14: 'ubuntu:14.04'
+  # ubuntu16: 'ubuntu-16.04'
+  # ubuntu18: 'ubuntu:18.04'
+  # macOS: "macos-10.13" 
+
+strategy:
+  matrix:
+    ubuntu16: 
+      imageName: 'ubuntu-16.04'
+    mac:
+      imageName: "macos-10.13"
+
 
 pool:
-  vmImage: 'Ubuntu-16.04'
-
-# jobs:
-# - job: test_linux
-  
-  # pool:
-    # vmImage: 'ubuntu-16.04'
-    # name: Hosted Ubuntu 1604
-  # container:
-    # image: $(ubuntu18)
-    # options: --user root
+  vmImage: $(imageName) 
+  #'Ubuntu-16.04'
 
 steps:
 
