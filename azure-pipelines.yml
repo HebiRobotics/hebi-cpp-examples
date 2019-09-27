@@ -14,36 +14,56 @@ trigger:
   # ubuntu18: 'ubuntu:18.04'
   # macOS: "macos-10.13" 
 
-strategy:
-  matrix:
-    ubuntu16: 
-      imageName: 'ubuntu-16.04'
-    mac:
-      imageName: "macos-10.13"
+# strategy:
+#   matrix:
+#     ubuntu16: 
+#       imageName: 'ubuntu-16.04'
+#     mac:
+#       imageName: "macos-10.13"
 
+jobs:
+- job: test_ubuntu16
 
-pool:
-  vmImage: $(imageName) 
-  #'Ubuntu-16.04'
+  pool:
+    vmImage: 'Ubuntu-16.04'
 
-steps:
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.x'
+      addToPath: true
+      architecture: 'x64'
 
-- task: UsePythonVersion@0
-  inputs:
-    versionSpec: '3.x'
-    addToPath: true
-    architecture: 'x64'
+  - bash: |
+      sudo apt install python-numpy 
+      pip install numpy
+      mkdir build
+      cd build
+      echo $PATH
+      cmake ../projects/cmake/
+      make
+    # displayName: 'Build Linux x86_64'
 
-- bash: |
-    sudo apt install python-numpy 
-    pip install numpy
-    mkdir build
-    cd build
-    echo $PATH
-    cmake ../projects/cmake/
-    make
-  displayName: 'Build Linux x86_64'
+- job: test_macos
 
+  pool:
+    vmImage: 'macos-10.13'
+
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.x'
+      addToPath: true
+      architecture: 'x64'
+
+  - bash: |
+      pip3 install numpy
+      mkdir build
+      cd build
+      echo $PATH
+      cmake ../projects/cmake/
+      make
+    # displayName: 'Build Linux x86_64'
 
 
   
