@@ -3,41 +3,10 @@
 # # Add steps that build, run tests, deploy, and more:
 # # https://aka.ms/yaml
 
-# trigger:
-# - master
-# - hardik/arm_examples_2
-# - CI_Test
-
-# # pool:
-# #   vmImage: 'ubuntu-16.04'
-
-# # These steps are the only job being run, in every container.
-# # jobs:
-# # - job: test_linux
-
-# pool: 
-#   vmImage: 'ubuntu-16.04'
-
-# container: 
-#     # image: $[variables['containerImage']]
-#     image: ubuntu:18.04
-#     options: --user root
-
-# steps:
-# - task: UsePythonVersion@0
-#   inputs:
-#     versionSpec: '3.x'
-#     addToPath: true
-#     architecture: 'x64'
-
-# - bash: |
-#     apt
-#     apt-get install python-numpy
-#     mkdir build
-#     cd build
-#     cmake ../projects/cmake/
-#     make
-#   displayName: 'Testing build on ubuntu'
+trigger:
+- master
+- hardik/arm_examples_2
+- CI_Test
 
 variables:
   ubuntu14: 'ubuntu:14.04'
@@ -65,15 +34,11 @@ jobs:
 
   - bash: |
       mkdir build
-    #   cd build
-    #   cmake ../projects/cmake/
+      cd build
+      echo $PATH
+      cmake ../projects/cmake/
     #   make
     displayName: 'Build Linux x86_64'
-
-  - task: CMake@1
-    inputs:
-      cmakeArgs: '../projects/cmake/'
-
 
 ###
 # Kind of working
