@@ -31,8 +31,8 @@ steps:
     mkdir build
     cd build
     echo $PATH
-  # cmake ../projects/cmake/
-  #   make
+    cmake ../projects/cmake/
+    make
   displayName: 'Build Linux x86_64'
 
 
