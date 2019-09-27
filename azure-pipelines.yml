@@ -27,7 +27,15 @@ pool:
     # options: --user root
 
 steps:
+
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '3.x'
+    addToPath: true
+    architecture: 'x64'
+
 - bash: |
+    sudo apt install python-numpy 
     mkdir build
     cd build
     echo $PATH
