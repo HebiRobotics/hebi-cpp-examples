@@ -16,7 +16,11 @@
 #include "arm/arm.hpp"
 #include <chrono>
 
+using namespace hebi;
 
+double currentTime(std::chrono::steady_clock::time_point& start) {
+  return (std::chrono::duration<double>(std::chrono::steady_clock::now() - start)).count();
+}
 
 int main(int argc, char* argv[])
 {
@@ -24,48 +28,29 @@ int main(int argc, char* argv[])
   ///// Arm Setup //////////
   //////////////////////////
 
+  arm::Arm::Params params;
+
   // Setup Module Family and Module Names
-  // Use the Scope App to find modules on your network.
-  std::vector<std::string> family = {"Arm Example"};
-  std::vector<std::string> names = {"Base", "Shoulder", "Elbow", "Wrist1", "Wrist2", "Wrist3"};
-  // Adding a module here but not connecting it causes a segmentation fault?/
+  params.families_ = {"Arm Example"};
+  params.names_ = {"Base", "Shoulder", "Elbow", "Wrist1", "Wrist2", "Wrist3"};
 
-
-  // Setup a RobotModel object for the Arm
-  // Here, we are creating a 6-DoF arm
-  // This can alternatively be done using a HRDF file 
-  // Check docs.hebi.us to learn more about HRDFs and how to load them
-  using ActuatorType = hebi::robot_model::RobotModel::ActuatorType;
-  using BracketType = hebi::robot_model::RobotModel::BracketType;
-  using LinkType = hebi::robot_model::RobotModel::LinkType;
-  std::unique_ptr<hebi::robot_model::RobotModel> model(new hebi::robot_model::RobotModel());
-
-  model -> addActuator(ActuatorType::X8_9);
-  model -> addBracket(BracketType::X5HeavyRightInside);
-  model -> addActuator(ActuatorType::X8_16);
-  model -> addLink(LinkType::X5, 0.3, M_PI);
-  model -> addActuator(ActuatorType::X8_9);
-  model -> addLink(LinkType::X5, 0.3, 0);
-  model -> addActuator(ActuatorType::X5_9);
-  model -> addBracket(BracketType::X5LightRight);
-  model -> addActuator(ActuatorType::X5_4);
-  model -> addBracket(BracketType::X5LightLeft);
-  model -> addActuator(ActuatorType::X5_4);
+  // Read HRDF file to seutp a RobotModel object for the 6-DoF Arm
+  // Make sure you are running this from the correct directory!
+  params.hrdf_file_ = "kits/hrdf/6-dof_arm.hrdf";
 
   // Setup Time Variables
-  // start_time is of the type: std::chrono::time_point<std::chrono::steady_clock> 
   auto start_time = std::chrono::steady_clock::now();
-  std::chrono::duration<double> time_from_start = std::chrono::steady_clock::now() - start_time;
-  double arm_start_time = time_from_start.count();
+  std::chrono::duration<double> arm_time = std::chrono::steady_clock::now() - start_time;
+  double arm_start_time = arm_time.count();
   
-  // Create the Arm Object itself
-  auto arm = hebi::arm::Arm::create(arm_start_time, family, names, std::move(model));
+  // Create the Arm Object
+  auto arm = arm::Arm::create(arm_start_time, params);
 
   //////////////////////////
   //// Main Control Loop ///
   //////////////////////////
 
-  while(arm->update(arm->currentTime(start_time)))
+  while(arm->update(currentTime(start_time)))
   {
 
     // When no goal is set, the arm automatically returns to grav-comp mode.

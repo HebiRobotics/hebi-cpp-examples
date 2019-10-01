@@ -21,57 +21,33 @@ using namespace hebi;
 using namespace hebi::experimental; // For all things mobileIO 
 
 
+double currentTime(std::chrono::steady_clock::time_point& start) {
+  return (std::chrono::duration<double>(std::chrono::steady_clock::now() - start)).count();
+}
+
 int main(int argc, char* argv[])
 {
   //////////////////////////
   ///// Arm Setup //////////
   //////////////////////////
 
+  arm::Arm::Params params;
+
   // Setup Module Family and Module Names
-  std::vector<std::string> family = {"Arm Example"};
-  std::vector<std::string> names = {"Base", "Shoulder", "Elbow", "Wrist1", "Wrist2", "Wrist3"};
+  params.families_ = {"Arm Example"};
+  params.names_ = {"Base", "Shoulder", "Elbow", "Wrist1", "Wrist2", "Wrist3"};
 
-  // Setup a RobotModel object for the 6-DoF Arm
-  // This can alternatively be done using a HRDF file 
-  // Check docs.hebi.us to learn more about HRDFs and how to load them
-
-  // std::unique_ptr<robot_model::RobotModel> model = 
-                      // robot_model::RobotModel::loadHRDF("hrdf/6-dof_arm.hrdf");
-  //TODO: Check if the HRDF needs to be updated back to something appropriate
-  // for the user. AKA back into the form that we ship ou the 6-dofs in.
-
-  // TODO: HRDF description on the Doxygen generated page is incorrectly copy pasted
-
-  using ActuatorType = robot_model::RobotModel::ActuatorType;
-  using BracketType = robot_model::RobotModel::BracketType;
-  using LinkType = robot_model::RobotModel::LinkType;
-  std::unique_ptr<robot_model::RobotModel> model(new robot_model::RobotModel());
-
-  // // TODO TOCONTINUE: Change this to be an HRDF
-  // // Update the documentation accordingly...?
-  // // Then Switch over to doing this in teach repeat
-
-  // Create the Arm
-  model -> addActuator(ActuatorType::X8_9);
-  model -> addBracket(BracketType::X5HeavyRightInside);
-  model -> addActuator(ActuatorType::X8_16);
-  model -> addLink(LinkType::X5, 0.3, M_PI);
-  model -> addActuator(ActuatorType::X8_9);
-  model -> addLink(LinkType::X5, 0.3, 0);
-  model -> addActuator(ActuatorType::X5_9);
-  model -> addBracket(BracketType::X5LightRight);
-  model -> addActuator(ActuatorType::X5_4);
-  model -> addBracket(BracketType::X5LightLeft);
-  model -> addActuator(ActuatorType::X5_4);
+  // Read HRDF file to seutp a RobotModel object for the 6-DoF Arm
+  // Make sure you are running this from the correct directory!
+  params.hrdf_file_ = "kits/hrdf/6-dof_arm.hrdf";
 
   // Setup Time Variables
   auto start_time = std::chrono::steady_clock::now();
-  std::chrono::duration<double> time_from_start = std::chrono::steady_clock::now() - start_time;
-  double arm_start_time = time_from_start.count();
+  std::chrono::duration<double> arm_time = std::chrono::steady_clock::now() - start_time;
+  double arm_start_time = arm_time.count();
   
   // Create the Arm Object
-  auto arm = arm::Arm::create(arm_start_time, family, names, std::move(model));
-
+  auto arm = arm::Arm::create(arm_start_time, params);
 
   //////////////////////////
   //// MobileIO Setup //////
@@ -109,7 +85,7 @@ int main(int argc, char* argv[])
   //// Main Control Loop ///
   //////////////////////////
 
-  while(arm->update(arm->currentTime(start_time)))
+  while(arm->update(currentTime(start_time)))
   {
     // Get latest mobile_state
     auto state = mobile->getState();
