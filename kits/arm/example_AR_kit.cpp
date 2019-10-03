@@ -78,23 +78,26 @@ int main(int argc, char* argv[])
   //// Main Control Loop ///
   //////////////////////////
 
-  // Variable to switch gripper control from mobile_io to trajectory and vice versa
-  bool playback = false;
-
-
-  // last_phone_pos
-  auto last_phone_pos = mobile -> getPosition();
+  bool ar_mode = false;
 
   // Make sure we softstart the arm first.
   bool softstart = true;
   bool softsend = true;
   Eigen::VectorXd home_position(arm -> robotModel().getDoFCount());
-  Eigen::VectorXd zeros = Eigen::VectorXd::Constant(arm -> robotModel().getDoFCount(), 0);
-
   home_position << 0, M_PI/3, 2*M_PI/3, 5*M_PI/6, -M_PI/2, 0;
+  Eigen::Vector3d xyz_base; // the new cartesion position
+  Eigen::Matrix3d orient_base;
+  // Get the initial cartesian position for the arm end effector @ home position
+  arm -> FK6Dof(home_position, xyz_base, orient_base); 
+  // Eigen::VectorXd zeros = Eigen::VectorXd::Constant(arm -> robotModel().getDoFCount(), 0);
+  
+  // Command the softstart to home position
   arm -> update(currentTime(start_time));
   arm -> setGoal(arm::Goal(4, home_position));
   arm -> send();
+
+  // Get initial state for the mobile device
+  auto base_phone_pos = mobile -> getPosition();
 
   while(arm->update(currentTime(start_time)))
   {
@@ -102,8 +105,9 @@ int main(int argc, char* argv[])
     if (softstart) {
       // End softstart when arm reaches its homePosition
       if (arm -> atGoal()){
-        printf("Softstart complete\n");
+        printf("Softstart complete.\n");
         softstart = false;
+        // base_phone_pos = mobile -> getPosition();
         continue;
       }
       arm -> send();
@@ -112,92 +116,66 @@ int main(int argc, char* argv[])
       continue;
     }
 
-
-     // Get latest mobile_state
+    // Get latest mobile_state
     auto mobile_state = mobile->getState();
     MobileIODiff diff(last_mobile_state, mobile_state);
 
 
-    // std::cout << mobile -> getLastFeedback().mobile().arPosition().get().getX() << std::endl;
-    auto phone_pos = mobile -> getPosition();
-    // std::cout << posio.getX() << posio.getY()
-    // printf("(%f, %f, %f)\n", posio.getX(), posio.getY(), posio.getZ());
-
-    auto oreo = mobile -> getOrientation();
-
-    // printf("(%f, %f, %f, %f)\n", oreo.getW(), oreo.getX(), oreo.getY(), oreo.getZ());
-
-
-
-    // Testing
-    gripper->getState();
+    // Update gripper state as well
+    gripper -> getState();
 
     // Set the gripper value
     double open_val = (mobile_state.getAxis(3) * 2)-1; // makes this range between -2 and 1
     
-    if (!playback) {
-      // gripper -> setCommand(0, open_val);
-    }
-    
     // Buttton B1 - Reset Orientation
-    if (diff.get(1) == MobileIODiff::ButtonState::ToOn) {
-      // addWaypoint(state, arm -> lastFeedback(), open_val, true);
-    }
-
     // Button B2 - Freeze Position (x,y,z)
-    if (diff.get(2) == MobileIODiff::ButtonState::ToOn) {
-      // state.waypoints.clear();
-    }
 
     // Button B3 - Freeze Rotation (roll, pitch, yaw)
-    if (true) {//(diff.get(3) == MobileIODiff::ButtonState::ToOn) {
-      // addWaypoint(state, arm -> lastFeedback(), open_val, false);
+    if (diff.get(3) == MobileIODiff::ButtonState::ToOn) {
+      base_phone_pos = mobile -> getPosition();
+      ar_mode = true;
+    }
 
-      // Take in xyz from the phone;
-      // auto phone_pos = mobile -> getPosition();
+    if (ar_mode) {
+      auto phone_pos = mobile -> getPosition();
+      auto oreo = mobile -> getOrientation();
 
-      hebi::Vector3f phoneDiff(phone_pos.getX() - last_phone_pos.getX(),
-                         phone_pos.getY() - last_phone_pos.getY(),
-                         phone_pos.getZ() - last_phone_pos.getZ());
-      // Take in the current position of the end effector in cartesian space
-      Eigen::Vector3d xyz_out;
-      Eigen::Matrix3d orient_out;
-      auto current_joints = arm -> lastFeedback().getPosition();
-      arm -> FK6Dof(current_joints, xyz_out, orient_out); 
+      // Calculate change in phone position
+      hebi::Vector3f phone_diff(phone_pos.getX() - base_phone_pos.getX(),
+                                phone_pos.getY() - base_phone_pos.getY(),
+                                phone_pos.getZ() - base_phone_pos.getZ());
 
-      // std::cout << xyz_out << std::endl;
+      // Calculate change in arm position
+      // Eigen::Vector3f xyz_diff(xyz_out.getX() - xyz_base.getX(),
+                               // xyz_out.getY() - xyz_base.getY(),
+                               // xyz_out.getZ() - xyz_base.getZ());
 
       // Calculate new targets
-      // THIS WONT WORK CAUSE YOU NEED THE DIFFERENCE IN THEIR POSITIONS
-      Eigen::Vector3d target_xyz;
-      float scale = 50;
-      target_xyz << xyz_out[0] + phoneDiff.getX() * scale, 
-                    xyz_out[1] + phoneDiff.getY() * scale,
-                    xyz_out[2] + phoneDiff.getZ() * scale;
+      Eigen::Vector3d xyz_target;
+      float scale = 1;
+      xyz_target << xyz_base[0] + phone_diff.getX() * scale,
+                    xyz_base[1] + phone_diff.getY() * scale,
+                    xyz_base[2] + phone_diff.getZ() * scale;
+      printf("(%f, %f, %f)\n", xyz_base[0], xyz_base[1], xyz_base[2]);
+      printf("(%f, %f, %f)\n", phone_diff.getX(), phone_diff.getY(), phone_diff.getZ());
+      printf("(%f, %f, %f)\n\n", xyz_target[0], xyz_target[1], xyz_target[2]);
 
-      auto target_joints = arm -> solveIK6Dof(current_joints,
-                                        target_xyz,
-                                        orient_out);
+      // Set the new target joint values for the arm
+      auto target_joints = arm -> solveIK6Dof(arm -> lastFeedback().getPosition(),
+                                              xyz_target,
+                                              orient_base);
 
-      std::cout << target_joints << std::endl;
-
+      // Send new goal to the arm
       arm -> setGoal(arm::Goal(target_joints));
-    
-
-
-
-      // So what I really gotta be doing is, upon startup,
-      // Note down the initial ipad pos, and I already know the initial pos for arm
-      // Then from there, I also compare difference to that base value for both of them
-      // And thus, all the reset button ever does is reset the base values so that
-      // everything from that point forward is relative to those reference values.
-
-
-
     }
+
+
+
+
 
     if (diff.get(6) == experimental::MobileIODiff::ButtonState::ToOn) {
       arm -> cancelGoal();
+      ar_mode = false;
     }
 
     // Button B8 - End Demo
@@ -207,9 +185,8 @@ int main(int argc, char* argv[])
       return 1;
     }
 
-    // Update to the new last_state
+    // Update mobile device to the new last_state
     last_mobile_state = mobile_state;
-    last_phone_pos = phone_pos;
 
     // Send latest commands to the arm
     arm->send();
