@@ -51,6 +51,9 @@ int main(int argc, char* argv[])
   // Create the Arm Object
   auto arm = arm::Arm::create(arm_start_time, params);
 
+
+
+
   /////////////////////////
   //// MobileIO Setup /////
   /////////////////////////
@@ -74,19 +77,25 @@ int main(int argc, char* argv[])
   auto last_mobile_state = mobile->getState();
 
 
+
+
+
+
   //////////////////////////
   //// Main Control Loop ///
   //////////////////////////
 
+  // Different modes it can be in (ar_mode, grav_comp_mode)
   bool ar_mode = false;
 
   // Make sure we softstart the arm first.
   bool softstart = true;
-  bool softsend = true;
   Eigen::VectorXd home_position(arm -> robotModel().getDoFCount());
   home_position << 0, M_PI/3, 2*M_PI/3, 5*M_PI/6, -M_PI/2, 0;
+
   Eigen::Vector3d xyz_base; // the new cartesion position
   Eigen::Matrix3d orient_base;
+
   // Get the initial cartesian position for the arm end effector @ home position
   arm -> FK6Dof(home_position, xyz_base, orient_base); 
   // Eigen::VectorXd zeros = Eigen::VectorXd::Constant(arm -> robotModel().getDoFCount(), 0);
@@ -97,7 +106,22 @@ int main(int argc, char* argv[])
   arm -> send();
 
   // Get initial state for the mobile device
-  auto base_phone_pos = mobile -> getPosition();
+  // auto base_phone_pos = mobile -> getPosition();
+  Eigen::Vector3d base_phone_pos;
+  base_phone_pos << mobile -> getPosition().getX(),
+                    mobile -> getPosition().getY(),
+                    mobile -> getPosition().getZ();
+  auto base_phone_ori = mobile -> getOrientation();
+  Eigen::Quaterniond q_init;
+  q_init.w() = base_phone_ori.getW();
+  q_init.x() = base_phone_ori.getX();
+  q_init.y() = base_phone_ori.getY();
+  q_init.z() = base_phone_ori.getZ();
+  auto rot_init = q_init.toRotationMatrix();
+
+  Eigen::MatrixXd rot_target_init(3,3);
+  rot_target_init << -1,0,0, 0,1,0, 0,0,-1;  // This should happen at every reset
+
 
   while(arm->update(currentTime(start_time)))
   {
@@ -106,7 +130,7 @@ int main(int argc, char* argv[])
       // End softstart when arm reaches its homePosition
       if (arm -> atGoal()){
         printf("Softstart complete.\n");
-        softstart = false;
+        softstart = false; 
         // base_phone_pos = mobile -> getPosition();
         continue;
       }
@@ -114,12 +138,11 @@ int main(int argc, char* argv[])
 
       // Stay in softstart, don't do any other behavior
       continue;
-    }
+    } 
 
     // Get latest mobile_state
     auto mobile_state = mobile->getState();
     MobileIODiff diff(last_mobile_state, mobile_state);
-
 
     // Update gripper state as well
     gripper -> getState();
@@ -132,38 +155,65 @@ int main(int argc, char* argv[])
 
     // Button B3 - Freeze Rotation (roll, pitch, yaw)
     if (diff.get(3) == MobileIODiff::ButtonState::ToOn) {
-      base_phone_pos = mobile -> getPosition();
+      base_phone_pos << mobile -> getPosition().getX(),
+                        mobile -> getPosition().getY(),
+                        mobile -> getPosition().getZ();
+      base_phone_ori = mobile -> getOrientation();
       ar_mode = true;
     }
 
     if (ar_mode) {
-      auto phone_pos = mobile -> getPosition();
-      auto oreo = mobile -> getOrientation();
+      // auto phone_pos = mobile -> getPosition();
+      Eigen::Vector3d phone_pos;
+      phone_pos << mobile -> getPosition().getX(),
+                   mobile -> getPosition().getY(),
+                   mobile -> getPosition().getZ();
+      auto phone_ori = mobile -> getOrientation();
 
       // Calculate change in phone position
-      hebi::Vector3f phone_diff(phone_pos.getX() - base_phone_pos.getX(),
-                                phone_pos.getY() - base_phone_pos.getY(),
-                                phone_pos.getZ() - base_phone_pos.getZ());
+      // hebi::Vector3f phone_diff(phone_pos.getX() - base_phone_pos.getX(),
+      //                           phone_pos.getY() - base_phone_pos.getY(),
+      //                           phone_pos.getZ() - base_phone_pos.getZ());
 
-      // Calculate change in arm position
-      // Eigen::Vector3f xyz_diff(xyz_out.getX() - xyz_base.getX(),
-                               // xyz_out.getY() - xyz_base.getY(),
-                               // xyz_out.getZ() - xyz_base.getZ());
+      // Calculate change in phone orientation
+      Eigen::Quaterniond q;
+      q.w() = phone_ori.getW();
+      q.x() = phone_ori.getX();
+      q.y() = phone_ori.getY();
+      q.z() = phone_ori.getZ();
+      auto rot_matrix = q.toRotationMatrix();
+
+      auto rot_target = rot_init.transpose() * q.toRotationMatrix() * rot_target_init;
+
+
+      Eigen::Vector3d xyz_scale;
+      xyz_scale << -1, -1, -2;
+      auto xyz_target = xyz_base + (0.75 * xyz_scale.array() * (rot_init.transpose() * (base_phone_pos - phone_pos)).array()).matrix();
+      //xyz_target_init is basically the xyz of where we started
+      // getting rid of phone_control_scale
+      // xyz_scale_array
+
+// auto xyz_target = xyz_target_init + (phone_control_scale * xyz_scale.array() * (r_init.transpose() * (xyz_phone_new - xyz_init)).array()).matrix();
+
 
       // Calculate new targets
-      Eigen::Vector3d xyz_target;
-      float scale = 1;
-      xyz_target << xyz_base[0] + phone_diff.getX() * scale,
-                    xyz_base[1] + phone_diff.getY() * scale,
-                    xyz_base[2] + phone_diff.getZ() * scale;
-      printf("(%f, %f, %f)\n", xyz_base[0], xyz_base[1], xyz_base[2]);
-      printf("(%f, %f, %f)\n", phone_diff.getX(), phone_diff.getY(), phone_diff.getZ());
-      printf("(%f, %f, %f)\n\n", xyz_target[0], xyz_target[1], xyz_target[2]);
+      // Eigen::Vector3d xyz_target;
+      float scale = 0.75;
+      // xyz_target << xyz_base[0] + phone_diff.getX() * scale,
+      //               xyz_base[1] + phone_diff.getY() * scale,
+      //               xyz_base[2] + phone_diff.getZ() * 2;
+
+
+      // printf("(%f, %f, %f)\n", xyz_base[0], xyz_base[1], xyz_base[2]);
+      // printf("(%f, %f, %f)\n", phone_diff.getX(), phone_diff.getY(), phone_diff.getZ());
+      // printf("(%f, %f, %f)\n\n", xyz_target[0], xyz_target[1], xyz_target[2]);
 
       // Set the new target joint values for the arm
       auto target_joints = arm -> solveIK6Dof(arm -> lastFeedback().getPosition(),
                                               xyz_target,
-                                              orient_base);
+                                              // xyz_base,
+                                              rot_target);
+                                              // orient_base);
 
       // Send new goal to the arm
       arm -> setGoal(arm::Goal(target_joints));
