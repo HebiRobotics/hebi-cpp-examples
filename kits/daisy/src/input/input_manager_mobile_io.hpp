@@ -54,7 +54,7 @@ private:
 
   // Scale the joystick scale to motion of the robot in SI units (m/s, rad/s,
   // etc).
-  static constexpr float xyz_scale_{0.175};
+  static constexpr float xyz_scale_{0.135};
   static constexpr float rot_scale_{0.4};
 
   float left_horz_raw_{0}; // Rotation

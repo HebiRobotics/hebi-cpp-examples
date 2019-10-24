@@ -53,9 +53,9 @@ public slots:
 protected:
   hebi::HexapodParameters _params;
 
-  float _min_stance_radius = 0.35f; // m
-  float _max_stance_radius = 0.6f; // m
-  float _min_body_height = 0.05f; // m
-  float _max_body_height = 0.22f; // m
+  float _min_stance_radius = 0.05f; // m
+  float _max_stance_radius = 0.35f; // m
+  float _min_body_height = -0.5f; // m
+  float _max_body_height = 0.05f; // m
   
 };

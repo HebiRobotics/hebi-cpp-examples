@@ -62,7 +62,6 @@ private:
 
   static constexpr int num_joints_ = 3;
   float stance_radius_; // [m]
-  float body_height_; // [m]
   const float spring_shift_; // [N*m] compensate for the spring torques
   Eigen::VectorXd seed_angles_;
 
