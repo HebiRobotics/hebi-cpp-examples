@@ -477,6 +477,7 @@ int main(int argc, char** argv)
     }
 
     // Startup phase: smoothly transition!
+    startup = false;
     if (startup)
     {
       int num_joints = Leg::getNumJoints();

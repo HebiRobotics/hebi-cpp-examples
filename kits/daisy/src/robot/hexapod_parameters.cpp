@@ -8,7 +8,7 @@ namespace hebi {
 void HexapodParameters::resetToDefaults()
 {
   stance_radius_ = 0.45f;
-  default_body_height_ = 0.12f;
+  default_body_height_ = 0.01f;
   min_z_ = -0.3f;
   max_z_ = -0.05f;
   max_r_ = 0.18f;

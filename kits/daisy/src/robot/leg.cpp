@@ -7,7 +7,7 @@ using ActuatorType = hebi::robot_model::RobotModel::ActuatorType;
 using LinkType = hebi::robot_model::RobotModel::LinkType;
 
 Leg::Leg(double angle_rad, double distance, const Eigen::VectorXd& current_angles, const HexapodParameters& params, bool is_dummy, int index, LegConfiguration configuration)
-  : index_(index), stance_radius_(params.stance_radius_), body_height_(params.default_body_height_), spring_shift_(configuration == LegConfiguration::Right ? 3.75 : -3.75) // Nm
+  : index_(index), stance_radius_(params.stance_radius_), body_height_(params.default_body_height_), spring_shift_(0)//configuration == LegConfiguration::Right ? 3.75 : -3.75) // Nm
 {
   kin_ = configuration == LegConfiguration::Left ?
     hebi::robot_model::RobotModel::loadHRDF("left.hrdf") :
@@ -30,13 +30,19 @@ Leg::Leg(double angle_rad, double distance, const Eigen::VectorXd& current_angle
   Eigen::Vector3d tmp;
   tmp << distance, 0, 0;
   transform.topRightCorner<3,1>() = rotate * tmp;
+
+  Matrix4d new_rotate = Matrix4d::Identity();
+  new_rotate.topLeftCorner<3,3>() = AngleAxisd(M_PI, Eigen::Vector3d::UnitX()).matrix();
+  transform *= new_rotate;
+  
+
   kin_->setBaseFrame(transform);
 
   seed_angles_.resize(num_joints_);
   if (configuration == LegConfiguration::Left)
-    seed_angles_ << 0.2, -.3, -1.9;
+    seed_angles_ << M_PI, -M_PI * 5.0 / 4.0, -M_PI / 2.0;
   else
-    seed_angles_ << 0.2, .3, 1.9;
+    seed_angles_ << M_PI, M_PI * 5.0 / 4.0, M_PI / 2.0;
  
   auto base_frame = kin_->getBaseFrame();
   Eigen::Vector4d tmp4(stance_radius_, 0, -body_height_, 0);

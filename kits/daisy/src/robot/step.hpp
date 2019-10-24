@@ -22,7 +22,7 @@ public:
 
   static constexpr float period_ = 0.7f; // seconds
   static constexpr float overshoot_ = 0.3f; // factor of step to overshoot
-  static constexpr float height_ = 0.04f; // in meters
+  static constexpr float height_ = 0.01f; // in meters
   // When creating trajectories, don't use waypoints that are too close together
   static constexpr float ignore_waypoint_threshold_ = 0.01; // 10 ms (in seconds)
   double getStartTime() const { return start_time_; }

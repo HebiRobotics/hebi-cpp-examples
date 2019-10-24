@@ -396,7 +396,7 @@ int getFirstOutOfRange(const Eigen::VectorXd& positions)
   int num_leg_modules = 3;
   for (int i = 0; i < positions.size(); i+=num_leg_modules)
   {
-    if (positions[i] < (-M_PI / 2.0) || positions[i] > (M_PI / 2.0))
+    if (positions[i] < (M_PI / 2.0) || positions[i] > (M_PI * 3.0 / 2.0))
     {
       return i / num_leg_modules;
     }
@@ -498,12 +498,12 @@ Hexapod::Hexapod(std::shared_ptr<Group> group,
   }
 
   // TODO: generalize!
-  legs_.emplace_back(new Leg(30.0 * M_PI / 180.0, 0.2375, getLegFeedback(0), params, real_legs_.count(0)>0, 0, Leg::LegConfiguration::Left));
-  legs_.emplace_back(new Leg(-30.0 * M_PI / 180.0, 0.2375, getLegFeedback(1), params, real_legs_.count(1)>0, 1, Leg::LegConfiguration::Right));
-  legs_.emplace_back(new Leg(90.0 * M_PI / 180.0, 0.1875, getLegFeedback(2), params, real_legs_.count(2)>0, 2, Leg::LegConfiguration::Left));
-  legs_.emplace_back(new Leg(-90.0 * M_PI / 180.0, 0.1875, getLegFeedback(3), params, real_legs_.count(3)>0, 3, Leg::LegConfiguration::Right));
-  legs_.emplace_back(new Leg(150.0 * M_PI / 180.0, 0.2375, getLegFeedback(4), params, real_legs_.count(4)>0, 4, Leg::LegConfiguration::Left));
-  legs_.emplace_back(new Leg(-150.0 * M_PI / 180.0, 0.2375, getLegFeedback(5), params, real_legs_.count(5)>0, 5, Leg::LegConfiguration::Right));
+  legs_.emplace_back(new Leg(28.5 * M_PI / 180.0, 0.12, getLegFeedback(0), params, real_legs_.count(0)>0, 0, Leg::LegConfiguration::Left));
+  legs_.emplace_back(new Leg(-28.5 * M_PI / 180.0, 0.12, getLegFeedback(1), params, real_legs_.count(1)>0, 1, Leg::LegConfiguration::Right));
+  legs_.emplace_back(new Leg(86.5 * M_PI / 180.0, 0.12, getLegFeedback(2), params, real_legs_.count(2)>0, 2, Leg::LegConfiguration::Left));
+  legs_.emplace_back(new Leg(-86.5 * M_PI / 180.0, 0.12, getLegFeedback(3), params, real_legs_.count(3)>0, 3, Leg::LegConfiguration::Right));
+  legs_.emplace_back(new Leg(144.5 * M_PI / 180.0, 0.12, getLegFeedback(4), params, real_legs_.count(4)>0, 4, Leg::LegConfiguration::Left));
+  legs_.emplace_back(new Leg(-144.5 * M_PI / 180.0, 0.12, getLegFeedback(5), params, real_legs_.count(5)>0, 5, Leg::LegConfiguration::Right));
 
   // Initialize step information
   last_step_legs_.insert(0);
