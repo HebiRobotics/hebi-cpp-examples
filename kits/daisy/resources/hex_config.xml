@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <hex_config name="config_root">
-  <stance radius="0.3" body_height="-0.214" min_foot_height="-0.3" max_foot_height="0" max_shift_radius="0.1"/>
+  <stance radius="0.3" body_height="0.214" min_foot_height="-0.3" max_foot_height="0" max_shift_radius="0.1"/>
   <step_threshold rotate="0.025" shift="0.015"/>
   <logging enabled="true" low_frequency_hz="5" high_frequency_hz="200"/>
 </hex_config>
