@@ -6,7 +6,7 @@ namespace hebi {
 using ActuatorType = hebi::robot_model::RobotModel::ActuatorType;
 using LinkType = hebi::robot_model::RobotModel::LinkType;
 
-Leg::Leg(double angle_rad, double distance, const Eigen::VectorXd& current_angles, const HexapodParameters& params, bool is_dummy, int index, LegConfiguration configuration)
+Leg::Leg(double angle_rad, double distance, const Eigen::VectorXd& current_angles, const HexapodParameters& params, bool is_dummy, int index, LegConfiguration configuration, float y_offset)
   : index_(index), stance_radius_(params.stance_radius_), spring_shift_(0)//configuration == LegConfiguration::Right ? 3.75 : -3.75) // Nm
 {
   kin_ = configuration == LegConfiguration::Left ?
@@ -40,12 +40,12 @@ Leg::Leg(double angle_rad, double distance, const Eigen::VectorXd& current_angle
 
   seed_angles_.resize(num_joints_);
   if (configuration == LegConfiguration::Left)
-    seed_angles_ << M_PI, -M_PI * 5.0 / 4.0, -M_PI / 2.0;
+    seed_angles_ << M_PI, -M_PI * 4.0 / 4.0, -M_PI / 2.0;
   else
-    seed_angles_ << M_PI, M_PI * 5.0 / 4.0, M_PI / 2.0;
+    seed_angles_ << M_PI, M_PI * 4.0 / 4.0, M_PI / 2.0;
  
   auto base_frame = kin_->getBaseFrame();
-  Eigen::Vector4d tmp4(stance_radius_, 0, params.default_body_height_, 0);
+  Eigen::Vector4d tmp4(stance_radius_, y_offset, params.default_body_height_, 0);
   home_stance_xyz_ = (base_frame * tmp4).topLeftCorner<3,1>();
   level_home_stance_xyz_ = home_stance_xyz_;
 
@@ -99,7 +99,7 @@ bool Leg::computeState(double t, Eigen::VectorXd& angles, Eigen::VectorXd& vels,
 Eigen::VectorXd Leg::computeTorques(const robot_model::MatrixXdVector& jacobian_com, const Eigen::MatrixXd& jacobian_ee, const Eigen::VectorXd& angles, const Eigen::VectorXd& vels, const Eigen::Vector3d& gravity_vec, const Eigen::Vector3d& foot_force)
 {
   // TODO: pull from XML?
-  constexpr float drag_shift = 1.5; // Nm / (rad/sec)
+  constexpr float drag_shift = 0;//1.5; // Nm / (rad/sec)
   
   Eigen::VectorXd spring(Leg::getNumJoints());
   spring << 0, spring_shift_ + drag_shift * vels(1), 0;

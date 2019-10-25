@@ -14,7 +14,7 @@ public:
   int index_;
 
   // Angle and distance from the center of the parent creature.
-  Leg(double angle_rad, double distance, const Eigen::VectorXd& current_angles, const HexapodParameters& params, bool is_dummy, int index, LegConfiguration configuration);
+  Leg(double angle_rad, double distance, const Eigen::VectorXd& current_angles, const HexapodParameters& params, bool is_dummy, int index, LegConfiguration configuration, float y_offset);
 
   // Compute jacobian given position and velocities.  Usually, this is done internally
   // int `computeState`, but if the position/velocity is known (e.g., external

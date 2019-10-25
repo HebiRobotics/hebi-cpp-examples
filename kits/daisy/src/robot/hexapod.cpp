@@ -133,7 +133,7 @@ void Hexapod::setCommand(int leg_index, const VectorXd* angles, const VectorXd* 
   {
     assert(torques->size() == num_joints);
     for (int i = 0; i < num_joints; ++i)
-      cmd_[leg_offset + i].actuator().effort().set((*torques)[i]);
+      cmd_[leg_offset + i].actuator().effort().set(2.0f * (*torques)[i]);
   }
 }
 
@@ -498,12 +498,12 @@ Hexapod::Hexapod(std::shared_ptr<Group> group,
   }
 
   // TODO: generalize!
-  legs_.emplace_back(new Leg(28.5 * M_PI / 180.0, 0.12, getLegFeedback(0), params, real_legs_.count(0)>0, 0, Leg::LegConfiguration::Left));
-  legs_.emplace_back(new Leg(-28.5 * M_PI / 180.0, 0.12, getLegFeedback(1), params, real_legs_.count(1)>0, 1, Leg::LegConfiguration::Right));
-  legs_.emplace_back(new Leg(86.5 * M_PI / 180.0, 0.12, getLegFeedback(2), params, real_legs_.count(2)>0, 2, Leg::LegConfiguration::Left));
-  legs_.emplace_back(new Leg(-86.5 * M_PI / 180.0, 0.12, getLegFeedback(3), params, real_legs_.count(3)>0, 3, Leg::LegConfiguration::Right));
-  legs_.emplace_back(new Leg(144.5 * M_PI / 180.0, 0.12, getLegFeedback(4), params, real_legs_.count(4)>0, 4, Leg::LegConfiguration::Left));
-  legs_.emplace_back(new Leg(-144.5 * M_PI / 180.0, 0.12, getLegFeedback(5), params, real_legs_.count(5)>0, 5, Leg::LegConfiguration::Right));
+  legs_.emplace_back(new Leg(28.5 * M_PI / 180.0, 0.12, getLegFeedback(0), params, real_legs_.count(0)>0, 0, Leg::LegConfiguration::Left, 0.05f));
+  legs_.emplace_back(new Leg(-28.5 * M_PI / 180.0, 0.12, getLegFeedback(1), params, real_legs_.count(1)>0, 1, Leg::LegConfiguration::Right,- 0.05f));
+  legs_.emplace_back(new Leg(86.5 * M_PI / 180.0, 0.12, getLegFeedback(2), params, real_legs_.count(2)>0, 2, Leg::LegConfiguration::Left, 0.05f));
+  legs_.emplace_back(new Leg(-86.5 * M_PI / 180.0, 0.12, getLegFeedback(3), params, real_legs_.count(3)>0, 3, Leg::LegConfiguration::Right, -0.05f));
+  legs_.emplace_back(new Leg(144.5 * M_PI / 180.0, 0.12, getLegFeedback(4), params, real_legs_.count(4)>0, 4, Leg::LegConfiguration::Left, 0.05));
+  legs_.emplace_back(new Leg(-144.5 * M_PI / 180.0, 0.12, getLegFeedback(5), params, real_legs_.count(5)>0, 5, Leg::LegConfiguration::Right, -0.05));
 
   // Initialize step information
   last_step_legs_.insert(0);
@@ -520,7 +520,7 @@ Hexapod::Hexapod(std::shared_ptr<Group> group,
     group->addFeedbackHandler([this] (const GroupFeedback& fbk)
     {
       // A -z vector in a local frame.
-      Eigen::Vector3d down(0, 0, -1);
+      Eigen::Vector3d down(0, 0, 1);
       Eigen::Vector3d avg_grav;
       avg_grav.setZero();
 

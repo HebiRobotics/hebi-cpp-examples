@@ -2,6 +2,7 @@
 #include "lookup.hpp"
 #include "xml_util/pugixml.hpp"
 #include "group_feedback.hpp"
+#include "group_command.hpp"
 
 #include <iostream> // Note: for debugging output.
 
@@ -26,6 +27,11 @@ bool InputManagerMobileIO::reset()
   group_ = lookup.getGroupFromNames({"HEBI"}, {"Mobile IO"}, timeout_ms);
   if (!group_)
     return false;
+
+  GroupCommand cmd(1);
+  cmd[0].io().a().setFloat(3, 0);
+  cmd[0].io().f().setFloat(3, 0);
+  group_->sendCommandWithAcknowledgement(cmd);
 
   group_->addFeedbackHandler([this] (const GroupFeedback& fbk)
   {
@@ -80,8 +86,8 @@ Eigen::Vector3f InputManagerMobileIO::getTranslationVelocityCmd() const
   if (isConnected())
   {
     translation_velocity_cmd <<
-      -xyz_scale_ * right_vert_raw_,
-      xyz_scale_ * right_horz_raw_,
+      0.8 * -xyz_scale_ * right_vert_raw_,
+      0.0, //xyz_scale_ * right_horz_raw_,
       xyz_scale_ * getVerticalVelocity();
   }
   else
@@ -99,7 +105,7 @@ Eigen::Vector3f InputManagerMobileIO::getRotationVelocityCmd() const
     rotation_velocity_cmd <<
       0,
       -rot_scale_ * left_vert_raw_,
-      rot_scale_ * left_horz_raw_;
+      -rot_scale_ * left_horz_raw_;
   }
   else
   {
@@ -115,7 +121,7 @@ bool InputManagerMobileIO::getQuitButtonPushed() const
 
 size_t InputManagerMobileIO::getAndResetModeToggleCount()
 {
-  return num_mode_toggles_.exchange(0);
+  return 0;// num_mode_toggles_.exchange(0);
 }
   
 float InputManagerMobileIO::getVerticalVelocity() const
