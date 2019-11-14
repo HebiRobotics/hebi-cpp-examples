@@ -34,6 +34,7 @@ add_custom_target(examples)
 
 # Build X_SERIES Examples
 SET(X_SERIES_SOURCES
+  ${ROOT_DIR}/basic/x_series_actuator/timestamp.cpp
   ${ROOT_DIR}/basic/x_series_actuator/01a_lookup.cpp
   ${ROOT_DIR}/basic/x_series_actuator/01b_get_group_single_module.cpp
   ${ROOT_DIR}/basic/x_series_actuator/01c_get_group_multiple_modules.cpp
