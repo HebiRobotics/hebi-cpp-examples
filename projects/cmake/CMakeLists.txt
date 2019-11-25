@@ -315,6 +315,20 @@ foreach (EXAMPLE ${KIT_SOURCES})
 endforeach (EXAMPLE ${KIT_SOURCES})
 
 
+# Copy the HRDF files into the build directory
+
+#SET(HRDF_SOURCES
+#  ${ROOT_DIR}/kits/arm/hrdf/6-dof_arm.hrdf)
+
+#set (CMAKE_RUNTIME_OUTPUT_DIRECTORY kits/hrdf)
+#foreach (HRDF ${HRDF_SOURCES})
+#  add_custom_command(TARGET ${HRDF} PRE_BUILD
+#		     COMMAND ${CMAKE_COMMAND} -E copy_directory
+#      		         ${ROOT_DIR}/kits/arm/hrdf/ 
+
+#endforeach (HRDF ${HRDF_SOURCES})
+
+
 
 
 
