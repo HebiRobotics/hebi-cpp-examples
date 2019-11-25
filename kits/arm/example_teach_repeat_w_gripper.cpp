@@ -115,7 +115,7 @@ int main(int argc, char* argv[])
   /////////////////////////
 
   // Create the MobileIO object
-  std::unique_ptr<MobileIO> mobile = MobileIO::create("HEBI", "Mobile IO");
+  std::unique_ptr<MobileIO> mobile = MobileIO::create("HEBIH", "Mobile IO");
 
   // Clear any garbage on screen
   mobile -> clearText(); 
