@@ -116,7 +116,7 @@ Eigen::Vector3f InputManagerMobileIO::getRotationVelocityCmd() const
 
 bool InputManagerMobileIO::getQuitButtonPushed() const
 {
-  return has_quit_been_pushed_;
+  return false; //has_quit_been_pushed_
 }
 
 size_t InputManagerMobileIO::getAndResetModeToggleCount()
