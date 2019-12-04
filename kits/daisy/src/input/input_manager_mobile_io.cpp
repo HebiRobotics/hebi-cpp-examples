@@ -50,6 +50,9 @@ bool InputManagerMobileIO::reset()
       right_horz_raw_ = analog.getFloat(7);
       right_vert_raw_ = analog.getFloat(8);
 
+      button_b3_raw_ = digital.getInt(3);
+      button_b4_raw_ = digital.getInt(4);
+
       // Note: only care about edge triggers down here
       bool new_mode_button_state = (digital.getInt(7) == 1);
       if (new_mode_button_state && !prev_mode_button_state_)
@@ -86,8 +89,8 @@ Eigen::Vector3f InputManagerMobileIO::getTranslationVelocityCmd() const
   if (isConnected())
   {
     translation_velocity_cmd <<
-      0.8 * -xyz_scale_ * right_vert_raw_,
-      0.0, //xyz_scale_ * right_horz_raw_,
+      0.8 * -xyz_scale_ * left_vert_raw_,
+      0.1 * (button_b3_raw_*-1.0 + button_b4_raw_),
       xyz_scale_ * getVerticalVelocity();
   }
   else
@@ -104,7 +107,7 @@ Eigen::Vector3f InputManagerMobileIO::getRotationVelocityCmd() const
   {
     rotation_velocity_cmd <<
       0,
-      -rot_scale_ * left_vert_raw_,
+      0,
       -rot_scale_ * left_horz_raw_;
   }
   else

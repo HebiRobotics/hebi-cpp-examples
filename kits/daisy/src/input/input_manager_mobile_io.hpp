@@ -58,12 +58,15 @@ private:
   static constexpr float rot_scale_{0.4};
 
   float left_horz_raw_{0}; // Rotation
-  float left_vert_raw_{0}; // Chassis tilt
+  float left_vert_raw_{0}; // Translation f/b
 
   float slider_1_raw_{0}; // Height
 
-  float right_horz_raw_{0}; // Translation (l/r)
-  float right_vert_raw_{0}; // Translation (f/b)
+  int button_b3_raw_; // Translation (l)
+  int button_b4_raw_; // Translation (r)
+
+  float right_horz_raw_{0}; 
+  float right_vert_raw_{0};
 
   bool prev_mode_button_state_{false};      // Mode
   std::atomic<size_t> num_mode_toggles_{0}; //
