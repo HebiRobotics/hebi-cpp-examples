@@ -246,10 +246,11 @@ int main(int argc, char** argv)
 
   std::unique_ptr<input::InputManager> input(new input::InputManagerMobileIO());
   
-  if (!is_quiet && !input->isConnected())
+  while (!is_quiet && !input->isConnected())
   {
     std::cout << "Could not find I/O board for joystick." << std::endl;
-    return 1;
+    static_cast<input::InputManagerMobileIO*>(input.get())->reset();
+    //return 1;
   }
   // Retry a "reset" multiple times! Wait for this in a loop.
   while (is_quiet && !input->isConnected())
