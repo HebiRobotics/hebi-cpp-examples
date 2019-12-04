@@ -3,8 +3,8 @@
 
 namespace hebi {
 
-using ActuatorType = hebi::robot_model::RobotModel::ActuatorType;
-using LinkType = hebi::robot_model::RobotModel::LinkType;
+using ActuatorType = hebi::robot_model::ActuatorType;
+using LinkType = hebi::robot_model::LinkType;
 
 Leg::Leg(double angle_rad, double distance, const Eigen::VectorXd& current_angles, const HexapodParameters& params, bool is_dummy, int index, LegConfiguration configuration)
   : index_(index), stance_radius_(params.stance_radius_), body_height_(params.default_body_height_), spring_shift_(configuration == LegConfiguration::Right ? 3.75 : -3.75) // Nm
@@ -57,7 +57,7 @@ Leg::Leg(double angle_rad, double distance, const Eigen::VectorXd& current_angle
 bool Leg::computeJacobians(const Eigen::VectorXd& angles, Eigen::MatrixXd& jacobian_ee, robot_model::MatrixXdVector& jacobian_com)
 {
   kin_->getJEndEffector(angles, jacobian_ee);
-  kin_->getJ(HebiFrameTypeCenterOfMass, angles, jacobian_com);
+  kin_->getJ(robot_model::FrameType::CenterOfMass, angles, jacobian_com);
 }
  
 bool Leg::computeState(double t, Eigen::VectorXd& angles, Eigen::VectorXd& vels, Eigen::MatrixXd& jacobian_ee, robot_model::MatrixXdVector& jacobian_com)

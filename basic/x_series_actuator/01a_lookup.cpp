@@ -38,4 +38,6 @@ int main() {
     << "  on the local network.  If this is empty make sure that the modules" << std::endl
     << "  are connected, powered on, and that the status LEDs are displaying" << std::endl
     << "  a green soft-fade." << std::endl;
+
+  return 0;
 }

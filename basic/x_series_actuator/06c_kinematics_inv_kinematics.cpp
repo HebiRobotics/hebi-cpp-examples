@@ -12,9 +12,9 @@
 #endif
 
 using namespace hebi;
-using ActuatorType = robot_model::RobotModel::ActuatorType;
-using BracketType = robot_model::RobotModel::BracketType;
-using LinkType = robot_model::RobotModel::LinkType;
+using ActuatorType = robot_model::ActuatorType;
+using BracketType = robot_model::BracketType;
+using LinkType = robot_model::LinkType;
 
 int main()
 {
@@ -108,7 +108,7 @@ int main()
   std::cout << "Target position: " << std::endl << target_xyz.transpose() << std::endl;
   std::cout << "IK joint angles: " << std::endl << ik_result_joint_angles.transpose() << std::endl;
   hebi::robot_model::Matrix4dVector transforms;
-  model->getFK(HebiFrameTypeOutput, ik_result_joint_angles, transforms);
+  model->getFK(robot_model::FrameType::Output, ik_result_joint_angles, transforms);
 
   // plot frames on a 3d graph
   transforms.emplace(transforms.begin(),Eigen::Matrix<double,4,4>::Identity());
