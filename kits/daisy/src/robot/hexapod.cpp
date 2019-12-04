@@ -45,7 +45,7 @@ std::unique_ptr<Hexapod> Hexapod::createPartial(const HexapodParameters& params,
   std::shared_ptr<hebi::Group> log_group_io;
   if (params.logging_enabled_)
   {
-    log_group_io = lookup.getGroupFromNames({"HEBI"}, {"Mobile IO"}, timeout_ms);
+    log_group_io = lookup.getGroupFromNames({"Aster"}, {"mobileIO"}, timeout_ms);
     log_group_modules = lookup.getGroupFromNames(family, names, timeout_ms);
   }
   return std::unique_ptr<Hexapod>(new Hexapod(group, log_group_io, log_group_modules, params, real_legs, hex_errors));
