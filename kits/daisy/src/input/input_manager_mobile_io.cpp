@@ -24,7 +24,7 @@ bool InputManagerMobileIO::reset()
   // Look for joystick (IO board)
   hebi::Lookup lookup;
   long timeout_ms = 2000; // use a 2 second timeout
-  group_ = lookup.getGroupFromNames({"HEBI"}, {"Mobile IO"}, timeout_ms);
+  group_ = lookup.getGroupFromNames({"Aster"}, {"mobileIO"}, timeout_ms);
   if (!group_)
     return false;
 
