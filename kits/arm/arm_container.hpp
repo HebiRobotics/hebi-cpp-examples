@@ -11,9 +11,9 @@
 #include "robot_model.hpp"
 #include "Eigen/Dense"
 
-using ActuatorType = hebi::robot_model::RobotModel::ActuatorType;
-using BracketType = hebi::robot_model::RobotModel::BracketType;
-using LinkType = hebi::robot_model::RobotModel::LinkType;
+using ActuatorType = hebi::robot_model::ActuatorType;
+using BracketType = hebi::robot_model::BracketType;
+using LinkType = hebi::robot_model::LinkType;
 
 namespace hebi {
 
@@ -76,7 +76,7 @@ namespace hebi {
       : group_(group), robot_model_(std::move(robot_model))
     {
       // Retrieve masses from robot model for efficient/convenient access later.
-      masses_.resize(robot_model_->getFrameCount(HebiFrameTypeCenterOfMass));
+      masses_.resize(robot_model_->getFrameCount(robot_model::FrameType::CenterOfMass));
       robot_model_->getMasses(masses_);
     }
 

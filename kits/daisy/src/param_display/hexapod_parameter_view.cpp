@@ -109,7 +109,7 @@ void HexapodParameterView::resetTransforms()
     hebi::robot_model::Matrix4dVector frames;
     hexapod->getLeg(i)->setCmdStanceToHomeStance();
     hexapod->getLeg(i)->computeState(0, angles, leg_vels, jacobian_ee, jacobian_com);
-    hexapod->getLeg(i)->getKinematics().getFK(HebiFrameTypeOutput, angles, frames);
+    hexapod->getLeg(i)->getKinematics().getFK(robot_model::FrameType::Output, angles, frames);
     leg_bases[i] = frames[0].topRightCorner<3,1>();
     leg_knees[i] = frames[3].topRightCorner<3,1>();
     leg_ends[i]  = frames[5].topRightCorner<3,1>();
