@@ -34,8 +34,8 @@ int main(int argc, char* argv[])
   arm::Arm::Params params;
 
   // Setup Module Family and Module Names
-  params.families_ = {"Arm Example"};
-  params.names_ = {"Base", "Shoulder", "Elbow", "Wrist1", "Wrist2", "Wrist3"};
+  params.families_ = {"Example Arm"};
+  params.names_ = {"J1_base", "J2_shoulder", "J3_elbow", "J4_wrist1", "J5_wrist2", "J6_wrist3"};
 
   // Read HRDF file to seutp a RobotModel object for the 6-DoF Arm
   // Make sure you are running this from the correct directory!
@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
   //////////////////////////
 
   // Create the MobileIO object
-  std::unique_ptr<MobileIO> mobile = MobileIO::create("HEBI", "Mobile IO");
+  std::unique_ptr<MobileIO> mobile = MobileIO::create("HEBI", "mobileIO");
 
   std::string instructions;
   instructions = "B1 - Home Position\nB2 - Waypoint 1\nB5 - Waypoint 2\nB6 - Grav Comp Mode\nB8 - End Demo\n";

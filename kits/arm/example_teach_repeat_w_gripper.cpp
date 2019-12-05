@@ -91,15 +91,15 @@ int main(int argc, char* argv[])
   arm::Arm::Params params;
 
   // Setup Module Family and Module Names
-  params.families_ = {"Arm Example"};
-  params.names_ = {"Base", "Shoulder", "Elbow", "Wrist1", "Wrist2", "Wrist3"};
+  params.families_ = {"Example Arm"};
+  params.names_ = {"J1_base", "J2_shoulder", "J3_elbow", "J4_wrist1", "J5_wrist2", "J6_wrist3"};
   
   // Read HRDF file to setup a RobotModel object for the 6-DoF Arm
   // Make sure you are running this from the correct directory!
   params.hrdf_file_ = "kits/hrdf/6-dof_arm.hrdf";  
 
   // Setup Gripper
-  std::shared_ptr<arm::EffortEndEffector<1>> gripper(arm::EffortEndEffector<1>::create("Arm Example", "Spool").release());
+  std::shared_ptr<arm::EffortEndEffector<1>> gripper(arm::EffortEndEffector<1>::create("Example Arm", "gripperSpool").release());
   params.end_effector_ = gripper;
 
   // Setup Time Variables
@@ -115,7 +115,7 @@ int main(int argc, char* argv[])
   /////////////////////////
 
   // Create the MobileIO object
-  std::unique_ptr<MobileIO> mobile = MobileIO::create("HEBIH", "Mobile IO");
+  std::unique_ptr<MobileIO> mobile = MobileIO::create("HEBI", "mobileIO");
 
   // Clear any garbage on screen
   mobile -> clearText(); 
