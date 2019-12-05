@@ -58,6 +58,7 @@ arm::Goal playWaypoints (State& state) {
   Eigen::MatrixXd target_accels(state.num_modules, state.waypoints.size());
   Eigen::VectorXd times(state.waypoints.size());
   Eigen::MatrixXd aux(1, state.waypoints.size());
+  double wp_time = 2.5;
 
   // Fill up the relevant matrices
   for (int i = 0; i < state.waypoints.size(); i++)
@@ -66,6 +67,7 @@ arm::Goal playWaypoints (State& state) {
     target_pos.col(i) << state.waypoints[i].positions;
     target_vels.col(i) << state.waypoints[i].vels;
     target_accels.col(i) << state.waypoints[i].accels;
+    times[i] = (i == 0) ? wp_time : times[i-1] + wp_time;
     aux.col(i) << state.waypoints[i].grip_effort;
   }
 
@@ -75,7 +77,7 @@ arm::Goal playWaypoints (State& state) {
   target_accels.col(state.waypoints.size()-1) << 
                     Eigen::VectorXd::Constant(state.num_modules, 0);
 
-  return arm::Goal(target_pos, target_vels, target_accels, aux);
+  return arm::Goal(times, target_pos, target_vels, target_accels, aux);
 }
 
 double currentTime(std::chrono::steady_clock::time_point& start) {
