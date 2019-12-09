@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(hebi_cpp_api VERSION 2.1.0)
+project(hebi_cpp_api VERSION 3.1.0)
 
 # If you want to include the C API from an out of source tree location,
 # pass `-DHEBI_C_DIR=<dir>` to cmake when generating this project
@@ -15,6 +15,7 @@ set(hebi_cpp_src
   src/command.cpp
   src/feedback.cpp
   src/info.cpp
+  src/message_helpers.cpp
   src/group_command.cpp
   src/group_feedback.cpp
   src/group_info.cpp
