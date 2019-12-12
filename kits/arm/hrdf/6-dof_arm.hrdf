@@ -12,7 +12,7 @@
   <actuator type="X5-9"/>
   <bracket type="X5LightRight"/>
   <actuator type="X5-4"/>
-  <bracket type="X5LightLeft"/>
+  <bracket type="X5LightRight"/>
   <actuator type="X5-4"/>
 
   <!-- Add an extra body for the gripper -->

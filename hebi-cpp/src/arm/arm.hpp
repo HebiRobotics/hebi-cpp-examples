@@ -100,6 +100,7 @@ public:
   // if "update" has never successfully run. The returned command can be
   // modified as desired before it is sent to the robot with the send function.
   GroupCommand& pendingCommand() { return command_; }
+  const GroupCommand& pendingCommand() const { return command_; }
 
   // Returns the last feedback obtained by update, or an empty feedback object
   // if "update" has never successfully run.

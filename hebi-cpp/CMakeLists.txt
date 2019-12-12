@@ -24,16 +24,14 @@ set(hebi_cpp_src
   src/lookup.cpp
   src/trajectory.cpp
   src/robot_model.cpp
-  src/version.cpp)
+  src/version.cpp
+  src/arm/arm.cpp
+  src/arm/kinematics_helper.cpp)
 
 set(hebi_cpp_util
   src/util/mobile_io.cpp)
 
-set(hebi_cpp_arm
-  src/arm/arm.cpp
-  src/arm/kinematics_helper.cpp)
-
-add_library(_hebic++-obj OBJECT ${hebi_cpp_src} ${hebi_cpp_util} ${hebi_cpp_arm})
+add_library(_hebic++-obj OBJECT ${hebi_cpp_src} ${hebi_cpp_util})
 add_library(hebic++ SHARED $<TARGET_OBJECTS:_hebic++-obj>)
 add_library(hebic++-static STATIC $<TARGET_OBJECTS:_hebic++-obj>)
 
