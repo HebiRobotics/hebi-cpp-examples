@@ -133,7 +133,7 @@ void Hexapod::setCommand(int leg_index, const VectorXd* angles, const VectorXd* 
   {
     assert(torques->size() == num_joints);
     for (int i = 0; i < num_joints; ++i)
-      cmd_[leg_offset + i].actuator().effort().set(2.0f * (*torques)[i]);
+      cmd_[leg_offset + i].actuator().effort().set((*torques)[i]);
   }
 }
 
@@ -520,7 +520,7 @@ Hexapod::Hexapod(std::shared_ptr<Group> group,
     group->addFeedbackHandler([this] (const GroupFeedback& fbk)
     {
       // A -z vector in a local frame.
-      Eigen::Vector3d down(0, 0, 1);
+      Eigen::Vector3d down(0, 0, -1);
       Eigen::Vector3d avg_grav;
       avg_grav.setZero();
 

@@ -119,7 +119,7 @@ private:
   // TODO: abstract into "step" class? At least parameter data structure?
   // TODO: LOAD FROM XML!
   HexapodParameters params_;
-  static constexpr float weight_ = 9.8f * 21.0f; // mass = 21 kg
+  static constexpr float weight_ = 9.8f * 26.0f; // mass = 26 kg
 
   Eigen::Vector3d vel_xyz_;
 

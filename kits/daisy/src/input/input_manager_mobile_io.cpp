@@ -90,7 +90,7 @@ Eigen::Vector3f InputManagerMobileIO::getTranslationVelocityCmd() const
   {
     translation_velocity_cmd <<
       0.8 * -xyz_scale_ * left_vert_raw_,
-      0.1 * (button_b3_raw_*-1.0 + button_b4_raw_),
+      0.0 * (button_b3_raw_*-1.0 + button_b4_raw_),
       xyz_scale_ * getVerticalVelocity();
   }
   else

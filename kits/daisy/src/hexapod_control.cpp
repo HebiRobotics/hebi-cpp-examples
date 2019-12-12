@@ -614,9 +614,8 @@ int main(int argc, char** argv)
       Eigen::Vector3d gravity_vec = hexapod->getGravityDirection() * 9.8;
       torques = hexapod->getLeg(i)->computeTorques(jacobian_com, jacobian_ee, angles, vels, gravity_vec, /*dynamic_comp_torque,*/ foot_force); // TODO:
 
-      if (i == 0)
-	torques[i] -= 1.f;
       hexapod->setCommand(i, &angles, &vels, &torques);
+
     }
     hexapod->sendCommand();
     }
