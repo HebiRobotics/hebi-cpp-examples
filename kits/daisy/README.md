@@ -102,7 +102,7 @@ When it can find the robot, but one of the legs is out of a safe range (+/- 90
 degrees from straight out), it sets the LEDs on that leg red.
 
 When if can find the robot, and all of the legs are within range, but it cannot
-find the joystick (mobile IO app with family "HEBI" and name "Mobile IO", it
+find the joystick (mobile IO app with family "Daisy" and name "mobileIO", it
 sets the LEDs on all modules to blue.
 
 ## Driving ##
