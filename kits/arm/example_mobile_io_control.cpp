@@ -39,14 +39,14 @@ Eigen::VectorXd eigenize(const std::vector<double>& in) {
 }
 
 const std::map<Waypoint, arm::Goal> waypoint_map = {
-  { { WaypointID::Home,      true},  arm::Goal(3, eigenize({0, 1.5, 2.8, 3.02, 4.64, 3.14})) },
-  { { WaypointID::AbovePick, true},  arm::Goal(3, eigenize({0, 0.54, 1.85, 3.01, 4.65, 3.14})) },
-  { { WaypointID::Pick,      true},  arm::Goal(3, eigenize({0, 0.22, 1.65, 3.03, 4.69, 3.14})) },
-  { { WaypointID::HighDrop,  true},  arm::Goal(4, eigenize({0, 1.74, 1.58, 1.49, 4.88, 3.14})) },
-  { { WaypointID::Home,      false}, arm::Goal(3, eigenize({0, 1.5, 2.8, 4.59, 4.64, 3.14})) },
-  { { WaypointID::AbovePick, false}, arm::Goal(3, eigenize({0, 0.54, 1.85, 4.58, 4.65, 3.14})) },
-  { { WaypointID::Pick,      false}, arm::Goal(3, eigenize({0, 0.22, 1.65, 4.60, 4.69, 3.14})) },
-  { { WaypointID::HighDrop,  false}, arm::Goal(4, eigenize({0, 1.74, 1.58, 3.06, 4.88, 3.14})) }
+  { { WaypointID::Home,      true},  arm::Goal::createFromPosition(3, eigenize({0, 1.5, 2.8, 3.02, 4.64, 3.14})) },
+  { { WaypointID::AbovePick, true},  arm::Goal::createFromPosition(3, eigenize({0, 0.54, 1.85, 3.01, 4.65, 3.14})) },
+  { { WaypointID::Pick,      true},  arm::Goal::createFromPosition(3, eigenize({0, 0.22, 1.65, 3.03, 4.69, 3.14})) },
+  { { WaypointID::HighDrop,  true},  arm::Goal::createFromPosition(4, eigenize({0, 1.74, 1.58, 1.49, 4.88, 3.14})) },
+  { { WaypointID::Home,      false}, arm::Goal::createFromPosition(3, eigenize({0, 1.5, 2.8, 4.59, 4.64, 3.14})) },
+  { { WaypointID::AbovePick, false}, arm::Goal::createFromPosition(3, eigenize({0, 0.54, 1.85, 4.58, 4.65, 3.14})) },
+  { { WaypointID::Pick,      false}, arm::Goal::createFromPosition(3, eigenize({0, 0.22, 1.65, 4.60, 4.69, 3.14})) },
+  { { WaypointID::HighDrop,  false}, arm::Goal::createFromPosition(4, eigenize({0, 1.74, 1.58, 3.06, 4.88, 3.14})) }
 };
 
 
@@ -138,7 +138,7 @@ arm::Goal get_jogging_goal(const arm::Arm& arm, float dx, float dy, float dz, bo
   // TODO: add vel...
   auto current_joint_position = arm.pendingCommand().getPosition();
  // auto current_joint_vel = arm.pendingCommand().getVelocity();
-  auto current_cartesian_position = arm.FK3Dof(current_joint_position);
+  auto current_cartesian_position = arm.FK(current_joint_position);
  // const auto& robot_model = arm.robotModel();
  // auto j_end_effector = robot_model.getJEndEffector(current_joint_position);
  // auto current_cartesian_velocity = j_end_effector * current_joint_vel;
@@ -173,7 +173,7 @@ arm::Goal get_jogging_goal(const arm::Arm& arm, float dx, float dy, float dz, bo
 
   // Further limit x if z is low...this prevents arm from hitting robit.
 
-  auto desired_joint_position = arm.solveIK5Dof(current_joint_position, desired_cartesian_position, is_gripper_down ? Eigen::Vector3d(0, 0, -1) : Eigen::Vector3d(1, 0, 0));
+  auto desired_joint_position = arm.solveIK(current_joint_position, desired_cartesian_position, is_gripper_down ? Eigen::Vector3d(0, 0, -1) : Eigen::Vector3d(1, 0, 0));
    
   // Change duration depending on if gripper direction changes... 
   auto max_angle_change = 0.0;
@@ -181,7 +181,7 @@ arm::Goal get_jogging_goal(const arm::Arm& arm, float dx, float dy, float dz, bo
   for (int i = 0; i < change.size(); ++i)
     max_angle_change = std::max(max_angle_change, std::abs(change[i]));
   double other_scale = 1.2; 
-  return arm::Goal(std::max(max_angle_change * other_scale, 0.5), desired_joint_position);
+  return arm::Goal::createFromPosition(std::max(max_angle_change * other_scale, 0.5), desired_joint_position);
 }
 
 
@@ -251,15 +251,12 @@ int main(int argc, char* argv[])
 
   mobile->sendText("Found gripper!\nLooking for arm...");
 
-  // Setup Time Variables
-  auto start_time = std::chrono::steady_clock::now();
-  
   // Create the Arm Object
-  auto arm = arm::Arm::create(currentTime(start_time), params);
+  auto arm = arm::Arm::create(params);
 
   while (!arm) {
     std::cout << "Failed to find arm!\n";
-    arm = arm::Arm::create(currentTime(start_time), params);
+    arm = arm::Arm::create(params);
   }
 
   while (!arm->loadGains("arm-gains.xml")) {
@@ -301,18 +298,18 @@ int main(int argc, char* argv[])
   double gripper_rotation = 3.14159;
 
   float gripper_theta = 0; 
-  while (!arm->update(currentTime(start_time)))
+  while (!arm->update())
   {}   
   gripper_theta = arm->lastFeedback()[5].actuator().position().get();
   
   // Soft start:  
-  arm->update(currentTime(start_time));
+  arm->update();
   std::optional<WaypointID> last_waypoint_id = WaypointID::Home;
   arm->setGoal(waypoint_map.at({ last_waypoint_id.value(), is_gripper_down }));
 
   // get initial gripper position! 
   while(true) {
-    if (!arm->update(currentTime(start_time)))
+    if (!arm->update())
       continue;
 
     // Gripper direction and state change
