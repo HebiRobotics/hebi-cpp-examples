@@ -4,4 +4,3 @@ projects/**/Release
 projects/**/x64
 projects/**/*.user
 
-hebi/

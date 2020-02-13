@@ -1,0 +1,61 @@
+  Note that Clang is _very_ particular about the relative layout of headers
+  and binaries when searching for a GCC installation. On Linux, Clang
+  will search for a GCC installation (denoted as a "candidate" installation)
+  and will only mark it as valid, when using libstdc++, when there are certain
+  include directories found relative to the installation directory.
+  For reference on how Clang searches for GCC installations, refer to the footnotes.
+
+  In order to get clang to find your sysroot
+  (and subsequently the correct include directories and link directories),
+  you must pass the `--sysroot=<sysroot>` flag to the compiler.
+  Explicitly setting `CMAKE_SYSROOT` (as done below) takes care of this for you.
+
+  The required layout of your sys root is as followed:
+
+  (let <sysroot>=/usr/aarch64-linux-gnu/sys-root)
+  ("7" is used below to denote a GCC 7 installation)
+
+================================================================================
+
+  <sysroot>/
+   ├── lib (symlink to usr/lib)
+   ├── lib64 (symlink to usr/lib64)
+   └── usr/
+       ├── lib
+       │   ├── gcc/
+       │   │   └── aarch64-linux-gnu/
+       │   │       └── 7/
+       │   └── ld-linux-aarch64.so.1
+       ├── lib64/
+       │   └── <your aarch64 binaries here>
+       └── include/
+           ├── <your library headers here>
+           └── c++/
+               └── 7/
+                   ├── aarch64-redhat-linux/ (*see note below)
+                   │   ├── bits/ (may not exist)
+                   │   │   └── <C++ stl files...>
+                   │   └── ext/ (may not exist)
+                   │       └── <C++ stl files...>
+                   └── <C++ stl files...>
+
+================================================================================
+
+  * Note:
+    `usr/include/c++/7/aarch64-<vendor>-linux`
+    vendor may vary per distro. On Fedora, the `vendor` is redhat.
+
+    While this directory is not necessarily required in all distributions
+    of libstdc++, the "vanilla" distribution is laid out as such. This folder
+    missing is a common reason for errors such as
+    `error: cannot find <bits/c++config.h>`
+
+  * Clang Algorithm for Searching for GCC Installations:
+
+    See the urls for the code within the Clang toolchain driver:
+      https://github.com/llvm-mirror/clang/blob/release_60/lib/Driver/ToolChains/Gnu.cpp#L2040-L2122
+      https://github.com/llvm-mirror/clang/blob/release_60/lib/Driver/ToolChains/Linux.cpp#L191-L378
+
+    The links above are not an exhaustive guide to the algorithm. However,
+    the code within those two source files encompasses most of the searching
+    algorithm which Clang uses, as of Clang 6.0.
