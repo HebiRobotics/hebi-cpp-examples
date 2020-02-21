@@ -16,7 +16,7 @@
 #include <iostream>
 
 using namespace hebi;
-using namespace hebi::experimental; // For all things mobileIO 
+using namespace hebi::experimental; 
 
 struct Waypoint
 {

@@ -18,12 +18,12 @@
 #include <chrono>
 
 using namespace hebi;
-using namespace hebi::experimental; // For all things mobileIO 
+using namespace experimental; 
 
 
-double currentTime(std::chrono::steady_clock::time_point& start) {
-  return (std::chrono::duration<double>(std::chrono::steady_clock::now() - start)).count();
-}
+// double currentTime(std::chrono::steady_clock::time_point& start) {
+//   return (std::chrono::duration<double>(std::chrono::steady_clock::now() - start)).count();
+// }
 
 int main(int argc, char* argv[])
 {
@@ -34,20 +34,15 @@ int main(int argc, char* argv[])
   arm::Arm::Params params;
 
   // Setup Module Family and Module Names
-  params.families_ = {"Example Arm"};
+  params.families_ = {"Arm"};
   params.names_ = {"J1_base", "J2_shoulder", "J3_elbow", "J4_wrist1", "J5_wrist2", "J6_wrist3"};
 
   // Read HRDF file to seutp a RobotModel object for the 6-DoF Arm
   // Make sure you are running this from the correct directory!
   params.hrdf_file_ = "kits/hrdf/6-dof_arm.hrdf";
 
-  // Setup Time Variables
-  auto start_time = std::chrono::steady_clock::now();
-  std::chrono::duration<double> arm_time = std::chrono::steady_clock::now() - start_time;
-  double arm_start_time = arm_time.count();
-  
   // Create the Arm Object
-  auto arm = arm::Arm::create(arm_start_time, params);
+  auto arm = arm::Arm::create(params);
 
   //////////////////////////
   //// MobileIO Setup //////
@@ -57,8 +52,9 @@ int main(int argc, char* argv[])
   std::unique_ptr<MobileIO> mobile = MobileIO::create("HEBI", "mobileIO");
 
   std::string instructions;
-  instructions = "B1 - Home Position\nB2 - Waypoint 1\nB5 - Waypoint 2\nB6 - Grav Comp Mode\nB8 - End Demo\n";
-
+  instructions = ("B1 - Waypoint 1\nB2 - Waypoint 2\n"
+                  "B3 - Waypoint 3\n"
+                  "B6 - Grav comp mode\nB8 - Quit\n");
   // Clear any garbage on screen
   mobile -> clearText(); 
 
@@ -76,43 +72,43 @@ int main(int argc, char* argv[])
   auto num_joints = arm -> robotModel().getDoFCount();
   Eigen::VectorXd positions(num_joints);
   double single_time;
+  single_time = 3;
 
-  // Time Vector for Waypoints
-  int num_wp = 1; 
-  Eigen::VectorXd times(num_wp);
 
   //////////////////////////
   //// Main Control Loop ///
   //////////////////////////
 
-  while(arm->update(currentTime(start_time)))
+  while(arm->update())
   {
     // Get latest mobile_state
     auto state = mobile->getState();
     MobileIODiff diff(last_state, state);
 
+    /////////////////
+    // Button Presses
+    /////////////////
+
     // Buttton B1 - Home Position
     if (diff.get(1) == MobileIODiff::ButtonState::ToOn)
     {
       positions << 0, 0, 0, 0, 0, 0;
-      single_time = 3;
-      arm -> setGoal(arm::Goal(single_time, positions));
+      arm -> setGoal(arm::Goal::createFromPosition(single_time, positions));
     }
 
     // Button B2 - Waypoint 1
     if (diff.get(2) == MobileIODiff::ButtonState::ToOn)
     {
       positions << M_PI/4, M_PI/3, 2*M_PI/3, M_PI/3, M_PI/4, 0;
-      single_time = 3;
-      arm -> setGoal(arm::Goal(single_time, positions));
+      arm -> setGoal(arm::Goal::createFromPosition(single_time, positions));
     }
 
-    // Button B5 - Waypoint 2
-    if (diff.get(5) == MobileIODiff::ButtonState::ToOn)
+    // Button B3 - Waypoint 2
+    if (diff.get(3) == MobileIODiff::ButtonState::ToOn)
     {
       positions << -M_PI/4, M_PI/3, 2*M_PI/3, M_PI/3, 3*M_PI/4, 0;
-      single_time = 3;
-      arm -> setGoal(arm::Goal(single_time, positions));
+      arm -> setGoal(arm::Goal::createFromPosition(single_time, positions));
+
     }
 
     // Button B6 - Grav Comp Mode
@@ -130,7 +126,11 @@ int main(int argc, char* argv[])
       return 1;
     }
 
-    // Update to the new last_state
+    /////////////////
+    // Update & send
+    /////////////////
+
+    // Update to the new last_state for mobile device
     last_state = state;
 
     // Send latest commands to the arm

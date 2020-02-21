@@ -17,10 +17,7 @@
 #include <chrono>
 
 using namespace hebi;
-
-double currentTime(std::chrono::steady_clock::time_point& start) {
-  return (std::chrono::duration<double>(std::chrono::steady_clock::now() - start)).count();
-}
+using namespace experimental;
 
 int main(int argc, char* argv[])
 {
@@ -31,26 +28,24 @@ int main(int argc, char* argv[])
   arm::Arm::Params params;
 
   // Setup Module Family and Module Names
-  params.families_ = {"Example Arm"};
+  params.families_ = {"Aster"}; //[change back]
   params.names_ = {"J1_base", "J2_shoulder", "J3_elbow", "J4_wrist1", "J5_wrist2", "J6_wrist3"};
 
   // Read HRDF file to seutp a RobotModel object for the 6-DoF Arm
-  // Make sure you are running this from the correct directory!
   params.hrdf_file_ = "kits/hrdf/6-dof_arm.hrdf";
 
   // Setup Time Variables
-  auto start_time = std::chrono::steady_clock::now();
-  std::chrono::duration<double> arm_time = std::chrono::steady_clock::now() - start_time;
-  double arm_start_time = arm_time.count();
+  // auto start_time = std::chrono::steady_clock::now();
+  // std::chrono::duration<double> arm_time = std::chrono::steady_clock::now() - start_time;
   
   // Create the Arm Object
-  auto arm = arm::Arm::create(arm_start_time, params);
+  auto arm = arm::Arm::create(params);
 
   //////////////////////////
   //// Main Control Loop ///
   //////////////////////////
 
-  while(arm->update(currentTime(start_time)))
+  while(arm->update())
   {
 
     // When no goal is set, the arm automatically returns to grav-comp mode.
