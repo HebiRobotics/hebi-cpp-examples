@@ -269,16 +269,12 @@ endforeach (EXAMPLE ${ADVANCED_SOURCES})
 
 # Kit Examples
 SET(KIT_SOURCES
-#  ${ROOT_DIR}/kits/arm/gravity_compensation.cpp
-#  ${ROOT_DIR}/kits/arm/teach_repeat.cpp
-#  ${ROOT_DIR}/kits/arm/graComp.cpp
-#  ${ROOT_DIR}/kits/arm/example_gravity_compensation_w_mobile_io.cpp
 
+  ${ROOT_DIR}/kits/arm/example_gravity_compensation.cpp
   ${ROOT_DIR}/kits/arm/example_mobile_io_control.cpp
   ${ROOT_DIR}/kits/arm/example_teach_repeat.cpp
-#  ${ROOT_DIR}/kits/arm/example_teach_repeat_w_gripper.cpp
-  ${ROOT_DIR}/kits/arm/example_AR_kit.cpp
-  ${ROOT_DIR}/kits/arm/example_gravity_compensation.cpp)
+  # ${ROOT_DIR}/kits/arm/example_teach_repeat_w_gripper.cpp
+  ${ROOT_DIR}/kits/arm/example_AR_kit.cpp)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY kits)
 foreach (EXAMPLE ${KIT_SOURCES})
@@ -316,18 +312,11 @@ foreach (EXAMPLE ${KIT_SOURCES})
 endforeach (EXAMPLE ${KIT_SOURCES})
 
 
-# Copy the HRDF files into the build directory
+# Copy the HRDF files for kits into the build directory
+file(COPY ${ROOT_DIR}/kits/hrdf DESTINATION ${ROOT_DIR}/build/kits)
 
-#SET(HRDF_SOURCES
-#  ${ROOT_DIR}/kits/arm/hrdf/6-dof_arm.hrdf)
 
-#set (CMAKE_RUNTIME_OUTPUT_DIRECTORY kits/hrdf)
-#foreach (HRDF ${HRDF_SOURCES})
-#  add_custom_command(TARGET ${HRDF} PRE_BUILD
-#		     COMMAND ${CMAKE_COMMAND} -E copy_directory
-#      		         ${ROOT_DIR}/kits/arm/hrdf/ 
 
-#endforeach (HRDF ${HRDF_SOURCES})
 
 
 

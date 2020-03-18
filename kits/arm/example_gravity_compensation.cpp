@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
   arm::Arm::Params params;
 
   // Setup Module Family and Module Names
-  params.families_ = {"Aster"}; //[change back]
+  params.families_ = {"Arm"}; //[change back]
   params.names_ = {"J1_base", "J2_shoulder", "J3_elbow", "J4_wrist1", "J5_wrist2", "J6_wrist3"};
 
   // Read HRDF file to seutp a RobotModel object for the 6-DoF Arm

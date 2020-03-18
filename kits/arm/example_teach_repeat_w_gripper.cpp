@@ -49,36 +49,56 @@ void addWaypoint (State& state, const GroupFeedback& feedback, double grip, bool
   }
 }
 
-arm::Goal playWaypoints (State& state) {
-  // We know that if we are here, there is at least one waypoint
+// arm::Goal playWaypoints (State& state) {
+//   // We know that if we are here, there is at least one waypoint
 
-  // Set up the required variables
+//   // Set up the required variables
+//   Eigen::MatrixXd target_pos(state.num_modules, state.waypoints.size());
+//   Eigen::MatrixXd target_vels(state.num_modules, state.waypoints.size());
+//   Eigen::MatrixXd target_accels(state.num_modules, state.waypoints.size());
+//   Eigen::VectorXd times(state.waypoints.size());
+//   Eigen::MatrixXd aux(1, state.waypoints.size());
+//   double wp_time = 2.5;
+
+//   // Fill up the relevant matrices
+//   for (int i = 0; i < state.waypoints.size(); i++)
+//   {
+//     // map each waypoint vector to a column in the targets matrix
+//     target_pos.col(i) << state.waypoints[i].positions;
+//     target_vels.col(i) << state.waypoints[i].vels;
+//     target_accels.col(i) << state.waypoints[i].accels;
+//     times[i] = (i == 0) ? wp_time : times[i-1] + wp_time;
+//     aux.col(i) << state.waypoints[i].grip_effort;
+//   }
+
+//   // For better motion, we ensure the last waypoint is a stop waypoint
+//   target_vels.col(state.waypoints.size()-1) << 
+//                   Eigen::VectorXd::Constant(state.num_modules, 0);
+//   target_accels.col(state.waypoints.size()-1) << 
+//                     Eigen::VectorXd::Constant(state.num_modules, 0);
+
+//   return arm::Goal(times, target_pos, target_vels, target_accels, aux);
+// }
+
+arm::Goal playWaypoints (State& state, double wp_time) {
+
+  // Set up required variables
+  Eigen::VectorXd times(state.waypoints.size());
   Eigen::MatrixXd target_pos(state.num_modules, state.waypoints.size());
   Eigen::MatrixXd target_vels(state.num_modules, state.waypoints.size());
   Eigen::MatrixXd target_accels(state.num_modules, state.waypoints.size());
-  Eigen::VectorXd times(state.waypoints.size());
-  Eigen::MatrixXd aux(1, state.waypoints.size());
-  double wp_time = 2.5;
 
-  // Fill up the relevant matrices
+  // Fill up matrices appropriately
   for (int i = 0; i < state.waypoints.size(); i++)
   {
-    // map each waypoint vector to a column in the targets matrix
+    times[i] = (i+1) * wp_time;
     target_pos.col(i) << state.waypoints[i].positions;
     target_vels.col(i) << state.waypoints[i].vels;
     target_accels.col(i) << state.waypoints[i].accels;
-    times[i] = (i == 0) ? wp_time : times[i-1] + wp_time;
-    aux.col(i) << state.waypoints[i].grip_effort;
   }
-
-  // For better motion, we ensure the last waypoint is a stop waypoint
-  target_vels.col(state.waypoints.size()-1) << 
-                  Eigen::VectorXd::Constant(state.num_modules, 0);
-  target_accels.col(state.waypoints.size()-1) << 
-                    Eigen::VectorXd::Constant(state.num_modules, 0);
-
-  return arm::Goal(times, target_pos, target_vels, target_accels, aux);
+  return arm::Goal::createFromWaypoints(times, target_pos, target_vels, target_accels);
 }
+
 
 double currentTime(std::chrono::steady_clock::time_point& start) {
   return (std::chrono::duration<double>(std::chrono::steady_clock::now() - start)).count();
@@ -101,16 +121,11 @@ int main(int argc, char* argv[])
   params.hrdf_file_ = "kits/hrdf/6-dof_arm.hrdf";  
 
   // Setup Gripper
-  std::shared_ptr<arm::EffortEndEffector<1>> gripper(arm::EffortEndEffector<1>::create("Example Arm", "gripperSpool").release());
+  std::shared_ptr<arm::EffortEndEffector<1>> gripper(arm::EffortEndEffector<1>::create(param.families[0], "gripperSpool").release());
   params.end_effector_ = gripper;
-
-  // Setup Time Variables
-  auto start_time = std::chrono::steady_clock::now();
-  std::chrono::duration<double> arm_time = std::chrono::steady_clock::now() - start_time;
-  double arm_start_time = arm_time.count();
     
   // Create the Arm Object
-  auto arm = arm::Arm::create(arm_start_time, params);
+  auto arm = arm::Arm::create(params);
 
   /////////////////////////
   //// MobileIO Setup /////
@@ -148,7 +163,7 @@ int main(int argc, char* argv[])
 
   // Gripper Variables
 
-  while(arm->update(currentTime(start_time)))
+  while(arm->update())
   {
      // Get latest mobile_state
     auto mobile_state = mobile->getState();
@@ -156,10 +171,12 @@ int main(int argc, char* argv[])
 
     // Testing
     gripper->getState();
+    
 
     double open_val = (mobile_state.getAxis(3) * 2)-1; // makes this range between -2 and 1
     if (!playback) {
       gripper -> setCommand(0, open_val);
+      gripper 
     }
     
 
@@ -185,7 +202,7 @@ int main(int argc, char* argv[])
       } 
       else {
         playback = true;
-        const arm::Goal playback = playWaypoints(state);
+        const arm::Goal playback = playWaypoints(state, 2.5);
         arm -> setGoal(playback);       
       }
     }
