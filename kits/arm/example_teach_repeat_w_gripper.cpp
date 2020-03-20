@@ -13,7 +13,7 @@
 #include "arm/arm.hpp"
 #include "util/mobile_io.hpp"
 #include <chrono>
-#include <iostream>
+#include <iostream> 
 
 using namespace hebi;
 using namespace hebi::experimental; 
@@ -113,7 +113,7 @@ int main(int argc, char* argv[])
   arm::Arm::Params params;
 
   // Setup Module Family and Module Names
-  params.families_ = {"Example Arm"};
+  params.families_ = {"Arm"};
   params.names_ = {"J1_base", "J2_shoulder", "J3_elbow", "J4_wrist1", "J5_wrist2", "J6_wrist3"};
   
   // Read HRDF file to setup a RobotModel object for the 6-DoF Arm
@@ -121,9 +121,15 @@ int main(int argc, char* argv[])
   params.hrdf_file_ = "kits/hrdf/6-dof_arm.hrdf";  
 
   // Setup Gripper
-  std::shared_ptr<arm::EffortEndEffector<1>> gripper(arm::EffortEndEffector<1>::create(param.families[0], "gripperSpool").release());
+  std::shared_ptr<arm::EffortEndEffector<1>> gripper(arm::EffortEndEffector<1>::create(params.families_[0], "gripperSpool").release());
   params.end_effector_ = gripper;
-    
+  // auto end_effector = arm::EndEffector<1, arm::EndEffectorCommand::Effort>::create("Arm", "gripperSpool");
+  // Eigen::VectorXd aux_state(1);
+  // aux_state.setConstant(0);
+  // params_end_effector_ = end_gripper;
+
+
+
   // Create the Arm Object
   auto arm = arm::Arm::create(params);
 
@@ -174,9 +180,12 @@ int main(int argc, char* argv[])
     
 
     double open_val = (mobile_state.getAxis(3) * 2)-1; // makes this range between -2 and 1
+    
     if (!playback) {
-      gripper -> setCommand(0, open_val);
-      gripper 
+      // gripper -> setCommand(0, open_val);
+      gripper -> update(open_val);
+      gripper -> send();
+      // gripper 
     }
     
 

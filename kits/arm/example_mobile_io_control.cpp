@@ -1,11 +1,7 @@
 /**
- * This file is a barebones skeleton of how to setup an arm for use.
- * It demonstrates gravity compensation behavior by commanding torques
- * equal to the force from gravity on the links and joints of an arm.
- * Note that this only approximately balances out gravity, as imperfections in
- * the torque sensing and modeled system can lead to "drift".  Also, the
- * particular choice of PID control gains can affect the performance of this
- * demo.
+ * Mobile IO Control
+ * An example for setting up your arm for simple control from a mobile io devoce
+ * to pre-programmed waypoints.
  */
 
 // #include "lookup.hpp"
@@ -49,7 +45,7 @@ int main(int argc, char* argv[])
   //////////////////////////
 
   // Create the MobileIO object
-  std::unique_ptr<MobileIO> mobile = MobileIO::create("HEBI", "mobileIO");
+  std::unique_ptr<MobileIO> mobile = MobileIO::create(params.families_[0], "mobileIO");
 
   std::string instructions;
   instructions = ("B1 - Waypoint 1\nB2 - Waypoint 2\n"

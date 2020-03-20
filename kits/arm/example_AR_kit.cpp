@@ -41,9 +41,9 @@ int main(int argc, char* argv[])
   // Read HRDF file to setup a RobotModel object for the 6-DoF Arm
   params.hrdf_file_ = "kits/hrdf/6-dof_arm.hrdf";  
 
-  // Setup Gripper [change the name back to example still] 
-  std::shared_ptr<arm::EffortEndEffector<1>> gripper(arm::EffortEndEffector<1>::create("Aster", "gripperSpool").release());
-  params.end_effector_ = gripper;
+  // Setup Gripper
+  // std::shared_ptr<arm::EffortEndEffector<1>> gripper(arm::EffortEndEffector<1>::create(params.families_[0], "gripperSpool").release());
+  // params.end_effector_ = gripper;
 
   // Create the Arm Object
   auto arm = arm::Arm::create(params);
@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
   /////////////////////////
 
   // Create the MobileIO object
-  std::unique_ptr<MobileIO> mobile = MobileIO::create("Aster", "mobileIO");
+  std::unique_ptr<MobileIO> mobile = MobileIO::create(params.families_[0], "mobileIO");
 
   // Clear any garbage on screen
   mobile -> clearText(); 
@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
   {
 
     if (softstart) {
-  Eigen::VectorXd home_position(arm -> robotModel().getDoFCount());
+      Eigen::VectorXd home_position(arm -> robotModel().getDoFCount());
       // End softstart when arm reaches its homePosition
       if (arm -> atGoal()){
         mobile -> sendText("Softstart Complete!");
@@ -123,6 +123,9 @@ int main(int argc, char* argv[])
     // Get latest mobile_state
     auto mobile_state = mobile->getState();
     MobileIODiff diff(last_mobile_state, mobile_state);
+
+    // Get latest gripper_state
+    // gripper -> getState();
 
     // Button B1 - Return to home position
     if (diff.get(1) == MobileIODiff::ButtonState::ToOn) {
@@ -178,6 +181,9 @@ int main(int argc, char* argv[])
 
       // Create and send new goal to the arm
       arm -> setGoal(arm::Goal::createFromPosition(target_joints));
+
+      // double open_val = (mobile_state.getAxis(3) * 2)-1; // makes this range between -2 and 1
+      // gripper -> update(open_val);
     }
    
     // Update mobile device to the new last_state
