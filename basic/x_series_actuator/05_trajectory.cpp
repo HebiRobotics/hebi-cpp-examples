@@ -71,8 +71,16 @@ int main()
 
   auto trajectory = hebi::trajectory::Trajectory::createUnconstrainedQp(time, positions);
 
-    // Start logging in the background
-  group->startLog("logs");
+  // Start logging in the background
+  std::string log_path = group->startLog("./logs");
+
+  if (log_path.empty()) {
+    std::cout << "~~ERROR~~\n"
+              << "Target directory for log file not found!\n"
+              << "HINT: Remember that the path declared in 'group->startLog()' "
+              << "is relative to your current working directory...\n";
+    return 1;
+  }
 
   // Follow the trajectory
   hebi::GroupCommand cmd(num_joints);

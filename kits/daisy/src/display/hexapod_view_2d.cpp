@@ -99,7 +99,7 @@ void HexapodView2D::updateLeg(const hebi::Leg* leg, int leg_index, const Eigen::
   hebi::robot_model::Matrix4dVector frames;
 
   // Get positions from the leg
-  leg->getKinematics().getFK(HebiFrameTypeOutput, angles, frames);
+  leg->getKinematics().getFK(hebi::robot_model::FrameType::Output, angles, frames);
   leg_base = frames[0].topRightCorner<4,1>();
   leg_knee = frames[3].topRightCorner<4,1>();
   leg_end  = frames[5].topRightCorner<4,1>();

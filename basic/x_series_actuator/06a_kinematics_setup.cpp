@@ -18,9 +18,9 @@
 #endif
 
 using namespace hebi;
-using ActuatorType = robot_model::RobotModel::ActuatorType;
-using BracketType = robot_model::RobotModel::BracketType;
-using LinkType = robot_model::RobotModel::LinkType;
+using ActuatorType = robot_model::ActuatorType;
+using BracketType = robot_model::BracketType;
+using LinkType = robot_model::LinkType;
 
 int main()
 {

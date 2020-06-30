@@ -39,7 +39,7 @@ int main()
   for(size_t i = 0; i < 50; i++) {
     if (group->getNextFeedback(group_fbk)){
       Eigen::VectorXd angles = group_fbk.getPosition();
-      model->getFK(HebiFrameTypeOutput, angles, transforms);
+      model->getFK(robot_model::FrameType::Output, angles, transforms);
 
       //plot frames on a 3d graph
       transforms.emplace(transforms.begin(),Eigen::Matrix<double,4,4>::Identity());
