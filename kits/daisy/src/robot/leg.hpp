@@ -13,20 +13,20 @@ public:
 
   int index_;
 
-  // Angle and distance from the center of the parent creature.
-  Leg(double angle_rad, double distance, const Eigen::VectorXd& current_angles, const HexapodParameters& params, bool is_dummy, int index, LegConfiguration configuration);
+  // Transform of leg base from the center of the parent creature.
+  Leg(const Matrix4d& base_frame, const Eigen::VectorXd& current_angles, const HexapodParameters& params, bool is_dummy, int index, LegConfiguration configuration);
 
   // Compute jacobian given position and velocities.  Usually, this is done internally
   // int `computeState`, but if the position/velocity is known (e.g., external
   // step control), this can be used to get these jacobians from the internal
   // kinematics object.
-  bool computeJacobians(const Eigen::VectorXd& angles, Eigen::MatrixXd& jacobian_ee, robot_model::MatrixXdVector& jacobian_com);
+  bool computeJacobians(const Eigen::VectorXd& angles, Eigen::MatrixXd& jacobian_ee, robot_model::MatrixXdVector& jacobian_com) const;
   // TODO: return value?  What if IK fails?
-  bool computeState(double t, Eigen::VectorXd& angles, Eigen::VectorXd& vels, Eigen::MatrixXd& jacobian_ee, robot_model::MatrixXdVector& jacobian_com);
+  bool computeState(double t, Eigen::VectorXd& angles, Eigen::VectorXd& vels, Eigen::MatrixXd& jacobian_ee, robot_model::MatrixXdVector& jacobian_com) const;
 
   // TODO: combine with above computeState?
   // TODO: pass in torques as reference instead for consistency?
-  Eigen::VectorXd computeTorques(const robot_model::MatrixXdVector& jacobian_com, const Eigen::MatrixXd& jacobian_ee, const Eigen::VectorXd& angles, const Eigen::VectorXd& vels, const Eigen::Vector3d& gravity_vec, const Eigen::Vector3d& foot_force);
+  Eigen::VectorXd computeTorques(const robot_model::MatrixXdVector& jacobian_com, const Eigen::MatrixXd& jacobian_ee, const Eigen::VectorXd& angles, const Eigen::VectorXd& vels, const Eigen::Vector3d& gravity_vec, const Eigen::Vector3d& foot_force) const;
 
   static constexpr int getNumJoints() { return num_joints_; };
 
@@ -51,7 +51,7 @@ public:
   const hebi::robot_model::RobotModel& getKinematics() const { return *kin_; }
 
   // Am I actively stepping?
-  Mode getMode() { return (step_) ? Mode::Flight : Mode::Stance; }
+  Mode getMode() const { return (step_) ? Mode::Flight : Mode::Stance; }
 
   void startStep(double t);
   void updateStep(double t);

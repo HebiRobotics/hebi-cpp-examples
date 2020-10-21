@@ -2,6 +2,7 @@
 #include "lookup.hpp"
 #include "xml_util/pugixml.hpp"
 #include "group_feedback.hpp"
+#include "group_command.hpp"
 
 #include <iostream> // Note: for debugging output.
 
@@ -20,12 +21,19 @@ bool InputManagerMobileIO::reset()
   if (group_)
     group_.reset();
 
-  // Look for joystick (IO board)
+  // Look for mobile IO
   hebi::Lookup lookup;
   long timeout_ms = 2000; // use a 2 second timeout
   group_ = lookup.getGroupFromNames({"Daisy"}, {"mobileIO"}, timeout_ms);
   if (!group_)
     return false;
+
+  // Set Slider snap positions and button toggle modes.
+  GroupCommand cmd(1);
+  cmd[0].io().a().setFloat(3, 0);
+  cmd[0].io().f().setFloat(3, 0);
+  cmd[0].io().b().setInt(7, 1);
+  group_->sendCommandWithAcknowledgement(cmd);
 
   group_->addFeedbackHandler([this] (const GroupFeedback& fbk)
   {
@@ -44,11 +52,8 @@ bool InputManagerMobileIO::reset()
       right_horz_raw_ = analog.getFloat(7);
       right_vert_raw_ = analog.getFloat(8);
 
-      // Note: only care about edge triggers down here
-      bool new_mode_button_state = (digital.getInt(7) == 1);
-      if (new_mode_button_state && !prev_mode_button_state_)
-        ++num_mode_toggles_;
-      prev_mode_button_state_ = new_mode_button_state;
+      // Note: Button is configured at toggle, so don't need to count edges
+      mode_ = digital.getInt(7);
 
       // Check for "Quit"
       if (digital.getInt(8) == 1) {
@@ -71,7 +76,7 @@ void InputManagerMobileIO::printState() const
   std::cout << "Height " << xyz_scale_ * getVerticalVelocity() << "\n";
 
   std::cout << "quit state: " << has_quit_been_pushed_ << "\n";
-  std::cout << "number of mode changes: " << num_mode_toggles_ << "\n";
+  std::cout << "Mode: " << mode_ << "\n";
 }
 
 Eigen::Vector3f InputManagerMobileIO::getTranslationVelocityCmd() const
@@ -113,9 +118,9 @@ bool InputManagerMobileIO::getQuitButtonPushed() const
   return has_quit_been_pushed_;
 }
 
-size_t InputManagerMobileIO::getAndResetModeToggleCount()
+size_t InputManagerMobileIO::getMode()
 {
-  return num_mode_toggles_.exchange(0);
+  return mode_;
 }
   
 float InputManagerMobileIO::getVerticalVelocity() const
