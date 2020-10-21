@@ -67,7 +67,7 @@ bool HexapodParameters::loadFromFile(std::string file) {
   if (leg_index != 6)
     return false;
 
-  success =
+  success = success &&
     xml::trySetFloatParameter(body.attribute("mass"), mass_);
   success = success &&
     xml::trySetFloatParameter(stance.attribute("radius"), stance_radius_) &&
