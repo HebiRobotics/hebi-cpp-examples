@@ -37,7 +37,7 @@ public:
 
   // Gets the number of times the mode button has been toggled since the last
   // request. Resets this count after retrieving.
-  size_t getAndResetModeToggleCount() override;
+  size_t getMode() override;
 
   // Is the joystick connected?
   // Return "true" if we are connected to an I/O board/app; false otherwise.
@@ -66,7 +66,7 @@ private:
   float right_vert_raw_{0}; // Translation (f/b)
 
   bool prev_mode_button_state_{false};      // Mode
-  std::atomic<size_t> num_mode_toggles_{0}; //
+  std::atomic<size_t> mode_{0}; //
 
   bool has_quit_been_pushed_ = false; // Quit
 };

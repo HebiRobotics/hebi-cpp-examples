@@ -3,8 +3,8 @@
 
 namespace hebi {
 
-Step::Step(double start_time, Leg* leg)
-  : start_time_(start_time), lift_up_(leg->getCmdStanceXYZ())
+Step::Step(double start_time, const Leg& leg)
+  : leg_(leg), start_time_(start_time), lift_up_(leg.getCmdStanceXYZ())
 {
   for (int i = 0; i < num_phase_pts_; ++i)
     time_.push_back(phase_[i] * period_);
@@ -13,16 +13,16 @@ Step::Step(double start_time, Leg* leg)
 }
 
 // Note: returns 'true' if complete
-bool Step::update(double t, Leg* leg)
+bool Step::update(double t)
 {
-  lift_off_vel_ = leg->getStanceVelXYZ();
+  lift_off_vel_ = leg_.getStanceVelXYZ();
 
   // Set touch down point to overshoot the stance error; only do this at the beginning to prevent
   // large changes in foot touch down location and corresponding weird trajectories.  TODO: fix to
   // allow small incremental updates to touch down location!
 //  std::cout << leg->getHomeStanceXYZ() << std::endl;
   if (t == start_time_)
-    touch_down_ = leg->getHomeStanceXYZ() - (overshoot_ * period_ * lift_off_vel_);
+    touch_down_ = leg_.getHomeStanceXYZ() - (overshoot_ * period_ * lift_off_vel_);
 
   // Linearly interpolate along ground
 //  mid_step_1_ = 0.9 * lift_up_ + 0.1 * touch_down_;
@@ -45,7 +45,7 @@ bool Step::update(double t, Leg* leg)
   // TODO: make this all more modular! (put waypoints in a vector so we can refer to them more easily here?)
   int num_joints = Leg::getNumJoints();
   int max_num_waypoints = 3; // max number of waypoints
-  auto& kin = leg->getKinematics();
+  auto& kin = leg_.getKinematics();
  
   VectorXd leg_times(max_num_waypoints); 
   MatrixXd leg_waypoints(num_joints, max_num_waypoints);
@@ -59,7 +59,7 @@ bool Step::update(double t, Leg* leg)
   if (t == start_time_)// For initial time, add special velocity for lift off:
   {
     kin.solveIK(
-      leg->getSeedAngles(),
+      leg_.getSeedAngles(),
       ik_output,
       robot_model::EndEffectorPositionObjective(lift_up_));
     if (ik_output.size() == 0)
@@ -97,7 +97,7 @@ bool Step::update(double t, Leg* leg)
   if ((time_[1] - elapsed) > ignore_waypoint_threshold_)
   {
     kin.solveIK(
-      leg->getSeedAngles(),
+      leg_.getSeedAngles(),
       ik_output,
       robot_model::EndEffectorPositionObjective(mid_step_1_));
     leg_waypoints.col(next_pt) = ik_output;
@@ -109,14 +109,14 @@ bool Step::update(double t, Leg* leg)
   if ((time_[2] - elapsed) > ignore_waypoint_threshold_)
   {
     kin.solveIK(
-      leg->getSeedAngles(),
+      leg_.getSeedAngles(),
       ik_output,
       robot_model::EndEffectorPositionObjective(touch_down_));
     // J(1:3, :) \ stance_vel;
     kin.getJEndEffector(ik_output, jacobian_ee);
     MatrixXd jacobian_part = jacobian_ee.topLeftCorner(3,jacobian_ee.cols());
     leg_waypoint_vels.block(0, next_pt, num_joints, 1) =
-      jacobian_part.colPivHouseholderQr().solve(leg->getStanceVelXYZ()).eval().cast<double>();
+      jacobian_part.colPivHouseholderQr().solve(leg_.getStanceVelXYZ()).eval().cast<double>();
 
     leg_waypoints.col(next_pt) = ik_output;
     leg_waypoint_accels.col(next_pt).setZero();
@@ -126,7 +126,7 @@ bool Step::update(double t, Leg* leg)
 /*
   if ((time_[3] - elapsed) > ignore_waypoint_threshold_)
   {
-    kin.solveIK(touch_down_, leg->getSeedAngles(), ik_output);
+    kin.solveIK(touch_down_, leg_.getSeedAngles(), ik_output);
     // TODO: get Jacobian, use this to get final vel.
     leg_waypoints.col(next_pt) = ik_output;
     leg_waypoint_vels.col(next_pt).setZero();

@@ -27,17 +27,30 @@ std::unique_ptr<Hexapod> Hexapod::createPartial(const HexapodParameters& params,
   {
     if (real_legs.count(i) > 0)
     {
-      names.push_back("L" + std::to_string(i + 1) + "_J1_Base" );
-      names.push_back("L" + std::to_string(i + 1) + "_J2_Shoulder" );
-      names.push_back("L" + std::to_string(i + 1) + "_J3_Elbow" );
+      names.push_back("L" + std::to_string(i + 1) + "_J1_base" );
+      names.push_back("L" + std::to_string(i + 1) + "_J2_shoulder" );
+      names.push_back("L" + std::to_string(i + 1) + "_J3_elbow" );
     }
   }
   std::vector<std::string> family = { "Daisy" };
 
   long timeout_ms = 4000; // use a 4 second timeout
   auto group = lookup.getGroupFromNames(family, names, timeout_ms);
-  if (!group)
+  if (!group) {
+    std::cout
+      << "Couldn't find actuators. Looking for:" << std::endl
+      << "Family: " << family[0] << std::endl;
+    for (auto name : names) {
+      std::cout << "Name: \"" << name << "\"" << std::endl;
+    }
+    std::cout << std::endl << "Actuators in family \"" << family[0] << "\" on network:" << std::endl;
+    auto entry_list = lookup.getEntryList();
+    for (auto entry : *entry_list) {
+      if (entry.family_.compare(family[0]) == 0)
+        std::cout << "Name: \"" << entry.name_ << "\"" << std::endl;
+    }
     return nullptr;
+  }
   group->setCommandLifetimeMs(100);
 
   // Log everything!
@@ -155,20 +168,15 @@ bool Hexapod::setGains()
   return success && group_->sendCommandWithAcknowledgement(gains, 4000);
 }
 
-void Hexapod::updateMode(int num_toggles)
+void Hexapod::updateMode(int mode)
 {
-  // This is specialized for two modes:
-  bool toggle = ((num_toggles % 2) == 1);
-  if (toggle)
-  {
-    if (mode_ == Mode::Step)
-      mode_ = Mode::Stance;
-    else if (mode_ == Mode::Stance)
-      mode_ = Mode::Step;
-  }
+  if (mode == 0)
+    mode_ = Mode::Step;
+  else if (mode == 1)
+    mode_ = Mode::Stance;
 }
 
-Eigen::Matrix4d Hexapod::getBodyPoseFromFeet()
+Eigen::Matrix4d Hexapod::getBodyPoseFromFeet() const
 {
   int num_legs = legs_.size();
   // Create zero-meaned COM values for feet and base
@@ -209,7 +217,7 @@ Eigen::Matrix4d Hexapod::getBodyPoseFromFeet()
   return res;
 }
 
-bool Hexapod::needToStep()
+bool Hexapod::needToStep() const
 {
   // Return if we are in stance mode or any legs are actively stepping
   if (mode_ == Stance || isStepping())
@@ -232,14 +240,13 @@ bool Hexapod::needToStep()
   return false;
 }
 
-bool Hexapod::isStepping()
+bool Hexapod::isStepping() const
 {
-  int num_stepping_legs = std::count_if(legs_.begin(), legs_.end(),
-    [](std::unique_ptr<Leg>& l)
-    {
-      return l->getMode() == Leg::Mode::Flight;
-    });
-  return num_stepping_legs > 0;
+  for (const auto& leg : legs_) {
+    if (leg->getMode() == Leg::Mode::Flight)
+      return true;
+  }
+  return false;
 }
 
 // TODO: think about -- can we just call this "StartAlternatingTripod", and have
@@ -289,7 +296,7 @@ Eigen::VectorXd Hexapod::getLegFeedback(int leg_index)
   return leg_angles;
 }
 
-void Hexapod::computeFootForces(double t, Eigen::MatrixXd& foot_forces)
+void Hexapod::computeFootForces(double t, Eigen::MatrixXd& foot_forces) const
 {
   Eigen::VectorXd factors(6);
   Eigen::VectorXd blend_factors(6);
@@ -409,7 +416,8 @@ bool getMStopPressed(const hebi::GroupFeedback& fbk)
   for (int i = 0; i < fbk.size(); ++i)
   {
     // At least one module has the m-stop pressed!
-    if (fbk[i].actuator().mstopState().get() == hebi::Feedback::MstopState::Triggered)
+    auto& mstop = fbk[i].actuator().mstopState();
+    if (mstop.has() && (mstop.get() == hebi::Feedback::MstopState::Triggered))
       return true;
   }
   return false;
@@ -476,7 +484,7 @@ Hexapod::Hexapod(std::shared_ptr<Group> group,
                  const std::set<int>& real_legs,
                  HexapodErrors& hex_errors)
  : real_legs_(real_legs), group_(group), log_group_input_(log_group_input), log_group_modules_(log_group_modules), cmd_(group_ ? group_->size() : 1),
-   params_(params), mode_(Mode::Step)
+   params_(params), mode_(Mode::Step), weight_(params.mass_ * 9.8f)
 {
   // TODO: What should the initial dummy position be?
   positions_ = Eigen::VectorXd::Zero(num_angles_);
@@ -497,13 +505,9 @@ Hexapod::Hexapod(std::shared_ptr<Group> group,
     hex_errors.m_stop_pressed = getMStopPressed(fbk);
   }
 
-  // TODO: generalize!
-  legs_.emplace_back(new Leg(30.0 * M_PI / 180.0, 0.2375, getLegFeedback(0), params, real_legs_.count(0)>0, 0, Leg::LegConfiguration::Left));
-  legs_.emplace_back(new Leg(-30.0 * M_PI / 180.0, 0.2375, getLegFeedback(1), params, real_legs_.count(1)>0, 1, Leg::LegConfiguration::Right));
-  legs_.emplace_back(new Leg(90.0 * M_PI / 180.0, 0.1875, getLegFeedback(2), params, real_legs_.count(2)>0, 2, Leg::LegConfiguration::Left));
-  legs_.emplace_back(new Leg(-90.0 * M_PI / 180.0, 0.1875, getLegFeedback(3), params, real_legs_.count(3)>0, 3, Leg::LegConfiguration::Right));
-  legs_.emplace_back(new Leg(150.0 * M_PI / 180.0, 0.2375, getLegFeedback(4), params, real_legs_.count(4)>0, 4, Leg::LegConfiguration::Left));
-  legs_.emplace_back(new Leg(-150.0 * M_PI / 180.0, 0.2375, getLegFeedback(5), params, real_legs_.count(5)>0, 5, Leg::LegConfiguration::Right));
+  for (int index = 0; index < 6; ++index) 
+    legs_.emplace_back(new Leg(params.getLegTransform(index), getLegFeedback(index), params, real_legs_.count(index)>0, index,
+      index % 2 == 0 ? Leg::LegConfiguration::Left : Leg::LegConfiguration::Right));
 
   // Initialize step information
   last_step_legs_.insert(0);

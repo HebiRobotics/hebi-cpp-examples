@@ -11,11 +11,11 @@ class Leg;
 class Step
 {
 public:
-  Step(double start_time, Leg* leg); // NOTE: I don't like this circular dependency on Leg here...
+  Step(double start_time, const Leg& leg); // NOTE: I don't like this circular dependency on Leg here...
   // TODO: don't call update from constructor?
 
   // Note: returns 'true' if complete
-  bool update(double t, Leg* leg); // NOTE: I don't like this circular dependency on Leg here...
+  bool update(double t);
 
   const Eigen::Vector3d& getTouchDown() const { return touch_down_; }
   void computeState(double t, Eigen::VectorXd& angles, Eigen::VectorXd& vels, Eigen::VectorXd& accels) const;
@@ -27,6 +27,7 @@ public:
   static constexpr float ignore_waypoint_threshold_ = 0.01; // 10 ms (in seconds)
   double getStartTime() const { return start_time_; }
 private:
+  const Leg& leg_;
   // TODO: read from XML -- the phase points of the leg
   static const int num_phase_pts_ = 3;
   const double phase_[num_phase_pts_] = {0, 0.5, 1};

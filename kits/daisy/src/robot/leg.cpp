@@ -6,7 +6,7 @@ namespace hebi {
 using ActuatorType = hebi::robot_model::ActuatorType;
 using LinkType = hebi::robot_model::LinkType;
 
-Leg::Leg(double angle_rad, double distance, const Eigen::VectorXd& current_angles, const HexapodParameters& params, bool is_dummy, int index, LegConfiguration configuration)
+Leg::Leg(const Matrix4d& base_frame, const Eigen::VectorXd& current_angles, const HexapodParameters& params, bool is_dummy, int index, LegConfiguration configuration)
   : index_(index), stance_radius_(params.stance_radius_), body_height_(params.default_body_height_), spring_shift_(configuration == LegConfiguration::Right ? 3.75 : -3.75) // Nm
 {
   kin_ = configuration == LegConfiguration::Left ?
@@ -24,13 +24,7 @@ Leg::Leg(double angle_rad, double distance, const Eigen::VectorXd& current_angle
 
   kin_->getMasses(masses_);
 
-  Matrix4d transform = Matrix4d::Identity();
-  Matrix3d rotate = AngleAxisd(angle_rad, Eigen::Vector3d::UnitZ()).matrix();
-  transform.topLeftCorner<3,3>() = rotate;
-  Eigen::Vector3d tmp;
-  tmp << distance, 0, 0;
-  transform.topRightCorner<3,1>() = rotate * tmp;
-  kin_->setBaseFrame(transform);
+  kin_->setBaseFrame(base_frame);
 
   seed_angles_.resize(num_joints_);
   if (configuration == LegConfiguration::Left)
@@ -38,7 +32,6 @@ Leg::Leg(double angle_rad, double distance, const Eigen::VectorXd& current_angle
   else
     seed_angles_ << 0.2, .3, 1.9;
  
-  auto base_frame = kin_->getBaseFrame();
   Eigen::Vector4d tmp4(stance_radius_, 0, -body_height_, 0);
   home_stance_xyz_ = (base_frame * tmp4).topLeftCorner<3,1>();
   level_home_stance_xyz_ = home_stance_xyz_;
@@ -54,13 +47,13 @@ Leg::Leg(double angle_rad, double distance, const Eigen::VectorXd& current_angle
 }
 
 // Compute jacobian given position and velocities
-bool Leg::computeJacobians(const Eigen::VectorXd& angles, Eigen::MatrixXd& jacobian_ee, robot_model::MatrixXdVector& jacobian_com)
+bool Leg::computeJacobians(const Eigen::VectorXd& angles, Eigen::MatrixXd& jacobian_ee, robot_model::MatrixXdVector& jacobian_com) const
 {
   kin_->getJEndEffector(angles, jacobian_ee);
   kin_->getJ(robot_model::FrameType::CenterOfMass, angles, jacobian_com);
 }
  
-bool Leg::computeState(double t, Eigen::VectorXd& angles, Eigen::VectorXd& vels, Eigen::MatrixXd& jacobian_ee, robot_model::MatrixXdVector& jacobian_com)
+bool Leg::computeState(double t, Eigen::VectorXd& angles, Eigen::VectorXd& vels, Eigen::MatrixXd& jacobian_ee, robot_model::MatrixXdVector& jacobian_com) const
 {
   // TODO: think about returning an error value, e.g., when IK fails?
   // TODO: add torque!
@@ -90,7 +83,7 @@ bool Leg::computeState(double t, Eigen::VectorXd& angles, Eigen::VectorXd& vels,
   }
 }
 
-Eigen::VectorXd Leg::computeTorques(const robot_model::MatrixXdVector& jacobian_com, const Eigen::MatrixXd& jacobian_ee, const Eigen::VectorXd& angles, const Eigen::VectorXd& vels, const Eigen::Vector3d& gravity_vec, const Eigen::Vector3d& foot_force)
+Eigen::VectorXd Leg::computeTorques(const robot_model::MatrixXdVector& jacobian_com, const Eigen::MatrixXd& jacobian_ee, const Eigen::VectorXd& angles, const Eigen::VectorXd& vels, const Eigen::Vector3d& gravity_vec, const Eigen::Vector3d& foot_force) const
 {
   // TODO: pull from XML?
   constexpr float drag_shift = 1.5; // Nm / (rad/sec)
@@ -137,7 +130,7 @@ void Leg::updateStance(const Eigen::Vector3d& trans_vel, const Eigen::Vector3d& 
 
 void Leg::startStep(double t)
 {
-  step_.reset(new Step(t, this)); // TODO: why not use fbk stance here?
+  step_.reset(new Step(t, *this)); // TODO: why not use fbk stance here?
 }
 
 void Leg::updateStep(double t)
@@ -146,7 +139,7 @@ void Leg::updateStep(double t)
   if (!step_)
     return;
   // Update, marking as complete if we finish the step.
-  if (step_->update(t, this))
+  if (step_->update(t))
   {
     cmd_stance_xyz_ = step_->getTouchDown();
     step_.reset(nullptr);

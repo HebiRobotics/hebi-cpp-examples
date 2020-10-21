@@ -454,7 +454,7 @@ int main(int argc, char** argv)
 
     translation_velocity_cmd = input->getTranslationVelocityCmd();
     rotation_velocity_cmd = input->getRotationVelocityCmd();
-    hexapod->updateMode(input->getAndResetModeToggleCount());
+    hexapod->updateMode(input->getMode());
 
     // The first minute of every 30 minutes:
     if (fmod(elapsed.count(), 1800) < 60)

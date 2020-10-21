@@ -35,7 +35,7 @@ public:
 
   // Gets the number of times the mode button has been toggled since the last
   // request.
-  virtual size_t getAndResetModeToggleCount() = 0;
+  virtual size_t getMode() = 0;
 
   // Is the joystick connected?
   virtual bool isConnected() const = 0;
