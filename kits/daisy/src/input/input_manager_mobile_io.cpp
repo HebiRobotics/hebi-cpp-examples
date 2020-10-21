@@ -24,7 +24,7 @@ bool InputManagerMobileIO::reset()
   // Look for mobile IO
   hebi::Lookup lookup;
   long timeout_ms = 2000; // use a 2 second timeout
-  group_ = lookup.getGroupFromNames({"Daisy"}, {"mobileIO"}, timeout_ms);
+  group_ = lookup.getGroupFromNames({"Lily"}, {"mobileIO"}, timeout_ms);
   if (!group_)
     return false;
 
