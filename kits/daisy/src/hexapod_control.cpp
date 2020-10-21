@@ -186,6 +186,131 @@ std::unique_ptr<Hexapod> getHexapod(const HexapodParameters& params, bool is_dum
 
 }
 
+struct HexapodGui {
+  QWidget *widget = new QWidget;
+
+  QLabel* mode;
+  QLabel* feedback_status;
+  std::unique_ptr<QGraphicsScene> scene;
+  std::unique_ptr<HexapodView2D> hexapod_display;
+  std::unique_ptr<QGraphicsView> view;
+
+  HexapodGui(bool do_visualize, HexapodParameters params) {
+    double overall_width = do_visualize ? 1100 : 300;
+    double overall_height = do_visualize ? 800 : 150;
+
+    if (do_visualize)
+    {
+      scene.reset(new QGraphicsScene(QRectF(0, 0, overall_width - 200, overall_height)));
+      hexapod_display.reset(new HexapodView2D(scene.get()));
+
+      view.reset(new QGraphicsView(scene.get()));
+      view->setBackgroundBrush(Qt::black);
+      view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+      view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+      view->resize(overall_width + 10, overall_height + 10);
+
+      QHBoxLayout *hLayout = new QHBoxLayout(widget);
+      QVBoxLayout *vLayout = new QVBoxLayout();
+      vLayout->setAlignment(Qt::AlignTop);
+      hLayout->addWidget(view.get(), 1);
+      hLayout->addLayout(vLayout);
+
+      ////////////////////////
+      // Build the panel with buttons/labels/etc.
+      // TODO: abstract out to a different class?
+      QLabel* mode_label = new QLabel("Current Mode:");
+      auto font = mode_label->font();
+      font.setWeight(QFont::Bold);
+      mode_label->setFont(font);
+      mode = new QLabel("---");
+
+      QLabel* feedback_status_label = new QLabel("Module Ethernet Connection:");
+      font = feedback_status_label->font();
+      font.setWeight(QFont::Bold);
+      feedback_status_label->setFont(font);
+
+      feedback_status = new QLabel("Good");
+      QPalette palette = feedback_status->palette();
+      palette.setColor(QPalette::Background, Qt::green);
+      feedback_status->setAutoFillBackground(true);
+      feedback_status->setPalette(palette);
+
+      QLabel* frequency_label = new QLabel("Logging Frequencies (low/high):");
+      font = frequency_label->font();
+      font.setWeight(QFont::Bold);
+      frequency_label->setFont(font);
+      std::string frequency_text = std::to_string(params.low_log_frequency_hz_) + "/" + std::to_string(params.high_log_frequency_hz_);
+      QLabel* frequency = new QLabel(frequency_text.c_str());
+
+      vLayout->addWidget(mode_label);
+      vLayout->addWidget(mode);
+      vLayout->addWidget(feedback_status_label);
+      vLayout->addWidget(feedback_status);
+      vLayout->addWidget(frequency_label);
+      vLayout->addWidget(frequency);
+      ////////////////////////
+    }
+    else
+    {
+      QVBoxLayout *vLayout = new QVBoxLayout(widget);
+      QHBoxLayout *hLayout1 = new QHBoxLayout();
+      QHBoxLayout *hLayout2 = new QHBoxLayout();
+      QHBoxLayout *hLayout3 = new QHBoxLayout();
+      QLabel* mode_label = new QLabel("Current Mode:");
+      auto font = mode_label->font();
+      font.setWeight(QFont::Bold);
+      mode_label->setFont(font);
+      mode = new QLabel("---");
+
+      QLabel* feedback_status_label = new QLabel("Module Ethernet Connection:");
+      font = feedback_status_label->font();
+      font.setWeight(QFont::Bold);
+      feedback_status_label->setFont(font);
+      feedback_status = new QLabel("Good");
+      QPalette palette = feedback_status->palette();
+      palette.setColor(QPalette::Background, Qt::green);
+      feedback_status->setAutoFillBackground(true);
+      feedback_status->setPalette(palette);
+
+      QLabel* frequency_label = new QLabel("Logging Frequencies (low/high):");
+      font = frequency_label->font();
+      font.setWeight(QFont::Bold);
+      frequency_label->setFont(font);
+      std::string frequency_text = std::to_string(params.low_log_frequency_hz_) + "/" + std::to_string(params.high_log_frequency_hz_);
+      QLabel* frequency = new QLabel(frequency_text.c_str());
+
+      hLayout1->addWidget(mode_label);
+      hLayout1->addWidget(mode);
+      hLayout2->addWidget(feedback_status_label);
+      hLayout2->addWidget(feedback_status);
+      hLayout3->addWidget(frequency_label);
+      hLayout3->addWidget(frequency);
+      vLayout->addLayout(hLayout1);
+      vLayout->addLayout(hLayout2);
+      vLayout->addLayout(hLayout3);
+    }
+
+    widget->setWindowTitle(QStringLiteral("heXapod Control"));
+    widget->show();
+    widget->resize(overall_width, overall_height);
+  }
+
+  void setFeedback(const QString msg, QColor color) {
+    feedback_status->setText(msg);
+    QPalette palette = feedback_status->palette();
+    palette.setColor(QPalette::Background, color);
+    feedback_status->setPalette(palette);
+  }
+};
+
+void showError(QString title, QString msg) {
+  QMessageBox param_error;
+  param_error.setWindowTitle(title);
+  param_error.setText(msg);
+  param_error.exec();
+}
+
 int main(int argc, char** argv)
 {
   // Construct initially so I can pop up error dialogs!
@@ -205,10 +330,7 @@ int main(int argc, char** argv)
     params.resetToDefaults();
     if (!is_quiet)
     {
-      QMessageBox param_error;
-      param_error.setWindowTitle("Could not find parameters");
-      param_error.setText("Could not find hexapod parameters, or file corrupt! Using default parameters.");
-      param_error.exec();
+      showError("Could not find parameters", "Could not find hexapod parameters, or file corrupt! Using default parameters.");
     }
   }
 
@@ -228,10 +350,7 @@ int main(int argc, char** argv)
     {
       if (!is_quiet)
       {
-        QMessageBox param_error;
-        param_error.setWindowTitle("Could not set gains!");
-        param_error.setText("Could not set controller gains on connected modules -- this could indicate an intermittent network connection with the modules.");
-        param_error.exec();
+        showError("Could not set gains!", "Could not set controller gains on connected modules -- this could indicate an intermittent network connection with the modules.");
       }      
     }
     if (hexapod)
@@ -246,14 +365,11 @@ int main(int argc, char** argv)
 
   std::unique_ptr<input::InputManager> input(new input::InputManagerMobileIO());
   
-  if (!is_quiet && !input->isConnected())
-  {
-    std::cout << "Could not find I/O board for joystick." << std::endl;
-    return 1;
-  }
   // Retry a "reset" multiple times! Wait for this in a loop.
-  while (is_quiet && !input->isConnected())
+  while (!input->isConnected())
   {
+    if (!is_quiet)
+      std::cout << "Could not find mobild IO! Check that it is online and named properly\n.";
     static_cast<input::InputManagerMobileIO*>(input.get())->reset();
   }
 
@@ -263,115 +379,7 @@ int main(int argc, char** argv)
 
   std::cout << "Found robot -- starting control program.\n";
 
-  double overall_width = do_visualize ? 1100 : 300;
-  double overall_height = do_visualize ? 800 : 150;
-
-  QWidget *widget = new QWidget;
-
-  // These could be put into a struct -- basically, we just need to hold on to
-  // these objects during application runtime, and they may be optional. Should
-  // really refactor more completely here.
-  QLabel* mode;
-  QLabel* feedback_status;
-  std::unique_ptr<QGraphicsScene> scene;
-  std::unique_ptr<HexapodView2D> hexapod_display;
-  std::unique_ptr<QGraphicsView> view;
-
-  if (do_visualize)
-  {
-    scene.reset(new QGraphicsScene(QRectF(0, 0, overall_width - 200, overall_height)));
-    hexapod_display.reset(new HexapodView2D(scene.get()));
-
-    view.reset(new QGraphicsView(scene.get()));
-    view->setBackgroundBrush(Qt::black);
-    view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    view->resize(overall_width + 10, overall_height + 10);
-
-    QHBoxLayout *hLayout = new QHBoxLayout(widget);
-    QVBoxLayout *vLayout = new QVBoxLayout();
-    vLayout->setAlignment(Qt::AlignTop);
-    hLayout->addWidget(view.get(), 1);
-    hLayout->addLayout(vLayout);
-
-    ////////////////////////
-    // Build the panel with buttons/labels/etc.
-    // TODO: abstract out to a different class?
-    QLabel* mode_label = new QLabel("Current Mode:");
-    auto font = mode_label->font();
-    font.setWeight(QFont::Bold);
-    mode_label->setFont(font);
-    mode = new QLabel("---");
-
-    QLabel* feedback_status_label = new QLabel("Module Ethernet Connection:");
-    font = feedback_status_label->font();
-    font.setWeight(QFont::Bold);
-    feedback_status_label->setFont(font);
-
-    feedback_status = new QLabel("Good");
-    QPalette palette = feedback_status->palette();
-    palette.setColor(QPalette::Background, Qt::green);
-    feedback_status->setAutoFillBackground(true);
-    feedback_status->setPalette(palette);
-
-    QLabel* frequency_label = new QLabel("Logging Frequencies (low/high):");
-    font = frequency_label->font();
-    font.setWeight(QFont::Bold);
-    frequency_label->setFont(font);
-    std::string frequency_text = std::to_string(params.low_log_frequency_hz_) + "/" + std::to_string(params.high_log_frequency_hz_);
-    QLabel* frequency = new QLabel(frequency_text.c_str());
-
-    vLayout->addWidget(mode_label);
-    vLayout->addWidget(mode);
-    vLayout->addWidget(feedback_status_label);
-    vLayout->addWidget(feedback_status);
-    vLayout->addWidget(frequency_label);
-    vLayout->addWidget(frequency);
-    ////////////////////////
-  }
-  else
-  {
-    QVBoxLayout *vLayout = new QVBoxLayout(widget);
-    QHBoxLayout *hLayout1 = new QHBoxLayout();
-    QHBoxLayout *hLayout2 = new QHBoxLayout();
-    QHBoxLayout *hLayout3 = new QHBoxLayout();
-    QLabel* mode_label = new QLabel("Current Mode:");
-    auto font = mode_label->font();
-    font.setWeight(QFont::Bold);
-    mode_label->setFont(font);
-    mode = new QLabel("---");
-
-    QLabel* feedback_status_label = new QLabel("Module Ethernet Connection:");
-    font = feedback_status_label->font();
-    font.setWeight(QFont::Bold);
-    feedback_status_label->setFont(font);
-    feedback_status = new QLabel("Good");
-    QPalette palette = feedback_status->palette();
-    palette.setColor(QPalette::Background, Qt::green);
-    feedback_status->setAutoFillBackground(true);
-    feedback_status->setPalette(palette);
-
-    QLabel* frequency_label = new QLabel("Logging Frequencies (low/high):");
-    font = frequency_label->font();
-    font.setWeight(QFont::Bold);
-    frequency_label->setFont(font);
-    std::string frequency_text = std::to_string(params.low_log_frequency_hz_) + "/" + std::to_string(params.high_log_frequency_hz_);
-    QLabel* frequency = new QLabel(frequency_text.c_str());
-
-    hLayout1->addWidget(mode_label);
-    hLayout1->addWidget(mode);
-    hLayout2->addWidget(feedback_status_label);
-    hLayout2->addWidget(feedback_status);
-    hLayout3->addWidget(frequency_label);
-    hLayout3->addWidget(frequency);
-    vLayout->addLayout(hLayout1);
-    vLayout->addLayout(hLayout2);
-    vLayout->addLayout(hLayout3);
-  }
-
-  widget->setWindowTitle(QStringLiteral("heXapod Control"));
-  widget->show();
-  widget->resize(overall_width, overall_height);
+  HexapodGui gui(do_visualize, params);
 
   Eigen::Vector3f translation_velocity_cmd;
   translation_velocity_cmd.setZero();
@@ -419,28 +427,14 @@ int main(int argc, char** argv)
 
     if (!is_dummy)
     {
-      // More than 2x the feedback period?
-      if ((now - hexapod->getLastFeedbackTime()) > std::chrono::milliseconds((long)(hexapod->getFeedbackPeriodMs() * 2.0)))
+      // Still less than 2x the feedback period?
+      bool connection_status = (now - hexapod->getLastFeedbackTime()) <= std::chrono::milliseconds((long)(hexapod->getFeedbackPeriodMs() * 2.0));
+
+      // If status changed, update text label
+      if (connection_status != last_connection_status)
       {
-        if (last_connection_status)
-        {
-          feedback_status->setText("Intermittent");
-          QPalette palette = feedback_status->palette();
-          palette.setColor(QPalette::Background, Qt::red);
-          feedback_status->setPalette(palette);
-        }
-        last_connection_status = false;
-      }
-      else
-      {
-        if (!last_connection_status)
-        {
-          feedback_status->setText("Good");
-          QPalette palette = feedback_status->palette();
-          palette.setColor(QPalette::Background, Qt::green);
-          feedback_status->setPalette(palette);
-        }
-        last_connection_status = true;
+        connection_status ? gui.setFeedback("Good", Qt::green) : gui.setFeedback("Intermittent", Qt::red);
+        last_connection_status = connection_status;
       }
     }
 
@@ -536,7 +530,7 @@ int main(int argc, char** argv)
         // we don't need 'first_run'?
         first_run = false;
       }
-      mode->setText("Startup");
+      gui.mode->setText("Startup");
      
       // Follow t_l:
       for (int i = 0; i < 6; ++i)
@@ -557,8 +551,8 @@ int main(int argc, char** argv)
         Eigen::Vector3d gravity_vec = hexapod->getGravityDirection() * 9.8;
         torques = curr_leg->computeTorques(jacobian_com, jacobian_ee, angles, vels, gravity_vec, /* dynamic_comp_torque,*/ foot_force); // TODO: add dynamic compensation
         // For rendering:
-        if (hexapod_display)
-          hexapod_display->updateLeg(curr_leg, i, angles);
+        if (gui.hexapod_display)
+          gui.hexapod_display->updateLeg(curr_leg, i, angles);
         // TODO: add actual foot torque for startup?
         // TODO: add vel, torque; test each one!
         hexapod->setCommand(i, &angles, &vels, &torques);
@@ -566,7 +560,7 @@ int main(int argc, char** argv)
       hexapod->sendCommand();
       if (elapsed.count() >= startup_seconds)
       {
-        mode->setText("");
+        gui.mode->setText("");
         startup = false;
       }
       continue;
@@ -575,7 +569,7 @@ int main(int argc, char** argv)
     // Optionally slowly ramp up commands over the first few seconds
     double ramp_up_scale = std::min(1.0, (elapsed.count() - startup_seconds) / 2.0);
 
-    mode->setText(hexapod->getMode() == hebi::Hexapod::Mode::Step ? "Step" : "Stance");
+    gui.mode->setText(hexapod->getMode() == hebi::Hexapod::Mode::Step ? "Step" : "Stance");
 
     hexapod->updateStance(
       translation_velocity_cmd.cast<double>(),
@@ -604,8 +598,8 @@ int main(int argc, char** argv)
       curr_leg->computeState(elapsed.count(), angles, vels, jacobian_ee, jacobian_com);
 
       // For rendering:
-      if (hexapod_display)
-        hexapod_display->updateLeg(curr_leg, i, angles);
+      if (gui.hexapod_display)
+        gui.hexapod_display->updateLeg(curr_leg, i, angles);
       
       // Get torques
       Eigen::Vector3d foot_force = foot_forces.block<3,1>(0,i);
