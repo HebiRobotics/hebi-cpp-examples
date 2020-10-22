@@ -35,7 +35,7 @@ void HexapodParameters::resetToDefaults() {
   high_log_frequency_hz_ = 200;
 }
 
-bool HexapodParameters::loadFromFile(std::string file) {
+bool HexapodParameters::loadFromFile(const std::string& file) {
   resetToDefaults();
 
   pugi::xml_document doc;
@@ -86,7 +86,7 @@ bool HexapodParameters::loadFromFile(std::string file) {
   return success;
 }
 
-bool HexapodParameters::saveToFile(std::string file) const {
+bool HexapodParameters::saveToFile(const std::string& file) const {
   pugi::xml_document doc;
 
   auto root = doc.append_child("hex_config");

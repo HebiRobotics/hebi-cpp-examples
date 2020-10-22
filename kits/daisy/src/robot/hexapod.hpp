@@ -118,8 +118,6 @@ private:
 
   // TODO: abstract into "step" class? At least parameter data structure?
   HexapodParameters params_;
-  // weight_ represents sum of body and leg weights
-  float weight_; // in Newtons or mass (kg) * gravity (9.8 m/s^2)
 
   Eigen::Vector3d vel_xyz_;
 
