@@ -357,7 +357,7 @@ void Hexapod::computeFootForces(double t, Eigen::MatrixXd& foot_forces) const
 
   foot_forces.resize(3,6);
   for (int i = 0; i < 6; ++i)
-    foot_forces.block<3,1>(0,i) = factors(i) * weight_ * grav;
+    foot_forces.block<3,1>(0,i) = factors(i) * params_.mass_ * 9.8f * grav;
 }
 
 // TODO: make this a class function and remove parameters? Make it better!
@@ -484,7 +484,7 @@ Hexapod::Hexapod(std::shared_ptr<Group> group,
                  const std::set<int>& real_legs,
                  HexapodErrors& hex_errors)
  : real_legs_(real_legs), group_(group), log_group_input_(log_group_input), log_group_modules_(log_group_modules), cmd_(group_ ? group_->size() : 1),
-   params_(params), mode_(Mode::Step), weight_(params.mass_ * 9.8f)
+   params_(params), mode_(Mode::Step)
 {
   // TODO: What should the initial dummy position be?
   positions_ = Eigen::VectorXd::Zero(num_angles_);

@@ -33,8 +33,8 @@ struct HexapodParameters
   float low_log_frequency_hz_;
 
   // true on success, false on failure
-  bool loadFromFile(std::string file);
-  bool saveToFile(std::string file) const;
+  bool loadFromFile(const std::string& file);
+  bool saveToFile(const std::string& file) const;
   // Index must be in [0,5]
   Eigen::Matrix4d getLegTransform(int index) const;
   void resetToDefaults();
