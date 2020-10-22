@@ -23,7 +23,10 @@ struct HexapodParameters
   float max_z_;
   float max_r_; // max radius (for stance mode body weight shifting)
 
-  // Step threshold
+  // Step
+  float step_height_; // m
+  float step_overshoot_; // m
+  float step_period_; // sec
   float step_threshold_rotate_; // rad
   float step_threshold_shift_; // m
 

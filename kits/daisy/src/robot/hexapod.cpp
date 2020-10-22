@@ -507,7 +507,7 @@ Hexapod::Hexapod(std::shared_ptr<Group> group,
 
   for (int index = 0; index < 6; ++index) 
     legs_.emplace_back(new Leg(params.getLegTransform(index), getLegFeedback(index), params, real_legs_.count(index)>0, index,
-      index % 2 == 0 ? Leg::LegConfiguration::Left : Leg::LegConfiguration::Right));
+      index % 2 == 0 ? Leg::LegConfiguration::Left : Leg::LegConfiguration::Right, 0.0f));
 
   // Initialize step information
   last_step_legs_.insert(0);

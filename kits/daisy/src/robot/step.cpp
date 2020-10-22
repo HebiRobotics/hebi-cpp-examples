@@ -4,48 +4,71 @@
 namespace hebi {
 
 Step::Step(double start_time, const Leg& leg)
-  : leg_(leg), start_time_(start_time), lift_up_(leg.getCmdStanceXYZ())
+  : leg_(leg), start_time_(start_time)
 {
   for (int i = 0; i < num_phase_pts_; ++i)
     time_.push_back(phase_[i] * period_);
 
 //  update(start_time, leg); // NOTE: I probably don't actually need to call this here, because it gets called from main before accessing the legs.  TODO: try removing?
+  computeKeyframes();
+}
+
+void Step::computeKeyframes()
+{
+  // make space for 3 keyframes
+  keyframes_.emplace_back();
+  keyframes_.emplace_back();
+  keyframes_.emplace_back();
+
+  lift_off_vel_ = leg_.getStanceVelXYZ();
+
+  // Liftoff
+  keyframes_[0].p = leg_.getCmdStanceXYZ();
+  keyframes_[0].v = lift_off_vel_;
+  keyframes_[0].a.setZero();
+
+  // Set touch down point to overshoot the stance error; only do this at the beginning to prevent
+  // large changes in foot touch down location and corresponding weird trajectories.  TODO: fix to
+  // allow small incremental updates to touch down location!
+  // Touchdown
+  Eigen::Vector3d touchdown_offset = overshoot_ * period_ * lift_off_vel_;
+  keyframes_[2].p = leg_.getHomeStanceXYZ() - touchdown_offset;
+  keyframes_[2].v = leg_.getStanceVelXYZ();
+  keyframes_[2].a.setZero();
+
+  // Midpoint
+  keyframes_[1].p = (keyframes_[0].p + keyframes_[2].p) / 2.0;
+  keyframes_[1].p(2) += height_;
+  keyframes_[1].v.setConstant(std::numeric_limits<double>::quiet_NaN());
+  keyframes_[1].a.setConstant(std::numeric_limits<double>::quiet_NaN());
+}
+
+void Step::recomputeKeyframes()
+{
+  // Midpoint
+  keyframes_[1].p = (keyframes_[0].p + keyframes_[2].p) / 2.0;
+  keyframes_[1].p(2) += height_;
+  keyframes_[1].v.setConstant(std::numeric_limits<double>::quiet_NaN());
+  keyframes_[1].a.setConstant(std::numeric_limits<double>::quiet_NaN());
 }
 
 // Note: returns 'true' if complete
 bool Step::update(double t)
 {
-  lift_off_vel_ = leg_.getStanceVelXYZ();
+  double elapsed_time = t - start_time_;
 
-  // Set touch down point to overshoot the stance error; only do this at the beginning to prevent
-  // large changes in foot touch down location and corresponding weird trajectories.  TODO: fix to
-  // allow small incremental updates to touch down location!
-//  std::cout << leg->getHomeStanceXYZ() << std::endl;
-  if (t == start_time_)
-    touch_down_ = leg_.getHomeStanceXYZ() - (overshoot_ * period_ * lift_off_vel_);
-
-  // Linearly interpolate along ground
-//  mid_step_1_ = 0.9 * lift_up_ + 0.1 * touch_down_;
-//  mid_step_2_ = 0.25 * lift_up_ + 0.75 * touch_down_;
-  mid_step_1_ = 0.5 * lift_up_ + 0.5 * touch_down_;
-
-  // Set z position
-//  mid_step_1_(2) += 0.75 * height_;
-//  mid_step_2_(2) += height_;
-  mid_step_1_(2) += height_;
-  double elapsed = t - start_time_;
   // We are done with this step!
-  if (elapsed > period_)
+  if (elapsed_time > period_)
     return true;
   // Close enough to the end; don't replan
-  else if ((period_ - elapsed) < ignore_waypoint_threshold_)
+  else if ((period_ - elapsed_time) < ignore_waypoint_threshold_)
     return false;
 
   // Replan based on current waypoints; create new trajectory objects
   // TODO: make this all more modular! (put waypoints in a vector so we can refer to them more easily here?)
   int num_joints = Leg::getNumJoints();
-  int max_num_waypoints = 3; // max number of waypoints
-  auto& kin = leg_.getKinematics();
+  int max_num_waypoints = time_.size(); // max number of waypoints
+  const robot_model::RobotModel& kin = leg_.getKinematics();
  
   VectorXd leg_times(max_num_waypoints); 
   MatrixXd leg_waypoints(num_joints, max_num_waypoints);
@@ -54,87 +77,69 @@ bool Step::update(double t)
   MatrixXd jacobian_ee;
   VectorXd ik_output;
 
-  // Add initial waypoint
   int next_pt = 0;
-  if (t == start_time_)// For initial time, add special velocity for lift off:
+  if (trajectory_) {
+    //std::cout << "Adding current position to trajectory" << std::endl;
+    Eigen::VectorXd p(num_joints), v(num_joints), a(num_joints);
+    trajectory_->getState(elapsed_time, &p, &v, &a);
+
+    // TODO: maybe use current position and velocity instead of trajectory ones?
+    leg_waypoints.col(next_pt) = p;
+    leg_waypoint_vels.col(next_pt) = v;
+    leg_waypoint_accels.col(next_pt) = a;
+
+    leg_times[next_pt] = elapsed_time;
+    next_pt++;
+  }
+
+  //recomputeKeyframes();
+
+  for (int idx = 0; idx < keyframes_.size(); ++idx)
   {
+    auto keyframe_deadline = time_[idx] - ignore_waypoint_threshold_;
+    // handle liftoff keyframe
+    if(keyframe_deadline < 0.0)
+      keyframe_deadline = 0.0;
+
+    if (elapsed_time > keyframe_deadline)
+      continue;
+
+    auto keyframe = keyframes_[idx];
+
     kin.solveIK(
       leg_.getSeedAngles(),
       ik_output,
-      robot_model::EndEffectorPositionObjective(lift_up_));
+      robot_model::EndEffectorPositionObjective(keyframe.p));
     if (ik_output.size() == 0)
       assert(false);
 
     // J(1:3, :) \ lift_off_vel;
     kin.getJEndEffector(ik_output, jacobian_ee);
     MatrixXd jacobian_part = jacobian_ee.topLeftCorner(3,jacobian_ee.cols());
-    leg_waypoint_vels.block(0, next_pt, num_joints, 1) =
-      jacobian_part.colPivHouseholderQr().solve(lift_off_vel_).eval().cast<double>();
 
     leg_waypoints.col(next_pt) = ik_output;
-    leg_waypoint_accels.col(next_pt).setZero();
+
+    // is there a better way to do this?
+    if (keyframe.v.array().isNaN().any()) {
+      leg_waypoint_vels.col(next_pt).setConstant(std::numeric_limits<double>::quiet_NaN());
+    } else if (keyframe.v.array().isZero()) {
+      leg_waypoint_vels.col(next_pt).setConstant(0);
+   } else {
+      leg_waypoint_vels.col(next_pt) = jacobian_part.colPivHouseholderQr().solve(keyframe.v).eval().cast<double>();
+    }
+
+    if (keyframe.a.array().isNaN().any()) {
+      leg_waypoint_accels.col(next_pt).setConstant(std::numeric_limits<double>::quiet_NaN());
+    } else if (keyframe.a.array().isZero()) {
+      leg_waypoint_accels.col(next_pt).setConstant(0);
+    } else {
+      leg_waypoint_accels.col(next_pt) = jacobian_part.colPivHouseholderQr().solve(keyframe.a).eval().cast<double>();
+    }
     
-    leg_times[next_pt] = time_[0];
-    next_pt++;
-  }
-  else // If not initial time, add our current point:
-  {
-    Eigen::VectorXd p(num_joints), v(num_joints), a(num_joints);
-    trajectory_->getState(elapsed, &p, &v, &a);
-
-    // Note -- we will definately have past trajectory here, because it is
-    // created above when (t == start_time_).
-    // TODO: maybe use current position and velocity instead of trajectory ones?
-    leg_waypoints.col(next_pt) = p;
-    leg_waypoint_vels.col(next_pt) = v;
-    leg_waypoint_accels.col(next_pt) = a;
-
-    leg_times[next_pt] = elapsed;
+    leg_times[next_pt] = time_[idx];
     next_pt++;
   }
 
-  // Now, add remaining waypoints
-  if ((time_[1] - elapsed) > ignore_waypoint_threshold_)
-  {
-    kin.solveIK(
-      leg_.getSeedAngles(),
-      ik_output,
-      robot_model::EndEffectorPositionObjective(mid_step_1_));
-    leg_waypoints.col(next_pt) = ik_output;
-    leg_waypoint_vels.col(next_pt).setConstant(std::numeric_limits<double>::quiet_NaN());
-    leg_waypoint_accels.col(next_pt).setConstant(std::numeric_limits<double>::quiet_NaN());
-    leg_times[next_pt] = time_[1];
-    next_pt++;
-  }
-  if ((time_[2] - elapsed) > ignore_waypoint_threshold_)
-  {
-    kin.solveIK(
-      leg_.getSeedAngles(),
-      ik_output,
-      robot_model::EndEffectorPositionObjective(touch_down_));
-    // J(1:3, :) \ stance_vel;
-    kin.getJEndEffector(ik_output, jacobian_ee);
-    MatrixXd jacobian_part = jacobian_ee.topLeftCorner(3,jacobian_ee.cols());
-    leg_waypoint_vels.block(0, next_pt, num_joints, 1) =
-      jacobian_part.colPivHouseholderQr().solve(leg_.getStanceVelXYZ()).eval().cast<double>();
-
-    leg_waypoints.col(next_pt) = ik_output;
-    leg_waypoint_accels.col(next_pt).setZero();
-    leg_times[next_pt] = time_[2];
-    next_pt++;
-  }
-/*
-  if ((time_[3] - elapsed) > ignore_waypoint_threshold_)
-  {
-    kin.solveIK(touch_down_, leg_.getSeedAngles(), ik_output);
-    // TODO: get Jacobian, use this to get final vel.
-    leg_waypoints.col(next_pt) = ik_output;
-    leg_waypoint_vels.col(next_pt).setZero();
-    leg_waypoint_accels.col(next_pt).setConstant(std::numeric_limits<double>::quiet_NaN());
-    leg_times.push_back(time_[3]);
-    next_pt++;
-  }
-*/
   int num_pts = next_pt;
   // TODO: don't resize, but just be smarter about passing in partial vectors
   // or creating the right size in the first place!
@@ -163,6 +168,11 @@ void Step::computeState(double t, Eigen::VectorXd& angles, Eigen::VectorXd& vels
   if (success)
     vels = v;
 //    vels = v.cast<float>();
+}
+
+const Eigen::Vector3d& Step::getTouchDown() const
+{
+  return keyframes_.back().p;
 }
 
 } // namespace hebi

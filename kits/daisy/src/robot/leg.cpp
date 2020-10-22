@@ -6,8 +6,8 @@ namespace hebi {
 using ActuatorType = hebi::robot_model::ActuatorType;
 using LinkType = hebi::robot_model::LinkType;
 
-Leg::Leg(const Matrix4d& base_frame, const Eigen::VectorXd& current_angles, const HexapodParameters& params, bool is_dummy, int index, LegConfiguration configuration)
-  : index_(index), stance_radius_(params.stance_radius_), body_height_(params.default_body_height_), spring_shift_(configuration == LegConfiguration::Right ? 3.75 : -3.75) // Nm
+Leg::Leg(const Matrix4d& base_frame, const Eigen::VectorXd& current_angles, const HexapodParameters& params, bool is_dummy, int index, LegConfiguration configuration, float theta_offset)
+  : index_(index), stance_radius_(params.stance_radius_), spring_shift_(configuration == LegConfiguration::Right ? 3.75 : -3.75) // Nm
 {
   kin_ = configuration == LegConfiguration::Left ?
     hebi::robot_model::RobotModel::loadHRDF("left.hrdf") :
@@ -32,8 +32,13 @@ Leg::Leg(const Matrix4d& base_frame, const Eigen::VectorXd& current_angles, cons
   else
     seed_angles_ << 0.2, .3, 1.9;
  
-  Eigen::Vector4d tmp4(stance_radius_, 0, -body_height_, 0);
-  home_stance_xyz_ = (base_frame * tmp4).topLeftCorner<3,1>();
+  Matrix4d global_z_theta_offsets = Matrix4d::Identity();
+  global_z_theta_offsets(2,3) = -params.default_body_height_;
+  global_z_theta_offsets.topLeftCorner<3,3>() = AngleAxisd(theta_offset, Vector3d::UnitZ()).matrix();
+
+  Eigen::Matrix4d tmp4 = Matrix4d::Identity();
+  tmp4(0, 3) = stance_radius_;
+  home_stance_xyz_ = (global_z_theta_offsets * base_frame * tmp4).topRightCorner<3,1>();
   level_home_stance_xyz_ = home_stance_xyz_;
 
   // Set initial stance position

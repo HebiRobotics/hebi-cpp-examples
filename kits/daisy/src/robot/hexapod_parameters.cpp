@@ -28,6 +28,9 @@ void HexapodParameters::resetToDefaults() {
   min_z_ = -0.3f;
   max_z_ = -0.05f;
   max_r_ = 0.18f;
+  step_height_ = 0.04f;
+  step_overshoot_ = 0.35f;
+  step_period_ = 1.0f;
   step_threshold_rotate_ = 0.05f;
   step_threshold_shift_ = 0.02f;
   logging_enabled_ = true;
@@ -48,7 +51,7 @@ bool HexapodParameters::loadFromFile(std::string file) {
 
   auto body = root.child("body");
   auto stance = root.child("stance");
-  auto step_thresh = root.child("step_threshold");
+  auto step = root.child("step");
   auto logging = root.child("logging");
   bool success = true;
 
@@ -76,8 +79,11 @@ bool HexapodParameters::loadFromFile(std::string file) {
     xml::trySetFloatParameter(stance.attribute("max_foot_height"), max_z_) &&
     xml::trySetFloatParameter(stance.attribute("max_shift_radius"), max_r_);
   success = success &&
-    xml::trySetFloatParameter(step_thresh.attribute("rotate"), step_threshold_rotate_) &&
-    xml::trySetFloatParameter(step_thresh.attribute("shift"), step_threshold_shift_);
+    xml::trySetFloatParameter(step.attribute("height"), step_height_) &&
+    xml::trySetFloatParameter(step.attribute("overshoot"), step_overshoot_) &&
+    xml::trySetFloatParameter(step.attribute("period"), step_period_) &&
+    xml::trySetFloatParameter(step.attribute("threshold_rotate"), step_threshold_rotate_) &&
+    xml::trySetFloatParameter(step.attribute("threshold_shift"), step_threshold_shift_);
   success = success &&
     xml::trySetBoolParameter(logging.attribute("enabled"), logging_enabled_) &&
     xml::trySetFloatParameter(logging.attribute("low_frequency_hz"), low_log_frequency_hz_) &&
@@ -94,7 +100,7 @@ bool HexapodParameters::saveToFile(std::string file) const {
 
   auto body = root.append_child("body");
   auto stance = root.append_child("stance");
-  auto step_thresh = root.append_child("step_threshold");
+  auto step = root.append_child("step");
   auto logging = root.append_child("logging");
   body.append_attribute("mass") = mass_;
   for (int leg_index = 0; leg_index < 6; ++leg_index) {
@@ -108,8 +114,11 @@ bool HexapodParameters::saveToFile(std::string file) const {
   stance.append_attribute("min_foot_height") = min_z_;
   stance.append_attribute("max_foot_height") = max_z_;
   stance.append_attribute("max_shift_radius") = max_r_;
-  step_thresh.append_attribute("rotate") = step_threshold_rotate_;
-  step_thresh.append_attribute("shift") = step_threshold_shift_;
+  step.append_attribute("height") = step_height_;
+  step.append_attribute("overshoot") = step_overshoot_;
+  step.append_attribute("period") = step_period_;
+  step.append_attribute("thresh_rotate") = step_threshold_rotate_;
+  step.append_attribute("thresh_shift") = step_threshold_shift_;
   logging.append_attribute("enabled") = logging_enabled_;
   logging.append_attribute("low_frequency_hz") = low_log_frequency_hz_;
   logging.append_attribute("high_frequency_hz") = high_log_frequency_hz_;

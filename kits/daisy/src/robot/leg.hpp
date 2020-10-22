@@ -14,7 +14,7 @@ public:
   int index_;
 
   // Transform of leg base from the center of the parent creature.
-  Leg(const Matrix4d& base_frame, const Eigen::VectorXd& current_angles, const HexapodParameters& params, bool is_dummy, int index, LegConfiguration configuration);
+  Leg(const Matrix4d& base_frame, const Eigen::VectorXd& current_angles, const HexapodParameters& params, bool is_dummy, int index, LegConfiguration configuration, float theta_offset);
 
   // Compute jacobian given position and velocities.  Usually, this is done internally
   // int `computeState`, but if the position/velocity is known (e.g., external
@@ -62,7 +62,6 @@ private:
 
   static constexpr int num_joints_ = 3;
   float stance_radius_; // [m]
-  float body_height_; // [m]
   const float spring_shift_; // [N*m] compensate for the spring torques
   Eigen::VectorXd seed_angles_;
 
