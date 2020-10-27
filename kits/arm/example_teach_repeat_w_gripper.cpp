@@ -13,17 +13,16 @@
 #include "arm/arm.hpp"
 #include "util/mobile_io.hpp"
 #include <chrono>
-#include <iostream> 
+#include <iostream>
 
 using namespace hebi;
-using namespace hebi::experimental; 
+using namespace experimental;
 
 struct Waypoint
 {
   Eigen::VectorXd positions;
   Eigen::VectorXd vels;
   Eigen::VectorXd accels;
-  double grip_effort;
 };
   
 struct State
@@ -32,53 +31,20 @@ struct State
   std::vector<Waypoint> waypoints;
 };
 
-void addWaypoint (State& state, const GroupFeedback& feedback, double grip, bool stop) {
+void addWaypoint (State& state, const GroupFeedback& feedback, bool stop) {
   printf("Adding a Waypoint.\n");
   
   if (stop) { // stop waypoint
     state.waypoints.push_back(Waypoint {feedback.getPosition(),
                               VectorXd::Constant(state.num_modules, 0),
-                              VectorXd::Constant(state.num_modules, 0),
-                              grip});
+                              VectorXd::Constant(state.num_modules, 0)});
   }
   else { // through waypoint
     state.waypoints.push_back(Waypoint {feedback.getPosition(),
                       VectorXd::Constant(state.num_modules, std::numeric_limits<double>::quiet_NaN()),
-                      VectorXd::Constant(state.num_modules, std::numeric_limits<double>::quiet_NaN()),
-                      grip});
+                      VectorXd::Constant(state.num_modules, std::numeric_limits<double>::quiet_NaN())});
   }
 }
-
-// arm::Goal playWaypoints (State& state) {
-//   // We know that if we are here, there is at least one waypoint
-
-//   // Set up the required variables
-//   Eigen::MatrixXd target_pos(state.num_modules, state.waypoints.size());
-//   Eigen::MatrixXd target_vels(state.num_modules, state.waypoints.size());
-//   Eigen::MatrixXd target_accels(state.num_modules, state.waypoints.size());
-//   Eigen::VectorXd times(state.waypoints.size());
-//   Eigen::MatrixXd aux(1, state.waypoints.size());
-//   double wp_time = 2.5;
-
-//   // Fill up the relevant matrices
-//   for (int i = 0; i < state.waypoints.size(); i++)
-//   {
-//     // map each waypoint vector to a column in the targets matrix
-//     target_pos.col(i) << state.waypoints[i].positions;
-//     target_vels.col(i) << state.waypoints[i].vels;
-//     target_accels.col(i) << state.waypoints[i].accels;
-//     times[i] = (i == 0) ? wp_time : times[i-1] + wp_time;
-//     aux.col(i) << state.waypoints[i].grip_effort;
-//   }
-
-//   // For better motion, we ensure the last waypoint is a stop waypoint
-//   target_vels.col(state.waypoints.size()-1) << 
-//                   Eigen::VectorXd::Constant(state.num_modules, 0);
-//   target_accels.col(state.waypoints.size()-1) << 
-//                     Eigen::VectorXd::Constant(state.num_modules, 0);
-
-//   return arm::Goal(times, target_pos, target_vels, target_accels, aux);
-// }
 
 arm::Goal playWaypoints (State& state, double wp_time) {
 
@@ -100,10 +66,6 @@ arm::Goal playWaypoints (State& state, double wp_time) {
 }
 
 
-double currentTime(std::chrono::steady_clock::time_point& start) {
-  return (std::chrono::duration<double>(std::chrono::steady_clock::now() - start)).count();
-}
-
 int main(int argc, char* argv[])
 {
   //////////////////////////
@@ -118,27 +80,20 @@ int main(int argc, char* argv[])
   
   // Read HRDF file to setup a RobotModel object for the 6-DoF Arm
   // Make sure you are running this from the correct directory!
-  params.hrdf_file_ = "kits/hrdf/6-dof_arm.hrdf";  
-
-  // Setup Gripper
-  std::shared_ptr<arm::EffortEndEffector<1>> gripper(arm::EffortEndEffector<1>::create(params.families_[0], "gripperSpool").release());
-  params.end_effector_ = gripper;
-  // auto end_effector = arm::EndEffector<1, arm::EndEffectorCommand::Effort>::create("Arm", "gripperSpool");
-  // Eigen::VectorXd aux_state(1);
-  // aux_state.setConstant(0);
-  // params_end_effector_ = end_gripper;
-
-
+  params.hrdf_file_ = "kits/arm/hrdf/A-2085-06.hrdf";  
 
   // Create the Arm Object
   auto arm = arm::Arm::create(params);
+
+  // Load the gains file that is approriate to the arm
+  arm -> loadGains("kits/arm/gains/A-2085-06.xml");
 
   /////////////////////////
   //// MobileIO Setup /////
   /////////////////////////
 
   // Create the MobileIO object
-  std::unique_ptr<MobileIO> mobile = MobileIO::create("HEBI", "mobileIO");
+  std::unique_ptr<MobileIO> mobile = MobileIO::create("Arm", "mobileIO");
 
   // Clear any garbage on screen
   mobile -> clearText(); 
@@ -164,34 +119,15 @@ int main(int argc, char* argv[])
   State state;
   state.num_modules = arm -> robotModel().getDoFCount();
 
-  // Variable to switch gripper control from mobile_io to trajectory and vice versa
-  bool playback = false;
-
-  // Gripper Variables
-
   while(arm->update())
   {
      // Get latest mobile_state
     auto mobile_state = mobile->getState();
     MobileIODiff diff(last_mobile_state, mobile_state);
 
-    // Testing
-    gripper->getState();
-    
-
-    double open_val = (mobile_state.getAxis(3) * 2)-1; // makes this range between -2 and 1
-    
-    if (!playback) {
-      // gripper -> setCommand(0, open_val);
-      gripper -> update(open_val);
-      gripper -> send();
-      // gripper 
-    }
-    
-
     // Buttton B1 - Add Stop Waypoint
     if (diff.get(1) == MobileIODiff::ButtonState::ToOn) {
-      addWaypoint(state, arm -> lastFeedback(), open_val, true);
+      addWaypoint(state, arm -> lastFeedback(), true);
     }
 
     // Button B2 - Clear Waypoints
@@ -201,7 +137,7 @@ int main(int argc, char* argv[])
 
     // Button B3 - Add Through Waypoint
     if (diff.get(3) == MobileIODiff::ButtonState::ToOn) {
-      addWaypoint(state, arm -> lastFeedback(), open_val, false);
+      addWaypoint(state, arm -> lastFeedback(), false);
     }
 
     // Button B5 - Playback Waypoints
@@ -210,7 +146,6 @@ int main(int argc, char* argv[])
         printf("You have not added any Waypoints!\n");
       } 
       else {
-        playback = true;
         const arm::Goal playback = playWaypoints(state, 2.5);
         arm -> setGoal(playback);       
       }
@@ -219,12 +154,11 @@ int main(int argc, char* argv[])
     // Button B6 - Grav Comp Mode
     if (diff.get(6) == MobileIODiff::ButtonState::ToOn) {
       // Cancel any goal that is set, returning arm into gravComp mode
-      playback = false;
       arm -> cancelGoal();
     }
 
     // Button B8 - End Demo
-    if (diff.get(8) == experimental::MobileIODiff::ButtonState::ToOn) {
+    if (diff.get(8) == MobileIODiff::ButtonState::ToOn) {
       // Clear MobileIO text
       mobile -> clearText();
       return 1;
@@ -242,4 +176,7 @@ int main(int argc, char* argv[])
 
   return 0;
 }
+
+
+
 

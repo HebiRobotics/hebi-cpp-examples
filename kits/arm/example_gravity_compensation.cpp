@@ -32,14 +32,13 @@ int main(int argc, char* argv[])
   params.names_ = {"J1_base", "J2_shoulder", "J3_elbow", "J4_wrist1", "J5_wrist2", "J6_wrist3"};
 
   // Read HRDF file to seutp a RobotModel object for the 6-DoF Arm
-  params.hrdf_file_ = "kits/hrdf/6-dof_arm.hrdf";
+  params.hrdf_file_ = "kits/arm/hrdf/A-2085-06.hrdf";
 
-  // Setup Time Variables
-  // auto start_time = std::chrono::steady_clock::now();
-  // std::chrono::duration<double> arm_time = std::chrono::steady_clock::now() - start_time;
-  
   // Create the Arm Object
   auto arm = arm::Arm::create(params);
+
+  // Load the gains file that is approriate to the arm
+  arm -> loadGains("kits/arm/gains/A-2085-06.xml");
 
   //////////////////////////
   //// Main Control Loop ///

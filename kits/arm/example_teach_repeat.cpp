@@ -80,18 +80,20 @@ int main(int argc, char* argv[])
   
   // Read HRDF file to setup a RobotModel object for the 6-DoF Arm
   // Make sure you are running this from the correct directory!
-  params.hrdf_file_ = "kits/hrdf/6-dof_arm.hrdf";  
+  params.hrdf_file_ = "kits/arm/hrdf/A-2085-06.hrdf";  
 
   // Create the Arm Object
   auto arm = arm::Arm::create(params);
 
+  // Load the gains file that is approriate to the arm
+  arm -> loadGains("kits/arm/gains/A-2085-06.xml");
 
   /////////////////////////
   //// MobileIO Setup /////
   /////////////////////////
 
   // Create the MobileIO object
-  std::unique_ptr<MobileIO> mobile = MobileIO::create("Aster", "mobileIO");
+  std::unique_ptr<MobileIO> mobile = MobileIO::create("Arm", "mobileIO");
 
   // Clear any garbage on screen
   mobile -> clearText(); 

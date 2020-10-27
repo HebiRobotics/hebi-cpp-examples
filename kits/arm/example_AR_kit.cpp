@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
   params.names_ = {"J1_base", "J2_shoulder", "J3_elbow", "J4_wrist1", "J5_wrist2", "J6_wrist3"};
   
   // Read HRDF file to setup a RobotModel object for the 6-DoF Arm
-  params.hrdf_file_ = "kits/hrdf/6-dof_arm.hrdf";  
+  params.hrdf_file_ = "kits/arm/hrdf/A-2085-06.hrdf";  
 
   // Setup Gripper
   // std::shared_ptr<arm::EffortEndEffector<1>> gripper(arm::EffortEndEffector<1>::create(params.families_[0], "gripperSpool").release());
@@ -48,6 +48,8 @@ int main(int argc, char* argv[])
   // Create the Arm Object
   auto arm = arm::Arm::create(params);
 
+  // Load the gains file that is approriate to the arm
+  arm -> loadGains("kits/arm/gains/A-2085-06.xml");
 
   /////////////////////////
   //// MobileIO Setup /////
@@ -124,9 +126,6 @@ int main(int argc, char* argv[])
     auto mobile_state = mobile->getState();
     MobileIODiff diff(last_mobile_state, mobile_state);
 
-    // Get latest gripper_state
-    // gripper -> getState();
-
     // Button B1 - Return to home position
     if (diff.get(1) == MobileIODiff::ButtonState::ToOn) {
         ar_mode = false;
@@ -159,10 +158,10 @@ int main(int argc, char* argv[])
     if (ar_mode) {
       // Get the latest mobile position and orientation
       Eigen::Vector3d phone_pos;
-      phone_pos << mobile -> getLastFeedback().mobile().arPosition().get().getX(),
-                   mobile -> getLastFeedback().mobile().arPosition().get().getY(),
-                   mobile -> getLastFeedback().mobile().arPosition().get().getZ();
-      auto phone_ori = mobile -> getLastFeedback().mobile().arOrientation().get();
+      phone_pos << mobile->getLastFeedback().mobile().arPosition().get().getX(),
+                   mobile->getLastFeedback().mobile().arPosition().get().getY(),
+                   mobile->getLastFeedback().mobile().arPosition().get().getZ();
+      auto phone_ori = mobile->getLastFeedback().mobile().arOrientation().get();
 
       // Calculate rotation matrix from orientation quaternion
       auto rot_phone_target = makeRotationMatrix(phone_ori);
@@ -182,8 +181,7 @@ int main(int argc, char* argv[])
       // Create and send new goal to the arm
       arm -> setGoal(arm::Goal::createFromPosition(target_joints));
 
-      // double open_val = (mobile_state.getAxis(3) * 2)-1; // makes this range between -2 and 1
-      // gripper -> update(open_val);
+
     }
    
     // Update mobile device to the new last_state

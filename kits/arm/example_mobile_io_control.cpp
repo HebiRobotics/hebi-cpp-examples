@@ -16,11 +16,6 @@
 using namespace hebi;
 using namespace experimental; 
 
-
-// double currentTime(std::chrono::steady_clock::time_point& start) {
-//   return (std::chrono::duration<double>(std::chrono::steady_clock::now() - start)).count();
-// }
-
 int main(int argc, char* argv[])
 {
   //////////////////////////
@@ -35,10 +30,13 @@ int main(int argc, char* argv[])
 
   // Read HRDF file to seutp a RobotModel object for the 6-DoF Arm
   // Make sure you are running this from the correct directory!
-  params.hrdf_file_ = "kits/hrdf/6-dof_arm.hrdf";
+  params.hrdf_file_ = "kits/arm/hrdf/A-2085-06.hrdf";
 
   // Create the Arm Object
   auto arm = arm::Arm::create(params);
+
+  // Load the gains file that is approriate to the arm
+  arm -> loadGains("kits/arm/gains/A-2085-06.xml");
 
   //////////////////////////
   //// MobileIO Setup //////
@@ -77,7 +75,7 @@ int main(int argc, char* argv[])
 
   while(arm->update())
   {
-    // Get latest mobile_state
+
     auto state = mobile->getState();
     MobileIODiff diff(last_state, state);
 
