@@ -36,6 +36,9 @@ int main(int argc, char* argv[])
 
   // Create the Arm Object
   auto arm = arm::Arm::create(params);
+  while (!arm) {
+    arm = arm::Arm::create(params);
+  }
 
   // Load the gains file that is approriate to the arm
   arm -> loadGains("kits/arm/gains/A-2085-06.xml");

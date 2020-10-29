@@ -1,6 +1,8 @@
 /*
  * AR Kit Example
  * Currently assumes 6 degrees of freedom in you arm!
+ * This demo sets up your arm's end effector to mimick the changes in 
+ * position and orientation of your mobile IO device.
  */
 
 #include "group_command.hpp"
@@ -47,6 +49,9 @@ int main(int argc, char* argv[])
 
   // Create the Arm Object
   auto arm = arm::Arm::create(params);
+  while (!arm) {
+    arm = arm::Arm::create(params);
+  }
 
   // Load the gains file that is approriate to the arm
   arm -> loadGains("kits/arm/gains/A-2085-06.xml");
@@ -63,7 +68,6 @@ int main(int argc, char* argv[])
 
   // Setup instructions for display
   std::string instructions;
-  // instructions = "Still needs to be done";
   instructions = ("B1 - Home Position\nB3 - AR Control Mode\n"
                   "B6 - Grav Comp Mode\nB8 - Quit\n");
 
@@ -84,7 +88,7 @@ int main(int argc, char* argv[])
   
   // Make sure we softstart the arm first.
   Eigen::VectorXd home_position(arm -> robotModel().getDoFCount());
-  home_position << 0, M_PI/3, 2*M_PI/3, 5*M_PI/6, -M_PI/2, 0;
+  home_position << 0, M_PI/3, 2*M_PI/3, 5*M_PI/6, -M_PI/2, 0; // Adjust depending on your DoFs
 
   // Command the softstart to home position
   arm -> update();
@@ -99,8 +103,6 @@ int main(int argc, char* argv[])
   // Set up states for the mobile device
   Eigen::Vector3d xyz_phone_init;
   Eigen::Matrix3d rot_phone_init;
-  Eigen::Matrix3d rot_init_target;//(3,3);
-  rot_init_target << 0,-1,0, 1,0,0, 0,0,1;
 
   // Target variables
   Eigen::VectorXd target_joints(arm -> robotModel().getDoFCount());
@@ -109,7 +111,6 @@ int main(int argc, char* argv[])
   {
 
     if (softstart) {
-      Eigen::VectorXd home_position(arm -> robotModel().getDoFCount());
       // End softstart when arm reaches its homePosition
       if (arm -> atGoal()){
         mobile -> sendText("Softstart Complete!");
@@ -157,21 +158,18 @@ int main(int argc, char* argv[])
 
     if (ar_mode) {
       // Get the latest mobile position and orientation
-      Eigen::Vector3d phone_pos;
-      phone_pos << mobile->getLastFeedback().mobile().arPosition().get().getX(),
+      Eigen::Vector3d xyz_phone;
+      xyz_phone << mobile->getLastFeedback().mobile().arPosition().get().getX(),
                    mobile->getLastFeedback().mobile().arPosition().get().getY(),
                    mobile->getLastFeedback().mobile().arPosition().get().getZ();
-      auto phone_ori = mobile->getLastFeedback().mobile().arOrientation().get();
-
-      // Calculate rotation matrix from orientation quaternion
-      auto rot_phone_target = makeRotationMatrix(phone_ori);
+      auto rot_phone = makeRotationMatrix(mobile->getLastFeedback().mobile().arOrientation().get());
 
       // Calculate new targets
       Eigen::Vector3d xyz_scale;
       xyz_scale << 1, 1, 2;
-      Eigen::Matrix3d rot_target = rot_phone_init.transpose() * rot_phone_target * rot_init_target;
       Eigen::Vector3d xyz_target = xyz_home + (0.75 * xyz_scale.array() *
-                                (rot_phone_init.transpose() * (phone_pos - xyz_phone_init)).array()).matrix();
+                                (rot_phone_init.transpose() * (xyz_phone - xyz_phone_init)).array()).matrix();
+      Eigen::Matrix3d rot_target = rot_phone_init.transpose() * rot_phone * rot_home;
 
       // Calculate new arm joint angle targets
       target_joints = arm -> solveIK(arm -> lastFeedback().getPosition(),
@@ -180,8 +178,6 @@ int main(int argc, char* argv[])
 
       // Create and send new goal to the arm
       arm -> setGoal(arm::Goal::createFromPosition(target_joints));
-
-
     }
    
     // Update mobile device to the new last_state
