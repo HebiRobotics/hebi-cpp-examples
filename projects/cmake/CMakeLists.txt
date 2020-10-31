@@ -268,12 +268,15 @@ endforeach (EXAMPLE ${ADVANCED_SOURCES})
 
 
 # Kit Examples
-SET(KIT_SOURCES
-  ${ROOT_DIR}/kits/arm/gravity_compensation.cpp
-  ${ROOT_DIR}/kits/arm/teach_repeat.cpp)
+SET(ARM_SOURCES
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY kits)
-foreach (EXAMPLE ${KIT_SOURCES})
+  ${ROOT_DIR}/kits/arm/example_gravity_compensation.cpp
+  ${ROOT_DIR}/kits/arm/example_mobile_io_control.cpp
+  ${ROOT_DIR}/kits/arm/example_teach_repeat.cpp
+  ${ROOT_DIR}/kits/arm/example_AR_kit.cpp)
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY kits/arm)
+foreach (EXAMPLE ${ARM_SOURCES})
 
   # The target for the individual example is based on the filename
   get_filename_component(EX_NAME ${EXAMPLE} NAME_WE)
@@ -306,6 +309,14 @@ foreach (EXAMPLE ${KIT_SOURCES})
   endif()
 
 endforeach (EXAMPLE ${KIT_SOURCES})
+
+
+# Copy the HRDF files for kits into the build directory
+file(COPY ${ROOT_DIR}/kits/arm/hrdf DESTINATION ${ROOT_DIR}/build/kits/arm)
+file(COPY ${ROOT_DIR}/kits/arm/gains DESTINATION ${ROOT_DIR}/build/kits/arm)
+
+
+
 
 
 
