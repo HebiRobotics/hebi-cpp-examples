@@ -5,8 +5,11 @@
 #include "group.hpp"
 #include "group_command.hpp"
 #include "group_feedback.hpp"
+#include "trajectory.hpp"
 
 #include "Eigen/Dense"
+
+#include "group_trajectory_follower.hpp"
 
 namespace hebi {
 namespace experimental {
@@ -23,6 +26,7 @@ class SE2Point {
     out.x = this->x + rhs.x;
     out.y = this->y + rhs.y;
     out.theta = this->theta + rhs.theta;
+    return out;
   }
 
   SE2Point operator-(const SE2Point& rhs) {
@@ -30,33 +34,49 @@ class SE2Point {
     out.x = this->x - rhs.x;
     out.y = this->y - rhs.y;
     out.theta = this->theta - rhs.theta;
+    return out;
   }
+
+  void operator+=(const SE2Point& rhs) {
+    this->x += rhs.x;
+    this->y += rhs.y;
+    this->theta += rhs.theta;
+  }
+
 };
 
 typedef SE2Point Pose;
 typedef SE2Point Vel;
+
+Pose operator*(const Vel& val, double t) {
+  SE2Point out{val.x*t, val.y*t, val.theta*t};
+  return out;
+}
+
+Pose operator+(const Pose& v1, const Pose& v2) {
+  SE2Point out{ v1.x + v2.x, v1.y + v2.y, v1.theta + v2.theta };
+  return out;
+}
 
 class Waypoint {
   public:
   double t{};
   Pose pos{};
   Vel vel{};
-  SE2Point eff{};
+  SE2Point acc{};
 };
 
-// Potentially HEBI trajectory?  Maybe piecewise combination?
-// (for velocity, can this be used )
-class Trajectory;
+class CartesianTrajectory;
 
-struct Goal {
+struct CartesianGoal {
   // Moves with the given relative body velocity for a certain
   // number of seconds, then slows to a stop over a certain number
   // of seconds.  Can be used for continuous replanning, e.g.
-  // mobile IO control.
+  // mobile IO con#include "kinematics_helper.hpp"trol.
   // \param v target velocity
   // \param cruiseTime time to drive at velocity v
   // \param slowTime "ramp down" time
-  static Goal createFromVelocity(Vel v, double cruiseTime, double slowTime) {
+  static CartesianGoal createFromVelocity(Vel v, double cruiseTime, double slowTime) {
     Waypoint start;
     start.t = 0;
     start.vel = v;
@@ -77,7 +97,7 @@ struct Goal {
   // Goes to (x, y, theta) in a certain number of seconds.
   // \param isBaseFrame is "true" if this is relative to current body frame,
   // and "false" for using odometry coordinates.
-  static Goal createFromPosition(Pose p, double goalTime, bool isBaseFrame) {
+  static CartesianGoal createFromPosition(Pose p, double goalTime, bool isBaseFrame) {
     Waypoint start;
     Waypoint end;
     start.t = 0;
@@ -91,14 +111,36 @@ struct Goal {
     createFromWaypoints({start, end}, isBaseFrame);
   }
 
+  static CartesianGoal createFromWaypoints(std::vector<Waypoint> waypoints, bool isBaseFrame) {
+    auto count = waypoints.size();
+    VectorXd times(count);
+    MatrixXd positions(3, count);
+    MatrixXd velocities(3, count);
+    MatrixXd accelerations(3, count);
+    for (auto idx = 0; idx < count; ++idx) {
+      times(idx) = waypoints.at(idx).t;
+      positions(0, idx) = waypoints.at(idx).pos.x;
+      positions(1, idx) = waypoints.at(idx).pos.y;
+      positions(2, idx) = waypoints.at(idx).pos.theta;
+
+      velocities(0, idx) = waypoints.at(idx).vel.x;
+      velocities(1, idx) = waypoints.at(idx).vel.y;
+      velocities(2, idx) = waypoints.at(idx).vel.theta;
+
+      accelerations(0, idx) = waypoints.at(idx).acc.x;
+      accelerations(1, idx) = waypoints.at(idx).acc.y;
+      accelerations(2, idx) = waypoints.at(idx).acc.theta;
+    }
+  }
+
   // Creates from cartesian trajectory.  May be (x,y) or (x,y,theta), but 
   // (x,y,theta) less likely to be realizable depending on system.
   // If "theta" is not defined, is tangent to path.
   // (x, y path here could be used for planning path through obstacles, for example)
   // \param isBaseFrame is "true" if this is relative to current body frame,
   // and "false" for using odometry coordinates.
-  static Goal createFromTrajectory(Trajectory t, bool isBaseFrame);
-  static Goal createFromWaypoints(std::vector<Waypoint> waypoints, bool isBaseFrame);
+  // TODO
+  static CartesianGoal createFromTrajectory(CartesianTrajectory t, bool isBaseFrame);
 
   const Eigen::VectorXd& times() const { return times_; }
   const Eigen::Matrix<double, 3, Eigen::Dynamic>& positions() const { return positions_; }
@@ -106,7 +148,7 @@ struct Goal {
   const Eigen::Matrix<double, 3, Eigen::Dynamic>& accelerations() const { return accelerations_; }
 
 private:
-  Goal(const Eigen::VectorXd& times,
+  CartesianGoal(const Eigen::VectorXd& times,
        const Eigen::Matrix<double, 3, Eigen::Dynamic>& positions,
        const Eigen::Matrix<double, 3, Eigen::Dynamic>& velocities,
        const Eigen::Matrix<double, 3, Eigen::Dynamic>& accelerations)
@@ -126,42 +168,36 @@ private:
 
 //////////////////////////////
 
-class Base {
+class Base: public GroupTrajectoryFollower {
 
 public:
 
-  // Parameters for creating an arm
-  struct Params {
-    // The family and names passed to the "lookup" function to find modules
-    // Both are required.
-    std::vector<std::string> families_;
-    std::vector<std::string> names_;
-    // How long a command takes effect for on the robot before expiring.
-    int command_lifetime_ = 100;
-    // Loop rate, in Hz.  This is how fast the arm update loop will nominally
-    // run.
-    double control_frequency_ = 200.f;
-
-    // A function pointer that returns a double representing the current time in
-    // seconds. (Can be overloaded to use, e.g., simulator time)
-    //
-    // The default value uses the steady clock wall time.
-    std::function<double()> get_current_time_s_ = []() {
-      using clock = std::chrono::steady_clock;
-      static const clock::time_point start_time = clock::now();
-      return (std::chrono::duration<double>(clock::now() - start_time)).count();
-    }; 
+  // Parameters for creating a base
+  struct Params: public GroupTrajectoryFollower::Params {
   };
 
+  static std::unique_ptr<Base> create(const Params& params);
 
-  void update(float some_timestamp);
-  // TODO: add a "send" and "getFeedback" and "getCommand" here?
+  Base(std::function<double()> get_current_time_s,
+       std::shared_ptr<Group> group) {
+    
+  }
+
+  bool update() {
+    auto ret = GroupTrajectoryFollower::update();
+    // now update odometry
+    auto vel = feedback_.getVelocity();
+    updateOdometry(vel, dt_);
+  }
+
+  //virtual SE2Point wheelsToSE2(Eigen::VectorXd wheel_state) const = 0;
+  virtual Eigen::VectorXd SE2ToWheels(SE2Point base_state) const = 0;
 
   // Get the global odometry state
-  virtual Pose getOdometry() const = 0;
+  Pose getOdometry() const { return global_pose_ + relative_odom_offset_; };
 
   // Reset the current odometry state
-  void setOdometry(Pose p) { _relative_odom_offset = p - getOdometry(); }
+  void setOdometry(Pose p) { relative_odom_offset_ = p - getOdometry(); }
 
   // Get the maximum velocity in each direction
   // NOTE: consider whether this is guaranteed maximum velocity
@@ -183,50 +219,124 @@ public:
   // that they are about to pass into base:
   // base.setGoal(Goal.createFrom(blah, base));
   // TODO: "best effort" -- or return "can't do this"?
-  void setGoal(const Goal& g);
+  bool setGoal(const CartesianGoal& g) {
+    auto jointsGoal = buildTrajectory(g);
+    if (jointsGoal.has_value()) {
+      GroupTrajectoryFollower::setGoal(jointsGoal.value());
+      return true;
+    }
+    return false;
+  }
 
   // When cleared, the base should be passive / compliant if possible.
-  void clearGoal() { setTrajectory(std::nullopt); }
-
-  // How far through the goal trajectory are we?  Returns "nullopt"
-  // if there is no active goal.  Returns "1" if goal is complete
-  // (base continues to command end state of trajectory if goal is
-  // as "1", until goal is explicitly cleared)
-  // TODO: might be able to move this to the parent class if additional
-  // trajectory state was here, but I would think that might be
-  // premature and limit the implementation of various Base types
-  // for the purpose of saving a couple lines of boilerplate code.
-  virtual std::optional<float> getGoalProgress() const = 0;
+  void clearGoal();
 
 protected:
   // A cartesian trajectory is the only thing an individual base
   // implementation must handle.  This should be smoothly moved
   // to from the current state of the system.
   // TODO: maybe a std::vector<Trajectory>?
-  // When "nullopt" is set, this clears the active trajectory
+  // When "nullopt" is set, this clears t  // Creates from cartesian trajectory.  May be (x,y) or (x,y,theta), but 
+  // (x,y,theta) less likely to be realizable depending on system.
+  // If "theta" is not defined, is tangent to path.
+  // (x, y path here could be used for planning path through obstacles, for example)
+  // \param isBaseFrame is "true" if this is relative to current body frame,
+  // and "false" for using odometry coordinates.he active trajectory
   // goal.
   // TODO: think about how to handle starting state to initial
   // state of trajectory -- should we just assume first waypoint
   // of trajectory is not at time 0, and add first point based on
   // current command (or feedback if not active) at time 0?)
-  virtual void setTrajectory(std::optional<Trajectory> t) = 0;
+  virtual std::optional<Goal> buildTrajectory(const CartesianGoal& g) = 0;
+
+  virtual void updateOdometry(const Eigen::VectorXd& wheel_vel, double dt) = 0;
+
+  // These variables should be updated when updateOdometry is called
+  Pose global_pose_{0, 0, 0};
+  Vel global_vel_{0, 0, 0};
+
+  Vel local_vel_{0, 0, 0};
 
 private:
-  std::function<double()> get_current_time_s_;
-  Pose _relative_odom_offset{};
+  Pose relative_odom_offset_{};
 };
 
 //////////////////////////////
 
-class MyBase : Base {
+class OmniBase : Base {
 public:
-  Pose getOdometry() const override;
-  std::optional<float> getGoalProgress() const override;
+  virtual Eigen::VectorXd SE2ToWheelVel(Waypoint base_state) const final {
+    double theta = base_state.pos.theta;
+    double dtheta = base_state.vel.theta;
+
+    double offset = 1.0;
+    double ctheta = std::cos(-theta);
+    double stheta = std::sin(-theta);
+    double dx = base_state.vel.x * ctheta - base_state.vel.y * stheta;
+    double dy = base_state.vel.x * stheta + base_state.vel.y * ctheta;
+
+    Eigen::Vector3d local_vel;
+    local_vel << dx, dy, dtheta;
+
+    return jacobian_ * local_vel;
+  };
+
   Vel getMaxVelocity() const override;
-protected:  
+
+private:
+  // Updates local velocity based on wheel change in position since last time
+  void OmniBase::updateOdometry(const Eigen::Vector3d& wheel_vel, double dt) { 
+    // Get local velocities
+    auto local_vel = jacobian_inv_ * wheel_vel;
+    local_vel_.x = local_vel[0];
+    local_vel_.y = local_vel[1];
+    local_vel_.theta = local_vel[2];
+  
+    // Get global velocity:
+    auto c = std::cos(global_pose_.theta);
+    auto s = std::sin(global_pose_.theta);
+    global_vel_.x = c * local_vel_.x - s * local_vel_.y;
+    global_vel_.y = s * local_vel_.x + c * local_vel_.y;
+    // Theta transforms directly
+    global_vel_.theta = local_vel_.theta;
+  
+    global_pose_ += global_vel_ * dt;
+  }
+
+  Eigen::Matrix3d OmniBase::createJacobian() {
+    double a = sqrt(3)/(2 * wheel_radius_);
+    double b = 1.0 / wheel_radius_;
+    double c = -base_radius_ / wheel_radius_;
+    Eigen::Matrix3d j;
+    j << -a, -b / 2.0, c,
+         a, -b / 2.0, c,
+         0.0, b, c;
+    return j;
+  }
+
+  Eigen::Matrix3d OmniBase::createJacobianInv() {
+    Eigen::Matrix3d j_inv;
+    double a = wheel_radius_ / sqrt(3);
+    double b = wheel_radius_ / 3.0;
+    double c = -b / base_radius_;
+    j_inv << -a, a, 0,
+             -b, -b, 2.0 * b,
+             c, c, c;
+    return j_inv;
+  }
+
   // TODO: think about limitations on (x,y) vs. (x,y,theta)
   // trajectories
-  void setTrajectory(std::optional<Trajectory> t) override;
+  std::optional<Goal> buildTrajectory(const CartesianGoal& g) override;
+
+   /* Declare main kinematic variables */
+  static constexpr double wheel_radius_ = 0.0762; // m
+  static constexpr double base_radius_ = 0.220; // m (center of omni to origin of base) 
+
+  const Eigen::Matrix3d OmniBase::jacobian_ = createJacobian();
+
+  // Wheel velocities to local (x,y,theta)
+  const Eigen::Matrix3d OmniBase::jacobian_inv_ = createJacobianInv();
 };
 
 } // namespace mobile
