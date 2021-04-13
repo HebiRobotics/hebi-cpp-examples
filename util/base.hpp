@@ -17,9 +17,9 @@ namespace mobile {
 
 class SE2Point {
   public:
-  float x{};
-  float y{};
-  float theta{};
+  double x{};
+  double y{};
+  double theta{};
 
   SE2Point operator+(const SE2Point& rhs) {
     SE2Point out;
@@ -168,7 +168,7 @@ private:
 
 //////////////////////////////
 
-class Base: public GroupTrajectoryFollower {
+class MobileBase {
 
 public:
 
@@ -176,22 +176,24 @@ public:
   struct Params: public GroupTrajectoryFollower::Params {
   };
 
-  static std::unique_ptr<Base> create(const Params& params);
-
-  Base(std::function<double()> get_current_time_s,
-       std::shared_ptr<Group> group) {
-    
-  }
+  MobileBase(Params p) :
+    trajectory_follower_(GroupTrajectoryFollower::create(p))
+  {}
 
   bool update() {
-    auto ret = GroupTrajectoryFollower::update();
+    auto ret = trajectory_follower_->update();
     // now update odometry
-    auto vel = feedback_.getVelocity();
-    updateOdometry(vel, dt_);
+    auto vel = trajectory_follower_->lastFeedback().getVelocity();
+    updateOdometry(vel, trajectory_follower_->dT());
+    return ret;
+  }
+
+  bool send() {
+    return trajectory_follower_->send();
   }
 
   //virtual SE2Point wheelsToSE2(Eigen::VectorXd wheel_state) const = 0;
-  virtual Eigen::VectorXd SE2ToWheels(SE2Point base_state) const = 0;
+  virtual Eigen::VectorXd SE2ToWheelVel(Pose pos, Vel vel) const = 0;
 
   // Get the global odometry state
   Pose getOdometry() const { return global_pose_ + relative_odom_offset_; };
@@ -222,7 +224,7 @@ public:
   bool setGoal(const CartesianGoal& g) {
     auto jointsGoal = buildTrajectory(g);
     if (jointsGoal.has_value()) {
-      GroupTrajectoryFollower::setGoal(jointsGoal.value());
+      trajectory_follower_->setGoal(jointsGoal.value());
       return true;
     }
     return false;
@@ -251,6 +253,8 @@ protected:
 
   virtual void updateOdometry(const Eigen::VectorXd& wheel_vel, double dt) = 0;
 
+  std::unique_ptr<GroupTrajectoryFollower> trajectory_follower_={nullptr};
+
   // These variables should be updated when updateOdometry is called
   Pose global_pose_{0, 0, 0};
   Vel global_vel_{0, 0, 0};
@@ -258,86 +262,9 @@ protected:
   Vel local_vel_{0, 0, 0};
 
 private:
-  Pose relative_odom_offset_{};
+  Pose relative_odom_offset_{0, 0, 0};
 };
 
-//////////////////////////////
-
-class OmniBase : Base {
-public:
-  virtual Eigen::VectorXd SE2ToWheelVel(Waypoint base_state) const final {
-    double theta = base_state.pos.theta;
-    double dtheta = base_state.vel.theta;
-
-    double offset = 1.0;
-    double ctheta = std::cos(-theta);
-    double stheta = std::sin(-theta);
-    double dx = base_state.vel.x * ctheta - base_state.vel.y * stheta;
-    double dy = base_state.vel.x * stheta + base_state.vel.y * ctheta;
-
-    Eigen::Vector3d local_vel;
-    local_vel << dx, dy, dtheta;
-
-    return jacobian_ * local_vel;
-  };
-
-  Vel getMaxVelocity() const override;
-
-private:
-  // Updates local velocity based on wheel change in position since last time
-  void OmniBase::updateOdometry(const Eigen::Vector3d& wheel_vel, double dt) { 
-    // Get local velocities
-    auto local_vel = jacobian_inv_ * wheel_vel;
-    local_vel_.x = local_vel[0];
-    local_vel_.y = local_vel[1];
-    local_vel_.theta = local_vel[2];
-  
-    // Get global velocity:
-    auto c = std::cos(global_pose_.theta);
-    auto s = std::sin(global_pose_.theta);
-    global_vel_.x = c * local_vel_.x - s * local_vel_.y;
-    global_vel_.y = s * local_vel_.x + c * local_vel_.y;
-    // Theta transforms directly
-    global_vel_.theta = local_vel_.theta;
-  
-    global_pose_ += global_vel_ * dt;
-  }
-
-  Eigen::Matrix3d OmniBase::createJacobian() {
-    double a = sqrt(3)/(2 * wheel_radius_);
-    double b = 1.0 / wheel_radius_;
-    double c = -base_radius_ / wheel_radius_;
-    Eigen::Matrix3d j;
-    j << -a, -b / 2.0, c,
-         a, -b / 2.0, c,
-         0.0, b, c;
-    return j;
-  }
-
-  Eigen::Matrix3d OmniBase::createJacobianInv() {
-    Eigen::Matrix3d j_inv;
-    double a = wheel_radius_ / sqrt(3);
-    double b = wheel_radius_ / 3.0;
-    double c = -b / base_radius_;
-    j_inv << -a, a, 0,
-             -b, -b, 2.0 * b,
-             c, c, c;
-    return j_inv;
-  }
-
-  // TODO: think about limitations on (x,y) vs. (x,y,theta)
-  // trajectories
-  std::optional<Goal> buildTrajectory(const CartesianGoal& g) override;
-
-   /* Declare main kinematic variables */
-  static constexpr double wheel_radius_ = 0.0762; // m
-  static constexpr double base_radius_ = 0.220; // m (center of omni to origin of base) 
-
-  const Eigen::Matrix3d OmniBase::jacobian_ = createJacobian();
-
-  // Wheel velocities to local (x,y,theta)
-  const Eigen::Matrix3d OmniBase::jacobian_inv_ = createJacobianInv();
-};
 
 } // namespace mobile
 } // namespace experimental

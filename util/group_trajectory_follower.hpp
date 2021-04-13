@@ -78,6 +78,7 @@ public:
   // Returns the last feedback obtained by update, or an empty feedback object
   // if "update" has never successfully run.
   const GroupFeedback& lastFeedback() const { return feedback_; }
+  const double dT() const { return dt_; }
 
   //////////////////////////////////////////////////////////////////////////////
   // Main loop functions
