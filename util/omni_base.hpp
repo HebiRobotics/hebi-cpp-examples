@@ -1,3 +1,5 @@
+#pragma once
+
 #include "base.hpp"
 
 namespace hebi {
@@ -80,6 +82,95 @@ private:
   const Eigen::Matrix3d jacobian_inv_ = createJacobianInv();
 };
 
-}
-}
-}
+
+Eigen::VectorXd OmniBase::SE2ToWheelVel(Pose pos, Vel vel) const {
+  // if position isn't provided, just return the local frame velocity
+  if(std::isnan(pos.x) || std::isnan(pos.y) || std::isnan(pos.theta)) {
+    Eigen::VectorXd ret(3);
+    ret(0) = vel.x;
+    ret(1) = vel.y;
+    ret(2) = vel.theta;
+    return jacobian_ * ret;
+  }
+
+  double theta = pos.theta;
+  double dtheta = vel.theta;
+
+  double offset = 1.0;
+  double ctheta = std::cos(-theta);
+  double stheta = std::sin(-theta);
+  double dx = vel.x * ctheta - vel.y * stheta;
+  double dy = vel.x * stheta + vel.y * ctheta;
+
+  Eigen::Vector3d local_vel;
+  local_vel << dx, dy, dtheta;
+
+  return jacobian_ * local_vel;
+};
+
+Vel OmniBase::getMaxVelocity() const {
+    // TODO: Do something smarter
+    return Vel{2, 2, 2};
+};
+
+void OmniBase::updateOdometry(const Eigen::VectorXd& wheel_vel, double dt) { 
+  // Get local velocities
+  auto local_vel = jacobian_inv_ * wheel_vel;
+  local_vel_.x = local_vel[0];
+  local_vel_.y = local_vel[1];
+  local_vel_.theta = local_vel[2];
+
+  // Get global velocity:
+  auto c = std::cos(global_pose_.theta);
+  auto s = std::sin(global_pose_.theta);
+  global_vel_.x = c * local_vel_.x - s * local_vel_.y;
+  global_vel_.y = s * local_vel_.x + c * local_vel_.y;
+  // Theta transforms directly
+  global_vel_.theta = local_vel_.theta;
+
+  global_pose_ += global_vel_ * dt;
+};
+
+std::optional<Goal> OmniBase::buildTrajectory(const CartesianGoal& g) {
+  auto num_waypoints = g.times().size();
+  MatrixXd wheel_vels(3, num_waypoints);
+
+  // TODO: REDO THIS PROPERLY IT SUCKS/IS BROKEN
+  // need to have some kind of non-hacky 2d trajectory rollout,
+  // or drop this approach entirely
+
+  std::cout << "Build Trajectory" << std::endl;
+
+  for(auto i = 0; i < num_waypoints; ++i) {
+    Vector3d p = g.positions().col(i);
+    Vector3d v = g.velocities().col(i);
+    if(std::isnan(v(0)) || std::isnan(v(1)) || std::isnan(v(2))) {
+      if(i == num_waypoints - 1) {
+        v(0) = 0;
+        v(1) = 0;
+        v(2) = 0;
+      } else {
+	auto delta = p - g.positions().col(i+1);
+	auto dt = g.times()(i+1) - g.times()(i);
+        v(0) = delta(0)/dt;
+        v(1) = delta(1)/dt;
+        v(2) = delta(2)/dt;
+      }
+    }
+    std::cout << "P:\n" << p << std::endl;
+    std::cout << "V:\n" << v <<std::endl;
+    wheel_vels.col(i) = SE2ToWheelVel(Pose{p(0), p(1), p(2)}, Vel{v(0), v(1), v(2)});
+  }
+
+  std::cout << "Times:\n" << g.times() << std::endl;
+  std::cout << "Vels:\n" << wheel_vels << std::endl;
+
+  return Goal::createFromWaypoints(g.times(),
+                                   nan(3, num_waypoints),
+                                   wheel_vels,
+                                   nanWithZeroRight(3, num_waypoints));
+};
+
+} // namespace mobile
+} // namespace experimental
+} // namespace hebi

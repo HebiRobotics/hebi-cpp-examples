@@ -12,14 +12,23 @@ int main(int argc, char* argv[]) {
   //////////////////////////
   //// MobileIO Setup //////
   //////////////////////////
+  
+  std::cout << "Creating MobileIO" << std::endl;
+
+  std::string family = "Rosie";
 
   // Create the MobileIO object
-  std::unique_ptr<MobileIO> mobile = MobileIO::create("HEBI", "mobileIO");
+  std::unique_ptr<MobileIO> mobile = MobileIO::create(family, "mobileIO");
+  while(!mobile) {
+    std::cout << "Couldn't find mobileIO, trying again..." << std::endl;
+    mobile = MobileIO::create(family, "mobileIO");
+  }
 
   std::string instructions;
-  instructions = ("B1 - Waypoint 1\nB2 - Waypoint 2\n"
-                  "B3 - Waypoint 3\n"
-                  "B6 - Grav comp mode\nB8 - Quit\n");
+  instructions = ("A1/A2 - Move Base\n"
+                  "A7 - Turn Base\n"
+                  "B8 - Quit\n");
+
   // Clear any garbage on screen
   mobile -> clearText(); 
 
@@ -35,8 +44,10 @@ int main(int argc, char* argv[]) {
 
   // Set module names for mobile base
   OmniBase::Params p;
-  p.families_ = {"HEBI"};
+  p.families_ = {family};
   p.names_ = {"W1", "W2", "W3"};
+
+  std::cout << "Creating Omni Base" << std::endl;
 
   OmniBase base(p);
 
@@ -46,17 +57,16 @@ int main(int argc, char* argv[]) {
 
   while(base.update())
   {
-
     auto state = mobile->getState();
     MobileIODiff diff(last_state, state);
 
     /////////////////
-    // Button Presses
+    // Input Handling
     /////////////////
 
-    auto dy = state.getAxis(1);
-    auto dx = state.getAxis(2);
-    auto dtheta = state.getAxis(7);
+    auto dy = -1 * state.getAxis(7) / 2.0;
+    auto dx = state.getAxis(8) / 2.0;
+    auto dtheta = -1 * state.getAxis(1);
 
     // Button B8 - End Demo
     if (diff.get(8) == MobileIODiff::ButtonState::ToOn)
@@ -70,7 +80,7 @@ int main(int argc, char* argv[]) {
     // Update & send
     /////////////////
 
-    // create Base Goal (theta = 1), for 1 second, 0.5 second ramp down
+    // create Vel Goal for 0.5 second, 0.25 second ramp down
     auto goal = CartesianGoal::createFromVelocity(Vel{dx, dy, dtheta}, 0.5, 0.25);
 
     // send goal to base

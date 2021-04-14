@@ -11,15 +11,21 @@
 
 #include "group_trajectory_follower.hpp"
 
+
 namespace hebi {
 namespace experimental {
 namespace mobile {
 
 class SE2Point {
   public:
-  double x{};
-  double y{};
-  double theta{};
+  SE2Point() : x(std::numeric_limits<double>::quiet_NaN()),
+	       y(std::numeric_limits<double>::quiet_NaN()),
+	       theta(std::numeric_limits<double>::quiet_NaN()) {}
+  SE2Point(double x, double y, double theta) : x(x), y(y), theta(theta) {}
+
+  double x;
+  double y;
+  double theta;
 
   SE2Point operator+(const SE2Point& rhs) {
     SE2Point out;
@@ -60,7 +66,7 @@ Pose operator+(const Pose& v1, const Pose& v2) {
 
 class Waypoint {
   public:
-  double t{};
+  double t{std::numeric_limits<double>::quiet_NaN()};
   Pose pos{};
   Vel vel{};
   SE2Point acc{};
@@ -72,13 +78,13 @@ struct CartesianGoal {
   // Moves with the given relative body velocity for a certain
   // number of seconds, then slows to a stop over a certain number
   // of seconds.  Can be used for continuous replanning, e.g.
-  // mobile IO con#include "kinematics_helper.hpp"trol.
+  // mobile IO control.
   // \param v target velocity
   // \param cruiseTime time to drive at velocity v
   // \param slowTime "ramp down" time
   static CartesianGoal createFromVelocity(Vel v, double cruiseTime, double slowTime) {
     Waypoint start;
-    start.t = 0;
+    start.t = 0.1;
     start.vel = v;
 
     Waypoint slow;
@@ -100,7 +106,7 @@ struct CartesianGoal {
   static CartesianGoal createFromPosition(Pose p, double goalTime, bool isBaseFrame) {
     Waypoint start;
     Waypoint end;
-    start.t = 0;
+    start.t = 0.1;
     start.pos.x = 0;
     start.pos.y = 0;
     start.pos.theta = 0;
@@ -113,10 +119,12 @@ struct CartesianGoal {
 
   static CartesianGoal createFromWaypoints(std::vector<Waypoint> waypoints, bool isBaseFrame) {
     auto count = waypoints.size();
+
     VectorXd times(count);
     MatrixXd positions(3, count);
     MatrixXd velocities(3, count);
     MatrixXd accelerations(3, count);
+
     for (auto idx = 0; idx < count; ++idx) {
       times(idx) = waypoints.at(idx).t;
       positions(0, idx) = waypoints.at(idx).pos.x;
@@ -131,6 +139,8 @@ struct CartesianGoal {
       accelerations(1, idx) = waypoints.at(idx).acc.y;
       accelerations(2, idx) = waypoints.at(idx).acc.theta;
     }
+
+    return CartesianGoal(times, positions, velocities, accelerations);
   }
 
   // Creates from cartesian trajectory.  May be (x,y) or (x,y,theta), but 
@@ -159,9 +169,9 @@ private:
 
   // TODO: some info here capturing above states/options
   const Eigen::VectorXd times_{0};
-  const Eigen::Matrix<double, 3, Eigen::Dynamic> positions_{0};
-  const Eigen::Matrix<double, 3, Eigen::Dynamic> velocities_{0};
-  const Eigen::Matrix<double, 3, Eigen::Dynamic> accelerations_{0};
+  const Eigen::Matrix<double, 3, Eigen::Dynamic> positions_{0, 0};
+  const Eigen::Matrix<double, 3, Eigen::Dynamic> velocities_{0, 0};
+  const Eigen::Matrix<double, 3, Eigen::Dynamic> accelerations_{0, 0};
 
   bool local_trajectory_{};
 };
@@ -222,6 +232,12 @@ public:
   // base.setGoal(Goal.createFrom(blah, base));
   // TODO: "best effort" -- or return "can't do this"?
   bool setGoal(const CartesianGoal& g) {
+    if (!trajectory_follower_) {
+      std::cout << "WARNING: Actuator Controller was not created successfully,"
+	        << " cannot track goal!" << std::endl;
+      return false;
+    }
+
     auto jointsGoal = buildTrajectory(g);
     if (jointsGoal.has_value()) {
       trajectory_follower_->setGoal(jointsGoal.value());
@@ -232,6 +248,10 @@ public:
 
   // When cleared, the base should be passive / compliant if possible.
   void clearGoal();
+
+  double goalProgress() const {
+    return trajectory_follower_->goalProgress();
+  }
 
 protected:
   // A cartesian trajectory is the only thing an individual base
