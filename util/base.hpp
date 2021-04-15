@@ -9,7 +9,7 @@
 
 #include "Eigen/Dense"
 
-#include "group_trajectory_follower.hpp"
+#include "group_manager.hpp"
 
 
 namespace hebi {
@@ -183,11 +183,11 @@ class MobileBase {
 public:
 
   // Parameters for creating a base
-  struct Params: public GroupTrajectoryFollower::Params {
+  struct Params: public GroupManager::Params {
   };
 
   MobileBase(Params p) :
-    trajectory_follower_(GroupTrajectoryFollower::create(p))
+    trajectory_follower_(GroupManager::create(p))
   {}
 
   bool update() {
@@ -273,7 +273,7 @@ protected:
 
   virtual void updateOdometry(const Eigen::VectorXd& wheel_vel, double dt) = 0;
 
-  std::unique_ptr<GroupTrajectoryFollower> trajectory_follower_={nullptr};
+  std::unique_ptr<GroupManager> trajectory_follower_={nullptr};
 
   // These variables should be updated when updateOdometry is called
   Pose global_pose_{0, 0, 0};

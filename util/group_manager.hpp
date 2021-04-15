@@ -15,7 +15,7 @@ namespace experimental {
 
 using arm::Goal;
 
-class GroupTrajectoryFollower {
+class GroupManager {
 
 public:
 
@@ -48,7 +48,7 @@ public:
 
   // Creates an "Trajectory Follower" object, and puts it into a "weightless" no-goal control
   // mode.
-  static std::unique_ptr<GroupTrajectoryFollower> create(const Params& params);
+  static std::unique_ptr<GroupManager> create(const Params& params);
 
   // Loads gains from the given .xml file, and sends them to the module. Returns
   // false if the gains file could not be found, if these is a mismatch in
@@ -160,7 +160,7 @@ protected:
   hebi::GroupCommand command_;
 
   // Private arm constructor
-  GroupTrajectoryFollower(
+  GroupManager(
       std::function<double()> get_current_time_s,
       std::shared_ptr<Group> group):
     get_current_time_s_(get_current_time_s),
@@ -184,7 +184,7 @@ private:
 };
 
 
-std::unique_ptr<GroupTrajectoryFollower> GroupTrajectoryFollower::create(const GroupTrajectoryFollower::Params& params) {
+std::unique_ptr<GroupManager> GroupManager::create(const GroupManager::Params& params) {
 
   // Get the group (scope the lookup object so it is destroyed
   // immediately after the lookup operation)
@@ -222,10 +222,10 @@ std::unique_ptr<GroupTrajectoryFollower> GroupTrajectoryFollower::create(const G
   } 
 
   // Note: once ROS moves up to C++14, we can change this to "make_unique".
-  return std::unique_ptr<GroupTrajectoryFollower>(new GroupTrajectoryFollower(params.get_current_time_s_, group));
+  return std::unique_ptr<GroupManager>(new GroupManager(params.get_current_time_s_, group));
 }
   
-bool GroupTrajectoryFollower::loadGains(const std::string& gains_file)
+bool GroupManager::loadGains(const std::string& gains_file)
 {
   hebi::GroupCommand gains_cmd(group_->size());
   if (!gains_cmd.readGains(gains_file))
@@ -234,7 +234,7 @@ bool GroupTrajectoryFollower::loadGains(const std::string& gains_file)
   return group_->sendCommandWithAcknowledgement(gains_cmd);
 }
 
-bool GroupTrajectoryFollower::update() {
+bool GroupManager::update() {
   double t = get_current_time_s_();
 
   // Time must be monotonically increasing!
@@ -246,9 +246,6 @@ bool GroupTrajectoryFollower::update() {
 
   if (!group_->getNextFeedback(feedback_))
     return false;
-
-  // Define aux state so end effector can be updated
-  Eigen::VectorXd aux(0);
 
   // Update command from trajectory
   if (trajectory_) {
@@ -270,7 +267,7 @@ bool GroupTrajectoryFollower::update() {
   return true;
 }
 
-bool GroupTrajectoryFollower::send() {
+bool GroupManager::send() {
   return group_->sendCommand(command_);
 }
 
@@ -292,7 +289,7 @@ Eigen::VectorXd getWaypointTimes(
   return times;
 }
 
-void GroupTrajectoryFollower::setGoal(const Goal& goal) {
+void GroupManager::setGoal(const Goal& goal) {
   int num_joints = goal.positions().rows();
 
   // If there is a current trajectory, use the commands as a starting point;
@@ -351,7 +348,7 @@ void GroupTrajectoryFollower::setGoal(const Goal& goal) {
   trajectory_start_time_ = last_time_;
 }
 
-double GroupTrajectoryFollower::goalProgress() const {
+double GroupManager::goalProgress() const {
   if (trajectory_) {
     double t_traj = last_time_ - trajectory_start_time_;
     t_traj = std::min(t_traj, trajectory_->getDuration());
@@ -361,7 +358,7 @@ double GroupTrajectoryFollower::goalProgress() const {
   return 0.0;
 }
 
-void GroupTrajectoryFollower::cancelGoal() {
+void GroupManager::cancelGoal() {
   trajectory_ = nullptr;
   trajectory_start_time_ = std::numeric_limits<double>::quiet_NaN();
 }

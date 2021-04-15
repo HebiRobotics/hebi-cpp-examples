@@ -2,6 +2,8 @@
 
 #include "base.hpp"
 
+#include "trajectory.hpp"
+
 namespace hebi {
 namespace experimental {
 namespace mobile {
@@ -10,14 +12,16 @@ class OmniBase : public MobileBase {
 public:
   // Parameters for creating a base
   struct Params: public MobileBase::Params {
-    Params() : wheel_radius(0.0762), base_radius(0.220) {}
+    Params() : wheel_radius(0.0762), base_radius(0.220), sample_density(0.1) {}
     double wheel_radius; // m
     double base_radius; // m (center of omni to origin of base) 
+    double sample_density; // time between sampled waypoints on cartesian trajectory
   };
 
   OmniBase(Params p) : MobileBase(p),
                        wheel_radius_(p.wheel_radius),
-                       base_radius_(p.base_radius)
+                       base_radius_(p.base_radius),
+                       sample_density_(p.sample_density)
   {}
 
   virtual Eigen::VectorXd SE2ToWheelVel(Pose pos, Vel vel) const override;
@@ -76,6 +80,8 @@ private:
   double wheel_radius_; // m
   double base_radius_; // m (center of omni to origin of base) 
 
+  double sample_density_; // sec
+
   const Eigen::Matrix3d jacobian_ = createJacobian();
 
   // Wheel velocities to local (x,y,theta)
@@ -133,42 +139,42 @@ void OmniBase::updateOdometry(const Eigen::VectorXd& wheel_vel, double dt) {
 
 std::optional<Goal> OmniBase::buildTrajectory(const CartesianGoal& g) {
   auto num_waypoints = g.times().size();
-  MatrixXd wheel_vels(3, num_waypoints);
+  auto num_wheels = g.positions().row(0).size();
 
-  // TODO: REDO THIS PROPERLY IT SUCKS/IS BROKEN
-  // need to have some kind of non-hacky 2d trajectory rollout,
-  // or drop this approach entirely
+  MatrixXd wheel_pos(num_wheels, num_waypoints);
+  MatrixXd wheel_vel(num_wheels, num_waypoints);
+  MatrixXd wheel_acc(num_wheels, num_waypoints);
 
   std::cout << "Build Trajectory" << std::endl;
 
-  for(auto i = 0; i < num_waypoints; ++i) {
-    Vector3d p = g.positions().col(i);
-    Vector3d v = g.velocities().col(i);
-    if(std::isnan(v(0)) || std::isnan(v(1)) || std::isnan(v(2))) {
-      if(i == num_waypoints - 1) {
-        v(0) = 0;
-        v(1) = 0;
-        v(2) = 0;
-      } else {
-	auto delta = p - g.positions().col(i+1);
-	auto dt = g.times()(i+1) - g.times()(i);
-        v(0) = delta(0)/dt;
-        v(1) = delta(1)/dt;
-        v(2) = delta(2)/dt;
-      }
-    }
-    std::cout << "P:\n" << p << std::endl;
-    std::cout << "V:\n" << v <<std::endl;
-    wheel_vels.col(i) = SE2ToWheelVel(Pose{p(0), p(1), p(2)}, Vel{v(0), v(1), v(2)});
+  MatrixXd vel = g.velocities();
+  MatrixXd acc = g.accelerations();
+  auto traj = hebi::trajectory::Trajectory::createUnconstrainedQp(g.times(),
+                                                                  g.positions(),
+                                                                  &vel,
+                                                                  &acc);
+
+  int num_samples = (int) (traj->getDuration() / sample_density_);
+  VectorXd p, v, a;
+
+  for(auto i = 0; i < num_samples; ++i) {
+    double t = i * sample_density_;
+
+    traj->getState(t, &p, &v, &a);
+
+    wheel_pos.col(i) = p;
+    wheel_vel.col(i) = SE2ToWheelVel(Pose{p(0), p(1), p(2)}, Vel{v(0), v(1), v(2)});
+    // this feels hacky but works I think?
+    wheel_acc.col(i) = SE2ToWheelVel(Pose{p(0), p(1), p(2)}, Vel{a(0), a(1), a(2)});
   }
 
   std::cout << "Times:\n" << g.times() << std::endl;
-  std::cout << "Vels:\n" << wheel_vels << std::endl;
+  std::cout << "Vels:\n" << wheel_vel << std::endl;
 
   return Goal::createFromWaypoints(g.times(),
-                                   nan(3, num_waypoints),
-                                   wheel_vels,
-                                   nanWithZeroRight(3, num_waypoints));
+                                   wheel_pos,
+                                   wheel_vel,
+                                   wheel_acc);
 };
 
 } // namespace mobile
