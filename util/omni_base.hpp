@@ -57,7 +57,7 @@ private:
 
   // TODO: think about limitations on (x,y) vs. (x,y,theta)
   // trajectories
-  virtual std::optional<Goal> buildTrajectory(const CartesianGoal& g) override;
+  virtual optional<queue<shared_ptr<Trajectory>>> buildTrajectory(const CartesianGoal& g) override;
 
   // Helper function to create unconstrained points along a motion.
   static MatrixXd nan(size_t num_joints, size_t num_waypoints) {
@@ -137,7 +137,7 @@ void OmniBase::updateOdometry(const Eigen::VectorXd& wheel_vel, double dt) {
   global_pose_ += global_vel_ * dt;
 };
 
-std::optional<Goal> OmniBase::buildTrajectory(const CartesianGoal& g) {
+optional<queue<shared_ptr<Trajectory>>> OmniBase::buildTrajectory(const CartesianGoal& g) {
   auto num_waypoints = g.times().size();
   auto num_wheels = g.positions().row(0).size();
 
@@ -149,32 +149,18 @@ std::optional<Goal> OmniBase::buildTrajectory(const CartesianGoal& g) {
 
   MatrixXd vel = g.velocities();
   MatrixXd acc = g.accelerations();
-  auto traj = hebi::trajectory::Trajectory::createUnconstrainedQp(g.times(),
-                                                                  g.positions(),
-                                                                  &vel,
-                                                                  &acc);
+  auto traj = Trajectory::createUnconstrainedQp(g.times(),
+                                                g.positions(),
+                                                &vel,
+                                                &acc);
 
-  int num_samples = (int) (traj->getDuration() / sample_density_);
-  VectorXd p, v, a;
-
-  for(auto i = 0; i < num_samples; ++i) {
-    double t = i * sample_density_;
-
-    traj->getState(t, &p, &v, &a);
-
-    wheel_pos.col(i) = p;
-    wheel_vel.col(i) = SE2ToWheelVel(Pose{p(0), p(1), p(2)}, Vel{v(0), v(1), v(2)});
-    // this feels hacky but works I think?
-    wheel_acc.col(i) = SE2ToWheelVel(Pose{p(0), p(1), p(2)}, Vel{a(0), a(1), a(2)});
+  if (!traj) {
+    return std::nullopt;
   }
 
-  std::cout << "Times:\n" << g.times() << std::endl;
-  std::cout << "Vels:\n" << wheel_vel << std::endl;
-
-  return Goal::createFromWaypoints(g.times(),
-                                   wheel_pos,
-                                   wheel_vel,
-                                   wheel_acc);
+  queue<shared_ptr<Trajectory>> retval;
+  retval.push(traj);
+  return {retval};
 };
 
 } // namespace mobile

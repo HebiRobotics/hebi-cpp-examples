@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <queue>
 
 #include "group.hpp"
 #include "group_command.hpp"
@@ -15,6 +16,11 @@
 namespace hebi {
 namespace experimental {
 namespace mobile {
+
+using std::optional;
+using std::queue;
+using std::shared_ptr;
+using hebi::trajectory::Trajectory;
 
 class SE2Point {
   public:
@@ -187,19 +193,66 @@ public:
   };
 
   MobileBase(Params p) :
-    trajectory_follower_(GroupManager::create(p))
+    group_manager_(GroupManager::create(p))
   {}
 
+  // This is a generic implementation that assumes the use of a wheel-space trajectory
   bool update() {
-    auto ret = trajectory_follower_->update();
+    // updates dt and last feedback message
+    auto ret = group_manager_->update();
     // now update odometry
-    auto vel = trajectory_follower_->lastFeedback().getVelocity();
-    updateOdometry(vel, trajectory_follower_->dT());
-    return ret;
+    auto vel = group_manager_->lastFeedback().getVelocity();
+    updateOdometry(vel, group_manager_->dT());
+
+    auto cmd = group_manager_->pendingCommand();
+
+    while (base_trajectories_.front() && base_trajectories_.front()->getEndTime() < group_manager_->lastTime()) {
+
+    }
+
+    // go into compliance mode if no trajectory
+    if (base_trajectories_.size() == 0) {
+      auto size = group_manager_->size();
+
+      VectorXd compliantState;
+      compliantState.resize(size);
+      double nan = std::numeric_limits<double>::quiet_NaN();
+      for (auto i=0; i<size; ++i) {
+        compliantState(i) = nan;
+      }
+
+      cmd.setPosition(compliantState);
+      cmd.setVelocity(compliantState);
+      compliantState.setZero(); // TODO: Double check w/ Matt this is supposed to be zero not NaN
+      cmd.setEffort(compliantState);
+
+      return ret;
+    } else {
+      auto traj = base_trajectories_.front();
+
+      VectorXd pos, vel, accel;
+
+      // Update command from trajectory
+      traj->getState(group_manager_->lastTime(), &pos, &vel, &accel);
+
+      // set velocity to steer along cartesian trajectory
+
+      // Convert from x/y/theta to wheel velocities
+      auto wheel_vels = SE2ToWheelVel({pos(0), pos(1), pos(2)}, {vel(0), vel(1), vel(2)});
+
+      // Integrate position using wheel velocities.
+      last_wheel_pos_ += wheel_vels * group_manager_->dT();
+      cmd.setPosition(last_wheel_pos_);
+
+      // Use velocity from trajectory, converted from x/y/theta into wheel velocities above.
+      cmd.setVelocity(wheel_vels);
+
+      return ret;
+    }
   }
 
   bool send() {
-    return trajectory_follower_->send();
+    return group_manager_->send();
   }
 
   //virtual SE2Point wheelsToSE2(Eigen::VectorXd wheel_state) const = 0;
@@ -209,7 +262,10 @@ public:
   Pose getOdometry() const { return global_pose_ + relative_odom_offset_; };
 
   // Reset the current odometry state
-  void setOdometry(Pose p) { relative_odom_offset_ = p - getOdometry(); }
+  void setOdometry(Pose p) {
+    last_wheel_pos_ = group_manager_->lastFeedback().getPosition();
+    relative_odom_offset_ = p - getOdometry();
+  }
 
   // Get the maximum velocity in each direction
   // NOTE: consider whether this is guaranteed maximum velocity
@@ -232,15 +288,15 @@ public:
   // base.setGoal(Goal.createFrom(blah, base));
   // TODO: "best effort" -- or return "can't do this"?
   bool setGoal(const CartesianGoal& g) {
-    if (!trajectory_follower_) {
+    if (!group_manager_) {
       std::cout << "WARNING: Actuator Controller was not created successfully,"
 	        << " cannot track goal!" << std::endl;
       return false;
     }
 
-    auto jointsGoal = buildTrajectory(g);
-    if (jointsGoal.has_value()) {
-      trajectory_follower_->setGoal(jointsGoal.value());
+    auto baseTrajectory = buildTrajectory(g);
+    if (baseTrajectory.has_value()) {
+      base_trajectories_ = baseTrajectory.value();
       return true;
     }
     return false;
@@ -250,7 +306,7 @@ public:
   void clearGoal();
 
   double goalProgress() const {
-    return trajectory_follower_->goalProgress();
+    return group_manager_->goalProgress();
   }
 
 protected:
@@ -269,17 +325,20 @@ protected:
   // state of trajectory -- should we just assume first waypoint
   // of trajectory is not at time 0, and add first point based on
   // current command (or feedback if not active) at time 0?)
-  virtual std::optional<Goal> buildTrajectory(const CartesianGoal& g) = 0;
+  virtual optional<queue<shared_ptr<Trajectory>>> buildTrajectory(const CartesianGoal& g) = 0;
 
   virtual void updateOdometry(const Eigen::VectorXd& wheel_vel, double dt) = 0;
 
-  std::unique_ptr<GroupManager> trajectory_follower_={nullptr};
+  std::unique_ptr<GroupManager> group_manager_={nullptr};
 
   // These variables should be updated when updateOdometry is called
   Pose global_pose_{0, 0, 0};
   Vel global_vel_{0, 0, 0};
+  VectorXd last_wheel_pos_{};
 
   Vel local_vel_{0, 0, 0};
+
+  queue<shared_ptr<Trajectory>> base_trajectories_{};
 
 private:
   Pose relative_odom_offset_{0, 0, 0};

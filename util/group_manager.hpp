@@ -80,6 +80,7 @@ public:
   // if "update" has never successfully run.
   const GroupFeedback& lastFeedback() const { return feedback_; }
   const double dT() const { return dt_; }
+  const double lastTime() const { return last_time_; }
 
   //////////////////////////////////////////////////////////////////////////////
   // Main loop functions
