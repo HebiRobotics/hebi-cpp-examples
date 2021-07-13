@@ -24,19 +24,15 @@ int main(int argc, char* argv[]) {
     mobile = MobileIO::create(family, "mobileIO");
   }
 
-  std::string instructions;
-  instructions = ("A1/A2 - Move Base\n"
-                  "A7 - Turn Base\n"
-                  "B8 - Quit\n");
+  std::string instructions("A1/A2 - Move Base\n"
+                           "A7 - Turn Base\n"
+                           "B8 - Quit\n");
 
   // Clear any garbage on screen
   mobile -> clearText(); 
 
   // Display instructions on screen
   mobile -> sendText(instructions); 
-
-  // Setup instructions
-  auto last_state = mobile->getState();
 
   //////////////////////////
   //// OmniBase Setup //////
@@ -50,6 +46,8 @@ int main(int argc, char* argv[]) {
   std::cout << "Creating Omni Base" << std::endl;
 
   OmniBase base(p);
+
+  auto last_state = mobile->getState();
 
   //////////////////////////
   //// Main Control Loop ///

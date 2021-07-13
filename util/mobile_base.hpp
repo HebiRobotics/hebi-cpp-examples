@@ -24,16 +24,14 @@ using hebi::trajectory::Trajectory;
 
 class SE2Point {
   public:
-  SE2Point() : x(std::numeric_limits<double>::quiet_NaN()),
-	       y(std::numeric_limits<double>::quiet_NaN()),
-	       theta(std::numeric_limits<double>::quiet_NaN()) {}
+  SE2Point() {}
   SE2Point(double x, double y, double theta) : x(x), y(y), theta(theta) {}
 
-  double x;
-  double y;
-  double theta;
+  double x{std::numeric_limits<double>::quiet_NaN()};
+  double y{std::numeric_limits<double>::quiet_NaN()};
+  double theta{std::numeric_limits<double>::quiet_NaN()};
 
-  SE2Point operator+(const SE2Point& rhs) {
+  SE2Point operator+(const SE2Point& rhs) const {
     SE2Point out;
     out.x = this->x + rhs.x;
     out.y = this->y + rhs.y;
@@ -41,7 +39,7 @@ class SE2Point {
     return out;
   }
 
-  SE2Point operator-(const SE2Point& rhs) {
+  SE2Point operator-(const SE2Point& rhs) const {
     SE2Point out;
     out.x = this->x - rhs.x;
     out.y = this->y - rhs.y;
@@ -62,11 +60,6 @@ typedef SE2Point Vel;
 
 Pose operator*(const Vel& val, double t) {
   SE2Point out{val.x*t, val.y*t, val.theta*t};
-  return out;
-}
-
-Pose operator+(const Pose& v1, const Pose& v2) {
-  SE2Point out{ v1.x + v2.x, v1.y + v2.y, v1.theta + v2.theta };
   return out;
 }
 
@@ -207,7 +200,7 @@ public:
     auto cmd = group_manager_->pendingCommand();
 
     while (base_trajectories_.front() && base_trajectories_.front()->getEndTime() < group_manager_->lastTime()) {
-
+      base_trajectories_.pop();
     }
 
     // go into compliance mode if no trajectory
@@ -223,7 +216,7 @@ public:
 
       cmd.setPosition(compliantState);
       cmd.setVelocity(compliantState);
-      compliantState.setZero(); // TODO: Double check w/ Matt this is supposed to be zero not NaN
+      compliantState.setZero();
       cmd.setEffort(compliantState);
 
       return ret;
@@ -280,12 +273,6 @@ public:
   // trajectory to the goal.
   // Note -- this turns the `Goal` into a `Trajectory` based on the
   // `getMaxVelocity` function implementation
-  // NOTE/TODO: alternatively, could pass a "Base" into the
-  // Goal factory methods to convert to trajectory goal there.
-  // Cleaner from the organization of the "Goal" class, but
-  // messier otherwise -- e.g., user passing base into a function
-  // that they are about to pass into base:
-  // base.setGoal(Goal.createFrom(blah, base));
   // TODO: "best effort" -- or return "can't do this"?
   bool setGoal(const CartesianGoal& g) {
     if (!group_manager_) {
@@ -304,10 +291,6 @@ public:
 
   // When cleared, the base should be passive / compliant if possible.
   void clearGoal();
-
-  double goalProgress() const {
-    return group_manager_->goalProgress();
-  }
 
 protected:
   // A cartesian trajectory is the only thing an individual base

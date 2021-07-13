@@ -1,8 +1,6 @@
 #pragma once
 
-#include "base.hpp"
-
-#include "trajectory.hpp"
+#include "mobile_base.hpp"
 
 namespace hebi {
 namespace experimental {
@@ -31,6 +29,10 @@ protected:
   // Updates local velocity based on wheel change in position since last time
   virtual void updateOdometry(const Eigen::VectorXd& wheel_vel, double dt) override;
 
+  // TODO: think about limitations on (x,y) vs. (x,y,theta)
+  // trajectories
+  optional<queue<shared_ptr<Trajectory>>> buildTrajectory(const CartesianGoal& g) override;
+
 private:
 
   Eigen::Matrix3d createJacobian() {
@@ -54,10 +56,6 @@ private:
              c, c, c;
     return j_inv;
   }
-
-  // TODO: think about limitations on (x,y) vs. (x,y,theta)
-  // trajectories
-  virtual optional<queue<shared_ptr<Trajectory>>> buildTrajectory(const CartesianGoal& g) override;
 
   // Helper function to create unconstrained points along a motion.
   static MatrixXd nan(size_t num_joints, size_t num_waypoints) {
