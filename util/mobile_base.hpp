@@ -1,6 +1,5 @@
 #pragma once
 
-#include <optional>
 #include <queue>
 
 #include "group.hpp"
@@ -17,7 +16,6 @@ namespace hebi {
 namespace experimental {
 namespace mobile {
 
-using std::optional;
 using std::queue;
 using std::shared_ptr;
 using hebi::trajectory::Trajectory;
@@ -55,8 +53,8 @@ class SE2Point {
 
 };
 
-typedef SE2Point Pose;
-typedef SE2Point Vel;
+using Pose = SE2Point;
+using Vel = SE2Point;
 
 Pose operator*(const Vel& val, double t) {
   SE2Point out{val.x*t, val.y*t, val.theta*t};
@@ -113,7 +111,7 @@ struct CartesianGoal {
     end.t = goalTime;
     end.pos = p;
 
-    createFromWaypoints({start, end}, isBaseFrame);
+    return createFromWaypoints({start, end}, isBaseFrame);
   }
 
   static CartesianGoal createFromWaypoints(std::vector<Waypoint> waypoints, bool isBaseFrame) {
@@ -171,8 +169,6 @@ private:
   const Eigen::Matrix<double, 3, Eigen::Dynamic> positions_{0, 0};
   const Eigen::Matrix<double, 3, Eigen::Dynamic> velocities_{0, 0};
   const Eigen::Matrix<double, 3, Eigen::Dynamic> accelerations_{0, 0};
-
-  bool local_trajectory_{};
 };
 
 //////////////////////////////
@@ -281,16 +277,28 @@ public:
       return false;
     }
 
-    auto baseTrajectory = buildTrajectory(g);
-    if (baseTrajectory.has_value()) {
-      base_trajectories_ = baseTrajectory.value();
+    auto baseTrajectories = buildTrajectory(g);
+    if (baseTrajectories) {
+      base_trajectories_ = *baseTrajectories;
       return true;
     }
     return false;
   }
 
   // When cleared, the base should be passive / compliant if possible.
-  void clearGoal();
+  void clearGoal() {
+    // Taken from https://stackoverflow.com/a/709161
+    // clear the trajectory queue
+    std::queue<shared_ptr<Trajectory>>().swap(base_trajectories_);
+  }
+
+  bool goalComplete() {
+    if (base_trajectories_.empty())
+      return true;
+    if (base_trajectories_.back()->getEndTime() < group_manager_->lastTime())
+      return true;
+    return false;
+  };
 
 protected:
   // A cartesian trajectory is the only thing an individual base
@@ -308,7 +316,7 @@ protected:
   // state of trajectory -- should we just assume first waypoint
   // of trajectory is not at time 0, and add first point based on
   // current command (or feedback if not active) at time 0?)
-  virtual optional<queue<shared_ptr<Trajectory>>> buildTrajectory(const CartesianGoal& g) = 0;
+  virtual std::unique_ptr<queue<shared_ptr<Trajectory>>> buildTrajectory(const CartesianGoal& g) = 0;
 
   virtual void updateOdometry(const Eigen::VectorXd& wheel_vel, double dt) = 0;
 

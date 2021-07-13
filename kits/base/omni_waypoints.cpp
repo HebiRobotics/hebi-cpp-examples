@@ -61,7 +61,7 @@ int main(int argc, char* argv[]) {
     base.send();
 
     // if the trajectory has been completed, start another square
-    if (base.goalProgress() > 0.99) {
+    if (base.goalComplete()) {
       base.setGoal(goal);
     }
   }

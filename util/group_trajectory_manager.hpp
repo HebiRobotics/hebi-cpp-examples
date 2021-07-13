@@ -16,7 +16,7 @@ namespace experimental {
 
 using arm::Goal;
 
-class GroupTrajectoryManager {
+class GroupTrajectoryManager: GroupMananger {
 
 public:
 
@@ -28,86 +28,17 @@ public:
   // mode.
   static std::unique_ptr<GroupTrajectoryManager> create(const GroupManager::Params& params);
 
-  // Loads gains from the given .xml file, and sends them to the module. Returns
-  // false if the gains file could not be found, if these is a mismatch in
-  // number of modules, or the modules do not acknowledge receipt of the gains.
-  bool loadGains(const std::string& gains_file);
-
   //////////////////////////////////////////////////////////////////////////////
   // Accessors
   //////////////////////////////////////////////////////////////////////////////
-
-  // Returns the number of modules / DoF in the arm
-  size_t size() const { return group_->size(); }
-
-  // Returns the internal group. Not necessary for most use cases.
-  const Group& group() const { return *group_; }
 
   // Returns the currently active internal trajectory. Not necessary for most
   // use cases.
   // Returns 'nullptr' if there is no active trajectory.
   const trajectory::Trajectory* trajectory() const { return trajectory_.get(); }
 
-  // Returns the command last computed by update, or an empty command object
-  // if "update" has never successfully run. The returned command can be
-  // modified as desired before it is sent to the robot with the send function.
-  GroupCommand& pendingCommand() { return command_; }
-  const GroupCommand& pendingCommand() const { return command_; }
-
-  // Returns the last feedback obtained by update, or an empty feedback object
-  // if "update" has never successfully run.
-  const GroupFeedback& lastFeedback() const { return feedback_; }
-  const double dT() const { return dt_; }
-  const double lastTime() const { return last_time_; }
-
-  //////////////////////////////////////////////////////////////////////////////
-  // Main loop functions
-  //
-  // Typical usage:
-  //
-  // while(true) {
-  //   arm->update();
-  //   arm->send();
-  // }
-  //////////////////////////////////////////////////////////////////////////////
-
-  // Updates feedback and generates the basic command for this timestep.
-  // To retrieve the feedback, call `getLastFeedback()` after this call.
-  // You can modify the command object after calling this.
-  //
-  // Returns 'false' on a connection problem; true on success.
-  bool update();
-
-  // Sends the command last computed by "update" to the robot arm.  Any user
-  // modifications to the command are included.
-  bool send();
-
   //////////////////////////////////////////////////////////////////////////////
   // Goals
-  // 
-  // A goal is a desired (joint angle) position that the arm should reach, and
-  // optionally information about the time it should reach that goal at and the
-  // path (position, velocity, and acceleration waypoints) it should take to
-  // get there.
-  //
-  // The default behavior when a goal is set is for the arm to plan and begin
-  // executing a smooth motion from its current state to this goal, with an
-  // internal heuristic that defines the time at which it will reach the goal.
-  // This immediately overrides any previous goal that was set.
-  //
-  // If there is no "active" goal the arm is set into a mode where it is
-  // actively controlled to be approximately weightless, and can be moved around
-  // by hand easily.  This is the default state when the arm is created.
-  //
-  // After reaching the goal, the arm continues to be commanded with the final
-  // joint state of the set goal, and is _not_ implicitly returned to a
-  // "weightless" mode.
-  //
-  // A goal may also define "aux" states to be sent to an end effector
-  // associated with the arm.  In this case, the end effector states are
-  // treated as "step functions", immediately being commanded at the timestamp
-  // of the waypoint they are associated with.  An empty "aux" goal or "NaN"
-  // defines a "no transition" at the given waypoint.
   //////////////////////////////////////////////////////////////////////////////
 
   // Set the current goal waypoint(s), immediately replanning to these

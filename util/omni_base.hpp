@@ -31,7 +31,7 @@ protected:
 
   // TODO: think about limitations on (x,y) vs. (x,y,theta)
   // trajectories
-  optional<queue<shared_ptr<Trajectory>>> buildTrajectory(const CartesianGoal& g) override;
+  std::unique_ptr<queue<shared_ptr<Trajectory>>> buildTrajectory(const CartesianGoal& g) override;
 
 private:
 
@@ -135,7 +135,7 @@ void OmniBase::updateOdometry(const Eigen::VectorXd& wheel_vel, double dt) {
   global_pose_ += global_vel_ * dt;
 };
 
-optional<queue<shared_ptr<Trajectory>>> OmniBase::buildTrajectory(const CartesianGoal& g) {
+std::unique_ptr<queue<shared_ptr<Trajectory>>> OmniBase::buildTrajectory(const CartesianGoal& g) {
   auto num_waypoints = g.times().size();
   auto num_wheels = g.positions().row(0).size();
 
@@ -153,12 +153,12 @@ optional<queue<shared_ptr<Trajectory>>> OmniBase::buildTrajectory(const Cartesia
                                                 &acc);
 
   if (!traj) {
-    return std::nullopt;
+    return nullptr;
   }
 
-  queue<shared_ptr<Trajectory>> retval;
-  retval.push(traj);
-  return {retval};
+  auto retval = std::make_unique<queue<shared_ptr<Trajectory>>>();
+  retval->push(traj);
+  return retval;
 };
 
 } // namespace mobile
