@@ -19,7 +19,6 @@ using arm::Goal;
 class GroupTrajectoryManager: GroupMananger {
 
 public:
-
   //////////////////////////////////////////////////////////////////////////////
   // Setup functions
   //////////////////////////////////////////////////////////////////////////////
@@ -51,25 +50,28 @@ public:
   //
   // If we have reached the goal, progress is "1".  If there is no active goal,
   // or we have just begun, progress is "0".
-  double goalProgress() const;
+  double GroupTrajectoryManager::goalProgress() const {
+    if (trajectory_) {
+      double t_traj = last_time_ - trajectory_start_time_;
+      t_traj = std::min(t_traj, trajectory_->getDuration());
+      return t_traj / trajectory_->getDuration();
+    }
+    // No current goal!
+    return 0.0;
+  }
 
   // Have we reached the goal?  If there is no goal, returns 'false'
   bool atGoal() const { return goalProgress() >= 1.0; }
 
   // Cancels any active goal, returning to a "weightless" state which does not
   // actively command position or velocity.
-  void cancelGoal();
+  void cancelGoal() {
+    trajectory_ = nullptr;
+    trajectory_start_time_ = std::numeric_limits<double>::quiet_NaN();
+  }
 
 protected:
-  std::function<double()> get_current_time_s_;
-  double last_time_;
-  double dt_{ std::numeric_limits<double>::quiet_NaN() };
-  std::shared_ptr<Group> group_;
-
-  hebi::GroupFeedback feedback_;
-  hebi::GroupCommand command_;
-
-  // Private arm constructor
+  // Private constructor
   GroupTrajectoryManager(
       std::function<double()> get_current_time_s,
       std::shared_ptr<Group> group):
@@ -134,15 +136,6 @@ std::unique_ptr<GroupTrajectoryManager> GroupTrajectoryManager::create(const Gro
   // Note: once ROS moves up to C++14, we can change this to "make_unique".
   return std::unique_ptr<GroupTrajectoryManager>(new GroupTrajectoryManager(params.get_current_time_s_, group));
 }
-  
-bool GroupTrajectoryManager::loadGains(const std::string& gains_file)
-{
-  hebi::GroupCommand gains_cmd(group_->size());
-  if (!gains_cmd.readGains(gains_file))
-    return false;
-
-  return group_->sendCommandWithAcknowledgement(gains_cmd);
-}
 
 bool GroupTrajectoryManager::update() {
   double t = get_current_time_s_();
@@ -175,10 +168,6 @@ bool GroupTrajectoryManager::update() {
   command_.setVelocity(vel_);
 
   return true;
-}
-
-bool GroupTrajectoryManager::send() {
-  return group_->sendCommand(command_);
 }
 
 // TODO: think about adding customizability, or at least more intelligence for
@@ -258,20 +247,6 @@ void GroupTrajectoryManager::setGoal(const Goal& goal) {
   trajectory_start_time_ = last_time_;
 }
 
-double GroupTrajectoryManager::goalProgress() const {
-  if (trajectory_) {
-    double t_traj = last_time_ - trajectory_start_time_;
-    t_traj = std::min(t_traj, trajectory_->getDuration());
-    return t_traj / trajectory_->getDuration();
-  }
-  // No current goal!
-  return 0.0;
-}
-
-void GroupTrajectoryManager::cancelGoal() {
-  trajectory_ = nullptr;
-  trajectory_start_time_ = std::numeric_limits<double>::quiet_NaN();
-}
 
 } // namespace experimental
 } // namespace hebi

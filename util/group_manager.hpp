@@ -12,11 +12,6 @@ namespace experimental {
 class GroupManager {
 
 public:
-
-  //////////////////////////////////////////////////////////////////////////////
-  // Setup functions
-  //////////////////////////////////////////////////////////////////////////////
-
   // Parameters for creating a group manager
   struct Params {
     // The family and names passed to the "lookup" function to find modules
@@ -39,6 +34,10 @@ public:
       return (std::chrono::duration<double>(clock::now() - start_time)).count();
     }; 
   };
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Setup functions
+  //////////////////////////////////////////////////////////////////////////////
 
   // Creates an "Trajectory Follower" object, and puts it into a "weightless" no-goal control
   // mode.
@@ -90,7 +89,7 @@ protected:
   hebi::GroupFeedback feedback_;
   hebi::GroupCommand command_;
 
-  // Private arm constructor
+  // Private constructor
   GroupManager(
       std::function<double()> get_current_time_s,
       std::shared_ptr<Group> group):
@@ -100,7 +99,6 @@ protected:
     feedback_(group->size()),
     command_(group->size()) {}
 };
-
 
 std::unique_ptr<GroupManager> GroupManager::create(const GroupManager::Params& params) {
 
