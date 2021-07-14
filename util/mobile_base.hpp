@@ -193,7 +193,7 @@ public:
     auto vel = group_manager_->lastFeedback().getVelocity();
     updateOdometry(vel, group_manager_->dT());
 
-    auto cmd = group_manager_->pendingCommand();
+    auto& cmd = group_manager_->pendingCommand();
 
     while (base_trajectories_.front() && base_trajectories_.front()->getEndTime() < group_manager_->lastTime()) {
       base_trajectories_.pop();
