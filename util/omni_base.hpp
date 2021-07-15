@@ -10,22 +10,29 @@ class OmniBase : public MobileBase {
 public:
   // Parameters for creating a base
   struct Params: public MobileBase::Params {
-    Params() : wheel_radius(0.0762), base_radius(0.220), sample_density(0.1) {}
-    double wheel_radius; // m
-    double base_radius; // m (center of omni to origin of base) 
-    double sample_density; // time between sampled waypoints on cartesian trajectory
+    double wheel_radius = 0.0762; // m
+    double base_radius = 0.220; // m (center of omni to origin of base) 
   };
 
-  OmniBase(Params p) : MobileBase(p),
-                       wheel_radius_(p.wheel_radius),
-                       base_radius_(p.base_radius),
-                       sample_density_(p.sample_density)
-  {}
+  static std::unique_ptr<OmniBase> create(Params p) {
+    auto gm = GroupManager::create(p);
+    if (!gm)
+      return nullptr;
+
+    auto retval = std::unique_ptr<OmniBase>(new OmniBase(move(gm), p));
+    return retval;
+  }
 
   virtual Eigen::VectorXd SE2ToWheelVel(Pose pos, Vel vel) const override;
   virtual Vel getMaxVelocity() const override;
 
 protected:
+  // protected constructor
+  OmniBase(std::unique_ptr<GroupManager> gm, Params p) : MobileBase(move(gm), p),
+                       wheel_radius_(p.wheel_radius),
+                       base_radius_(p.base_radius)
+  {}
+
   // Updates local velocity based on wheel change in position since last time
   virtual void updateOdometry(const Eigen::VectorXd& wheel_vel, double dt) override;
 
@@ -77,8 +84,6 @@ private:
    /* Declare main kinematic variables */
   double wheel_radius_; // m
   double base_radius_; // m (center of omni to origin of base) 
-
-  double sample_density_; // sec
 
   const Eigen::Matrix3d jacobian_ = createJacobian();
 
@@ -156,7 +161,7 @@ std::unique_ptr<queue<shared_ptr<Trajectory>>> OmniBase::buildTrajectory(const C
     return nullptr;
   }
 
-  auto retval = std::make_unique<queue<shared_ptr<Trajectory>>>();
+  auto retval = std::unique_ptr<queue<shared_ptr<Trajectory>>>(new queue<shared_ptr<Trajectory>>());
   retval->push(traj);
   return retval;
 };

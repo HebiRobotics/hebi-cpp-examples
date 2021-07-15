@@ -19,9 +19,14 @@ int main(int argc, char* argv[]) {
 
   std::cout << "Creating Omni Base" << std::endl;
 
-  OmniBase base(p);
+  auto base = OmniBase::create(p);
 
-  auto currentPose = base.getOdometry();
+  if (!base) {
+    std::cout << "Failed to create base, exiting!" << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  auto currentPose = base->getOdometry();
 
   Waypoint wp1;
   Waypoint wp2;
@@ -46,7 +51,7 @@ int main(int argc, char* argv[]) {
   auto goal = CartesianGoal::createFromWaypoints({wp1, wp2, wp3, wp4}, false);
 
   // send goal to base
-  base.setGoal(goal);
+  base->setGoal(goal);
 
   //////////////////////////
   //// Main Control Loop ///
@@ -55,14 +60,14 @@ int main(int argc, char* argv[]) {
   std::cout << "Executing Goal" << std::endl;
   return -1;
 
-  while (base.update())
+  while (base->update())
   {
     // Send updated command to the base
-    base.send();
+    base->send();
 
     // if the trajectory has been completed, start another square
-    if (base.goalComplete()) {
-      base.setGoal(goal);
+    if (base->goalComplete()) {
+      base->setGoal(goal);
     }
   }
 

@@ -181,10 +181,6 @@ public:
   struct Params: public GroupManager::Params {
   };
 
-  MobileBase(Params p) :
-    group_manager_(GroupManager::create(p))
-  {}
-
   // This is a generic implementation that assumes the use of a wheel-space trajectory
   bool update() {
     // updates dt and last feedback message
@@ -301,6 +297,11 @@ public:
   };
 
 protected:
+  // protected constructor
+  MobileBase(std::unique_ptr<GroupManager> gm, Params p) :
+    group_manager_(move(gm))
+  {}
+
   // A cartesian trajectory is the only thing an individual base
   // implementation must handle.  This should be smoothly moved
   // to from the current state of the system.

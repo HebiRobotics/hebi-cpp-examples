@@ -45,7 +45,12 @@ int main(int argc, char* argv[]) {
 
   std::cout << "Creating Omni Base" << std::endl;
 
-  OmniBase base(p);
+  auto base = OmniBase::create(p);
+
+  if (!base) {
+    std::cout << "Failed to create base, exiting!" << std::endl;
+    exit(EXIT_FAILURE);
+  }
 
   auto last_state = mobile->getState();
 
@@ -53,7 +58,7 @@ int main(int argc, char* argv[]) {
   //// Main Control Loop ///
   //////////////////////////
 
-  while(base.update())
+  while(base->update())
   {
     auto state = mobile->getState();
     MobileIODiff diff(last_state, state);
@@ -82,13 +87,13 @@ int main(int argc, char* argv[]) {
     auto goal = CartesianGoal::createFromVelocity(Vel{dx, dy, dtheta}, 0.5, 0.25);
 
     // send goal to base
-    base.setGoal(goal);
+    base->setGoal(goal);
 
     // Update to the new last_state for mobile device
     last_state = state;
 
     // Send latest commands to the base
-    base.send();
+    base->send();
   }
 
   // Clear MobileIO text
