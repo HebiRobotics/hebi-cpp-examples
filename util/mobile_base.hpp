@@ -69,8 +69,6 @@ class Waypoint {
   SE2Point acc{};
 };
 
-class CartesianTrajectory;
-
 struct CartesianGoal {
   // Moves with the given relative body velocity for a certain
   // number of seconds, then slows to a stop over a certain number
@@ -139,15 +137,6 @@ struct CartesianGoal {
 
     return CartesianGoal(times, positions, velocities, accelerations);
   }
-
-  // Creates from cartesian trajectory.  May be (x,y) or (x,y,theta), but 
-  // (x,y,theta) less likely to be realizable depending on system.
-  // If "theta" is not defined, is tangent to path.
-  // (x, y path here could be used for planning path through obstacles, for example)
-  // \param isBaseFrame is "true" if this is relative to current body frame,
-  // and "false" for using odometry coordinates.
-  // TODO
-  static CartesianGoal createFromTrajectory(CartesianTrajectory t, bool isBaseFrame);
 
   const Eigen::VectorXd& times() const { return times_; }
   const Eigen::Matrix<double, 3, Eigen::Dynamic>& positions() const { return positions_; }
@@ -267,12 +256,6 @@ public:
   // `getMaxVelocity` function implementation
   // TODO: "best effort" -- or return "can't do this"?
   bool setGoal(const CartesianGoal& g) {
-    if (!group_manager_) {
-      std::cout << "WARNING: Actuator Controller was not created successfully,"
-	        << " cannot track goal!" << std::endl;
-      return false;
-    }
-
     auto baseTrajectories = buildTrajectory(g);
     if (baseTrajectories) {
       base_trajectories_ = *baseTrajectories;
