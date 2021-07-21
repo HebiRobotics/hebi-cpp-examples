@@ -22,7 +22,7 @@ public:
     int command_lifetime_ = 100;
     // Loop rate, in Hz.  This is how fast the arm update loop will nominally
     // run.
-    double control_frequency_ = 200.f;
+    double control_frequency_ = 200;
 
     // A function pointer that returns a double representing the current time in
     // seconds. (Can be overloaded to use, e.g., simulator time)
@@ -39,8 +39,6 @@ public:
   // Setup functions
   //////////////////////////////////////////////////////////////////////////////
 
-  // Creates an "Trajectory Follower" object, and puts it into a "weightless" no-goal control
-  // mode.
   static std::unique_ptr<GroupManager> create(const Params& params);
 
   // Loads gains from the given .xml file, and sends them to the module. Returns
@@ -58,9 +56,6 @@ public:
   // Returns the internal group. Not necessary for most use cases.
   const Group& group() const { return *group_; }
 
-  // Returns the command last computed by update, or an empty command object
-  // if "update" has never successfully run. The returned command can be
-  // modified as desired before it is sent to the robot with the send function.
   GroupCommand& pendingCommand() { return command_; }
   const GroupCommand& pendingCommand() const { return command_; }
 
@@ -124,21 +119,22 @@ std::unique_ptr<GroupManager> GroupManager::create(const GroupManager::Params& p
     return nullptr;
   }
 
+  // TODO: once we move up to C++14, we can change this to "make_unique".
+  std::unique_ptr<GroupManager> gm(new GroupManager(params.get_current_time_s_, group));
+
   // Try to get feedback -- if we don't get a packet in the first N times,
   // something is wrong
   int num_attempts = 0;
 
   // We need feedback, so we can plan trajectories if that gets called before the first "update"
-  GroupFeedback feedback(group->size());
-  while (!group->getNextFeedback(feedback)) {
+  while (!gm->update()) {
     if (num_attempts++ > 10) {
       std::cout << "Could not communicate with robot; check network connection.\n";
       return nullptr;
     }
   } 
 
-  // Note: once ROS moves up to C++14, we can change this to "make_unique".
-  return std::unique_ptr<GroupManager>(new GroupManager(params.get_current_time_s_, group));
+  return gm;
 }
   
 bool GroupManager::loadGains(const std::string& gains_file)

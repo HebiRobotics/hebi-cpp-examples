@@ -16,9 +16,8 @@ namespace hebi {
 namespace experimental {
 namespace mobile {
 
-using std::queue;
-using std::shared_ptr;
 using hebi::trajectory::Trajectory;
+using TrajectoryQueue = std::queue<std::shared_ptr<Trajectory>>;
 
 class SE2Point {
   public:
@@ -75,11 +74,12 @@ struct CartesianGoal {
   // of seconds.  Can be used for continuous replanning, e.g.
   // mobile IO control.
   // \param v target velocity
+  // \param rampTime "ramp up" time
   // \param cruiseTime time to drive at velocity v
   // \param slowTime "ramp down" time
-  static CartesianGoal createFromVelocity(Vel v, double cruiseTime, double slowTime) {
+  static CartesianGoal createFromVelocity(Vel v, double rampTime, double cruiseTime, double slowTime) {
     Waypoint start;
-    start.t = 0.1;
+    start.t = rampTime;
     start.vel = v;
 
     Waypoint slow;
@@ -88,31 +88,25 @@ struct CartesianGoal {
 
     Waypoint stop;
     stop.t = cruiseTime + slowTime;
-    stop.vel.x = 0;
-    stop.vel.y = 0;
-    stop.vel.theta = 0;
+    stop.vel = {0, 0, 0};
+    stop.acc = {0, 0, 0};
 
-    return createFromWaypoints({start, slow, stop}, true);
+    return createFromWaypoints({start, slow, stop});
   }
 
   // Goes to (x, y, theta) in a certain number of seconds.
-  // \param isBaseFrame is "true" if this is relative to current body frame,
-  // and "false" for using odometry coordinates.
-  static CartesianGoal createFromPosition(Pose p, double goalTime, bool isBaseFrame) {
-    Waypoint start;
+  static CartesianGoal createFromPosition(Pose p, double goalTime) {
     Waypoint end;
-    start.t = 0.1;
-    start.pos.x = 0;
-    start.pos.y = 0;
-    start.pos.theta = 0;
 
     end.t = goalTime;
     end.pos = p;
+    end.vel = {0, 0, 0};
+    end.acc = {0, 0, 0};
 
-    return createFromWaypoints({start, end}, isBaseFrame);
+    return createFromWaypoints({end});
   }
 
-  static CartesianGoal createFromWaypoints(std::vector<Waypoint> waypoints, bool isBaseFrame) {
+  static CartesianGoal createFromWaypoints(std::vector<Waypoint> waypoints) {
     auto count = waypoints.size();
 
     VectorXd times(count);
@@ -153,7 +147,6 @@ private:
       velocities_(velocities),
       accelerations_(accelerations) {}
 
-  // TODO: some info here capturing above states/options
   const Eigen::VectorXd times_{0};
   const Eigen::Matrix<double, 3, Eigen::Dynamic> positions_{0, 0};
   const Eigen::Matrix<double, 3, Eigen::Dynamic> velocities_{0, 0};
@@ -188,12 +181,8 @@ public:
     if (base_trajectories_.size() == 0) {
       auto size = group_manager_->size();
 
-      VectorXd compliantState;
-      compliantState.resize(size);
       double nan = std::numeric_limits<double>::quiet_NaN();
-      for (auto i=0; i<size; ++i) {
-        compliantState(i) = nan;
-      }
+      VectorXd compliantState = VectorXd::Constant(1, size, nan);
 
       cmd.setPosition(compliantState);
       cmd.setVelocity(compliantState);
@@ -229,15 +218,14 @@ public:
     return group_manager_->send();
   }
 
-  //virtual SE2Point wheelsToSE2(Eigen::VectorXd wheel_state) const = 0;
-  virtual Eigen::VectorXd SE2ToWheelVel(Pose pos, Vel vel) const = 0;
+  virtual SE2Point wheelsToSE2(const Pose& pos, const Eigen::VectorXd& wheel_state) const = 0;
+  virtual Eigen::VectorXd SE2ToWheelVel(const Pose& pos, const Vel& vel) const = 0;
 
   // Get the global odometry state
   Pose getOdometry() const { return global_pose_ + relative_odom_offset_; };
 
   // Reset the current odometry state
   void setOdometry(Pose p) {
-    last_wheel_pos_ = group_manager_->lastFeedback().getPosition();
     relative_odom_offset_ = p - getOdometry();
   }
 
@@ -258,7 +246,7 @@ public:
   bool setGoal(const CartesianGoal& g) {
     auto baseTrajectories = buildTrajectory(g);
     if (baseTrajectories) {
-      base_trajectories_ = *baseTrajectories;
+      base_trajectories_.swap(*baseTrajectories);
       return true;
     }
     return false;
@@ -268,7 +256,7 @@ public:
   void clearGoal() {
     // Taken from https://stackoverflow.com/a/709161
     // clear the trajectory queue
-    std::queue<shared_ptr<Trajectory>>().swap(base_trajectories_);
+    TrajectoryQueue().swap(base_trajectories_);
   }
 
   bool goalComplete() {
@@ -282,29 +270,19 @@ public:
 protected:
   // protected constructor
   MobileBase(std::unique_ptr<GroupManager> gm, Params p) :
-    group_manager_(move(gm))
-  {}
+    group_manager_(std::move(gm))
+  {
+    last_wheel_pos_ = group_manager_->lastFeedback().getPosition();
+  }
 
   // A cartesian trajectory is the only thing an individual base
   // implementation must handle.  This should be smoothly moved
   // to from the current state of the system.
-  // TODO: maybe a std::vector<Trajectory>?
-  // When "nullopt" is set, this clears t  // Creates from cartesian trajectory.  May be (x,y) or (x,y,theta), but 
-  // (x,y,theta) less likely to be realizable depending on system.
-  // If "theta" is not defined, is tangent to path.
-  // (x, y path here could be used for planning path through obstacles, for example)
-  // \param isBaseFrame is "true" if this is relative to current body frame,
-  // and "false" for using odometry coordinates.he active trajectory
-  // goal.
-  // TODO: think about how to handle starting state to initial
-  // state of trajectory -- should we just assume first waypoint
-  // of trajectory is not at time 0, and add first point based on
-  // current command (or feedback if not active) at time 0?)
-  virtual std::unique_ptr<queue<shared_ptr<Trajectory>>> buildTrajectory(const CartesianGoal& g) = 0;
+  virtual std::unique_ptr<TrajectoryQueue> buildTrajectory(const CartesianGoal& g) = 0;
 
   virtual void updateOdometry(const Eigen::VectorXd& wheel_vel, double dt) = 0;
 
-  std::unique_ptr<GroupManager> group_manager_={nullptr};
+  std::unique_ptr<GroupManager> group_manager_{nullptr};
 
   // These variables should be updated when updateOdometry is called
   Pose global_pose_{0, 0, 0};
@@ -313,7 +291,7 @@ protected:
 
   Vel local_vel_{0, 0, 0};
 
-  queue<shared_ptr<Trajectory>> base_trajectories_{};
+  TrajectoryQueue base_trajectories_{};
 
 private:
   Pose relative_odom_offset_{0, 0, 0};

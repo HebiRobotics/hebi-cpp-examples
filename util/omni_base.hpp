@@ -6,6 +6,7 @@ namespace hebi {
 namespace experimental {
 namespace mobile {
 
+
 class OmniBase : public MobileBase {
 public:
   // Parameters for creating a base
@@ -23,7 +24,8 @@ public:
     return retval;
   }
 
-  virtual Eigen::VectorXd SE2ToWheelVel(Pose pos, Vel vel) const override;
+  virtual SE2Point wheelsToSE2(const Pose& pos,const Eigen::VectorXd&) const override;
+  virtual Eigen::VectorXd SE2ToWheelVel(const Pose& pos, const Vel& vel) const override;
   virtual Vel getMaxVelocity() const override;
 
 protected:
@@ -38,9 +40,19 @@ protected:
 
   // TODO: think about limitations on (x,y) vs. (x,y,theta)
   // trajectories
-  std::unique_ptr<queue<shared_ptr<Trajectory>>> buildTrajectory(const CartesianGoal& g) override;
+  std::unique_ptr<TrajectoryQueue> buildTrajectory(const CartesianGoal& g) override;
 
 private:
+
+  Eigen::Matrix3d thetaToTF(double theta) const {
+    Eigen::Matrix3d tf;
+    tf(0, 0) = std::cos(theta);
+    tf(0, 1) = -std::sin(theta);
+    tf(1, 0) = std::cos(theta);
+    tf(1, 1) = std::sin(theta);
+    tf(2, 2) = theta;
+    return tf;
+  }
 
   Eigen::Matrix3d createJacobian() {
     double a = sqrt(3)/(2 * wheel_radius_);
@@ -91,30 +103,30 @@ private:
   const Eigen::Matrix3d jacobian_inv_ = createJacobianInv();
 };
 
+SE2Point OmniBase::wheelsToSE2(const Pose& pos, const Eigen::VectorXd& wheel_vels) const {
+  auto local_base_vels = jacobian_inv_ * wheel_vels;
+  // if provided, rotate around theta
+  if (std::isnan(pos.theta))
+    return {local_base_vels(0), local_base_vels(1), local_base_vels(2)};
 
-Eigen::VectorXd OmniBase::SE2ToWheelVel(Pose pos, Vel vel) const {
-  // if position isn't provided, just return the local frame velocity
-  if(std::isnan(pos.x) || std::isnan(pos.y) || std::isnan(pos.theta)) {
-    Eigen::VectorXd ret(3);
-    ret(0) = vel.x;
-    ret(1) = vel.y;
-    ret(2) = vel.theta;
-    return jacobian_ * ret;
+  auto base_vels = thetaToTF(pos.theta) * local_base_vels;
+  return {base_vels(0), base_vels(1), base_vels(2)};
+}
+
+Eigen::VectorXd OmniBase::SE2ToWheelVel(const Pose& pos, const Vel& vel) const {
+  Eigen::VectorXd local_vel(3);
+  local_vel(0) = vel.x;
+  local_vel(1) = vel.y;
+  local_vel(2) = vel.theta;
+
+  // if position isn't provided, just use the local frame velocity
+  if(std::isnan(pos.theta)) {
+    return jacobian_ * local_vel;
   }
 
-  double theta = pos.theta;
-  double dtheta = vel.theta;
+  Eigen::Vector3d global_vel = thetaToTF(pos.theta) * local_vel;
 
-  double offset = 1.0;
-  double ctheta = std::cos(-theta);
-  double stheta = std::sin(-theta);
-  double dx = vel.x * ctheta - vel.y * stheta;
-  double dy = vel.x * stheta + vel.y * ctheta;
-
-  Eigen::Vector3d local_vel;
-  local_vel << dx, dy, dtheta;
-
-  return jacobian_ * local_vel;
+  return jacobian_ * global_vel;
 };
 
 Vel OmniBase::getMaxVelocity() const {
@@ -125,30 +137,42 @@ Vel OmniBase::getMaxVelocity() const {
 void OmniBase::updateOdometry(const Eigen::VectorXd& wheel_vel, double dt) { 
   // Get local velocities
   auto local_vel = jacobian_inv_ * wheel_vel;
-  local_vel_.x = local_vel[0];
-  local_vel_.y = local_vel[1];
-  local_vel_.theta = local_vel[2];
+  local_vel_ = {local_vel(0), local_vel(1), local_vel(2)};
 
   // Get global velocity:
-  auto c = std::cos(global_pose_.theta);
-  auto s = std::sin(global_pose_.theta);
-  global_vel_.x = c * local_vel_.x - s * local_vel_.y;
-  global_vel_.y = s * local_vel_.x + c * local_vel_.y;
-  // Theta transforms directly
-  global_vel_.theta = local_vel_.theta;
+  auto global_vel = thetaToTF(global_pose_.theta) * local_vel;
+  global_vel_ = {global_vel(0), global_vel(1), global_vel(2)};
 
   global_pose_ += global_vel_ * dt;
 };
 
-std::unique_ptr<queue<shared_ptr<Trajectory>>> OmniBase::buildTrajectory(const CartesianGoal& g) {
-  auto num_waypoints = g.times().size();
-  auto num_wheels = g.positions().row(0).size();
+std::unique_ptr<TrajectoryQueue> OmniBase::buildTrajectory(const CartesianGoal& g) {
+  // construct first waypoint from current state
+  // so trajectory smoothly transitions
 
-  MatrixXd wheel_pos(num_wheels, num_waypoints);
-  MatrixXd wheel_vel(num_wheels, num_waypoints);
-  MatrixXd wheel_acc(num_wheels, num_waypoints);
+  // remove stale trajectories
+  auto t_now = group_manager_->lastTime();
+  while (base_trajectories_.front() && base_trajectories_.front()->getEndTime() < t_now) {
+    base_trajectories_.pop();
+  }
 
-  std::cout << "Build Trajectory" << std::endl;
+  Vel starting_vel;
+
+  if (base_trajectories_.empty())
+  {
+    // if no trajectory, use last feedback.
+    auto v = group_manager_->pendingCommand().getVelocity();
+    starting_vel = wheelsToSE2({}, v);
+  }
+  else
+  {
+    auto traj = base_trajectories_.front();
+    Eigen::VectorXd pos;
+    Eigen::VectorXd vel;
+    Eigen::VectorXd acc;
+    traj->getState(t_now, &pos, &vel, &acc);
+    auto starting_vel = thetaToTF(pos(2)) * vel;
+  }
 
   MatrixXd vel = g.velocities();
   MatrixXd acc = g.accelerations();
@@ -161,7 +185,7 @@ std::unique_ptr<queue<shared_ptr<Trajectory>>> OmniBase::buildTrajectory(const C
     return nullptr;
   }
 
-  auto retval = std::unique_ptr<queue<shared_ptr<Trajectory>>>(new queue<shared_ptr<Trajectory>>());
+  std::unique_ptr<TrajectoryQueue> retval(new TrajectoryQueue());
   retval->push(traj);
   return retval;
 };

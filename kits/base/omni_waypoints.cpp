@@ -48,7 +48,7 @@ int main(int argc, char* argv[]) {
   wp4.t += 1.0;
   wp4.pos.x -= 0.5;
 
-  auto goal = CartesianGoal::createFromWaypoints({wp1, wp2, wp3, wp4}, false);
+  auto goal = CartesianGoal::createFromWaypoints({wp1, wp2, wp3, wp4});
 
   // send goal to base
   base->setGoal(goal);

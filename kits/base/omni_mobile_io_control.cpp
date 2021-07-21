@@ -84,7 +84,7 @@ int main(int argc, char* argv[]) {
     /////////////////
 
     // create Vel Goal for 0.5 second, 0.25 second ramp down
-    auto goal = CartesianGoal::createFromVelocity(Vel{dx, dy, dtheta}, 0.5, 0.25);
+    auto goal = CartesianGoal::createFromVelocity(Vel{dx, dy, dtheta}, 0.1, 0.5, 0.25);
 
     // send goal to base
     base->setGoal(goal);
