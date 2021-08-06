@@ -67,9 +67,9 @@ int main(int argc, char* argv[]) {
     // Input Handling
     /////////////////
 
-    auto dy = -1 * state.getAxis(7) / 2.0;
-    auto dx = state.getAxis(8) / 2.0;
-    auto dtheta = -1 * state.getAxis(1);
+    auto dy = -1 * state.getAxis(1);
+    auto dx = state.getAxis(2);
+    auto dtheta = -1 * state.getAxis(7);
 
     // Button B8 - End Demo
     if (diff.get(8) == MobileIODiff::ButtonState::ToOn)

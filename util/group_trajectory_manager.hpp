@@ -16,7 +16,7 @@ namespace experimental {
 
 using arm::Goal;
 
-class GroupTrajectoryManager: GroupMananger {
+class GroupTrajectoryManager: GroupManager {
 
 public:
   //////////////////////////////////////////////////////////////////////////////
@@ -138,17 +138,7 @@ std::unique_ptr<GroupTrajectoryManager> GroupTrajectoryManager::create(const Gro
 }
 
 bool GroupTrajectoryManager::update() {
-  double t = get_current_time_s_();
-
-  // Time must be monotonically increasing!
-  if (t < last_time_)
-    return false;
-
-  dt_ = t - last_time_;
-  last_time_ = t;
-
-  if (!group_->getNextFeedback(feedback_))
-    return false;
+  GroupManager::update();
 
   // Update command from trajectory
   if (trajectory_) {

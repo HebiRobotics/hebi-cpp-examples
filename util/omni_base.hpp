@@ -45,12 +45,8 @@ protected:
 private:
 
   Eigen::Matrix3d thetaToTF(double theta) const {
-    Eigen::Matrix3d tf;
-    tf(0, 0) = std::cos(theta);
-    tf(0, 1) = -std::sin(theta);
-    tf(1, 0) = std::cos(theta);
-    tf(1, 1) = std::sin(theta);
-    tf(2, 2) = theta;
+    Eigen::Matrix3d tf = Matrix3d::Identity();
+    tf.block<2,2>(0,0) = Rotation2D<double>(theta).toRotationMatrix();
     return tf;
   }
 
@@ -152,32 +148,49 @@ std::unique_ptr<TrajectoryQueue> OmniBase::buildTrajectory(const CartesianGoal& 
 
   // remove stale trajectories
   auto t_now = group_manager_->lastTime();
-  while (base_trajectories_.front() && base_trajectories_.front()->getEndTime() < t_now) {
+  while (!base_trajectories_.empty() && base_trajectories_.front()->getEndTime() < t_now) {
     base_trajectories_.pop();
   }
 
-  Vel starting_vel;
+  Vector3d starting_vel;
 
   if (base_trajectories_.empty())
   {
     // if no trajectory, use last feedback.
     auto v = group_manager_->pendingCommand().getVelocity();
-    starting_vel = wheelsToSE2({}, v);
+    auto base_vel = wheelsToSE2({}, v);
+    starting_vel = {base_vel.x, base_vel.y, base_vel.theta};
   }
   else
   {
     auto traj = base_trajectories_.front();
-    Eigen::VectorXd pos;
-    Eigen::VectorXd vel;
-    Eigen::VectorXd acc;
+    Eigen::VectorXd pos(3);
+    Eigen::VectorXd vel(3);
+    Eigen::VectorXd acc(3);
     traj->getState(t_now, &pos, &vel, &acc);
-    auto starting_vel = thetaToTF(pos(2)) * vel;
+    starting_vel = thetaToTF(pos(2)) * vel;
   }
 
-  MatrixXd vel = g.velocities();
-  MatrixXd acc = g.accelerations();
-  auto traj = Trajectory::createUnconstrainedQp(g.times(),
-                                                g.positions(),
+  auto zeros = VectorXd::Constant(3, 0.0);
+  auto num_waypoints = g.times().size();
+  VectorXd times(num_waypoints + 1);
+  times.tail(num_waypoints) = g.times();
+  times(0) = 0.0;
+
+  MatrixXd pos(3, num_waypoints + 1);
+  pos.col(0) = zeros;
+  pos.rightCols(num_waypoints) = g.positions();
+
+  MatrixXd vel(3, num_waypoints + 1);
+  vel.col(0) = starting_vel;
+  vel.rightCols(num_waypoints) = g.velocities();
+
+  MatrixXd acc(3, num_waypoints + 1);
+  acc.col(0) = zeros;
+  acc.rightCols(num_waypoints) = g.accelerations();
+
+  auto traj = Trajectory::createUnconstrainedQp(times,
+                                                pos,
                                                 &vel,
                                                 &acc);
 

@@ -165,24 +165,28 @@ public:
 
   // This is a generic implementation that assumes the use of a wheel-space trajectory
   bool update() {
+
     // updates dt and last feedback message
     auto ret = group_manager_->update();
+    if (!ret) {
+      std::cout << "Warning: No update from base modules, possible connection issue..." << std::endl;
+      return false;
+    }
+
+    double t_now = group_manager_->lastTime();
     // now update odometry
     auto vel = group_manager_->lastFeedback().getVelocity();
     updateOdometry(vel, group_manager_->dT());
 
     auto& cmd = group_manager_->pendingCommand();
 
-    while (base_trajectories_.front() && base_trajectories_.front()->getEndTime() < group_manager_->lastTime()) {
-      base_trajectories_.pop();
-    }
-
+    clearStaleTrajectories(t_now);
     // go into compliance mode if no trajectory
-    if (base_trajectories_.size() == 0) {
+    if (base_trajectories_.empty()) {
       auto size = group_manager_->size();
 
-      double nan = std::numeric_limits<double>::quiet_NaN();
-      VectorXd compliantState = VectorXd::Constant(1, size, nan);
+      auto nan = std::numeric_limits<double>::quiet_NaN();
+      VectorXd compliantState = VectorXd::Constant(size, nan);
 
       cmd.setPosition(compliantState);
       cmd.setVelocity(compliantState);
@@ -193,10 +197,10 @@ public:
     } else {
       auto traj = base_trajectories_.front();
 
-      VectorXd pos, vel, accel;
+      VectorXd pos(3), vel(3), accel(3);
 
       // Update command from trajectory
-      traj->getState(group_manager_->lastTime(), &pos, &vel, &accel);
+      traj->getState(t_now - trajectory_start_time_, &pos, &vel, &accel);
 
       // set velocity to steer along cartesian trajectory
 
@@ -247,6 +251,8 @@ public:
     auto baseTrajectories = buildTrajectory(g);
     if (baseTrajectories) {
       base_trajectories_.swap(*baseTrajectories);
+      double t_now = group_manager_->lastTime();
+      trajectory_start_time_ = t_now;
       return true;
     }
     return false;
@@ -273,6 +279,8 @@ protected:
     group_manager_(std::move(gm))
   {
     last_wheel_pos_ = group_manager_->lastFeedback().getPosition();
+    // why is this necessary?
+    clearGoal();
   }
 
   // A cartesian trajectory is the only thing an individual base
@@ -292,9 +300,24 @@ protected:
   Vel local_vel_{0, 0, 0};
 
   TrajectoryQueue base_trajectories_{};
+  double trajectory_start_time_ = 0;
 
 private:
   Pose relative_odom_offset_{0, 0, 0};
+
+  void clearStaleTrajectories(double t_now) {
+    while (!base_trajectories_.empty())
+    {
+      double t_end = base_trajectories_.front()->getEndTime();
+      if(t_now > trajectory_start_time_ + t_end)
+      {
+        trajectory_start_time_ += t_end;
+        base_trajectories_.pop();
+      }
+      else
+        break;
+    }
+  }
 };
 
 
