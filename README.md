@@ -19,34 +19,18 @@ Use the same version of the C++ API that is defined at the top of projects/cmake
 The 'projects' folder contains sample project files for different IDEs/build
 systems.
 
-Currently, the only supported build systems are CMake and Visual Studio (Makefile
-and XCode support will be added soon).
-
-### Visual Studio
-
-Open the `projects/visual_studio/basic_examples.sln` file in Visual Studio.
-VS 2017 has been tested, but earlier versions are expected to work as well.
-(Note that a VS project for the advanced examples is coming soon!)
-
-To run an example:
-
-- Right click on the desired example project in the solution explorer, and
-click "Set as StartUp Project",
-- Select the desired configuration (Debug/Release and x64/Win32) from the
-top toolbar.
-- Click the run button (green triangle, beside the configuration selection
-buttons) to run the program.
-
-Note that as these are console applications with no pause at the end, you
-may wish to add a breakpoint before the program returns to have a chance
-to inspect the console output.
+Currently, the recommended build systems is CMake, although it is possible to add the source files and library dependencies in Visual Studio, XCode, Makefiles, etc.
 
 ### CMake
 
 To get started with CMake, you must
 first install CMake.  After doing so, you can run cmake to create the project
-files for your desired platform.  For example, on 64 bit Linux, from the root
-directory, you can run
+files for your desired platform.  You can run `cmake --help` to get platform-specific
+options, but here are a couple basic examples:
+
+**64-bit Linux; generates a makefile project**
+ 
+From the root directory of the checkout, run:
 
 ```
 mkdir build
@@ -60,6 +44,27 @@ can then run
 ```make```
 
 to compile the examples.
+
+**64-bit Windows; Visual Studio**
+
+From the root directory of the checkout, run the following in a command prompt:
+
+```
+mkdir build
+cd build
+cmake -G"Visual Studio 16 2019" -Ax64 ../projects/cmake/
+```
+
+Then open the `build/hebi_cpp_examples.sln` solution file, set the startup project
+to your desired example, and hit the green "run" button at the top of the IDE to
+compile and run it.
+
+For other versions of Visual Studio, `cmake --help` will provide the exact syntax.
+For example, for 64-bit builds on Visual Studio 2017, change the final line to:
+
+```
+cmake -G"Visual Studio 15 2017 Win64" ../projects/cmake/
+```
 
 ## Directory Layout
 
