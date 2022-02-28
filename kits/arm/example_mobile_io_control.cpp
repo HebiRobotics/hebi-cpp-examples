@@ -46,31 +46,35 @@ int main(int argc, char* argv[])
   //////////////////////////
 
   // Create the MobileIO object
-  std::unique_ptr<MobileIO> mobile = MobileIO::create(params.families_[0], "mobileIO");
+  std::unique_ptr<util::MobileIO> mobile = util::MobileIO::create(params.families_[0], "mobileIO");
+  if (!mobile)
+  {
+    std::cout << "couldn't find mobile IO device!\n";
+    return 1;
+  }
 
   std::string instructions;
   instructions = ("B1 - Waypoint 1\nB2 - Waypoint 2\n"
                   "B3 - Waypoint 3\n"
                   "B6 - Grav comp mode\nB8 - Quit\n");
   // Clear any garbage on screen
-  mobile -> clearText(); 
+  mobile->clearText(); 
 
   // Display instructions on screen
-  mobile -> sendText(instructions); 
+  mobile->appendText(instructions); 
 
   // Setup instructions
-  auto last_state = mobile->getState();
+  auto last_state = mobile->update();
 
   /////////////////////////////
   // Control Variables Setup //
   /////////////////////////////
 
   // Single Waypoint Vectors
-  auto num_joints = arm -> robotModel().getDoFCount();
+  auto num_joints = arm->robotModel().getDoFCount();
   Eigen::VectorXd positions(num_joints);
   double single_time;
   single_time = 3;
-
 
   //////////////////////////
   //// Main Control Loop ///
@@ -78,64 +82,55 @@ int main(int argc, char* argv[])
 
   while(arm->update())
   {
+    auto updated_mobile = mobile->update(0);
 
-    auto state = mobile->getState();
-    MobileIODiff diff(last_state, state);
-
-    /////////////////
-    // Button Presses
-    /////////////////
-
-    // Buttton B1 - Home Position
-    if (diff.get(1) == MobileIODiff::ButtonState::ToOn)
+    if (!updated_mobile)
+      std::cout << "Failed to get feedback from mobile I/O; check connection!\n";
+    else
     {
-      positions << 0, 0, 0, 0, 0, 0;
-      arm -> setGoal(arm::Goal::createFromPosition(single_time, positions));
+      /////////////////
+      // Button Presses
+      /////////////////
+
+      // Buttton B1 - Home Position
+      if (mobile->getButtonDiff(1) == util::MobileIO::ButtonState::ToOn) {
+        positions << 0, 0, 0, 0, 0, 0;
+        arm -> setGoal(arm::Goal::createFromPosition(single_time, positions));
+      }
+
+      // Button B2 - Waypoint 1
+      if (mobile->getButtonDiff(2) == util::MobileIO::ButtonState::ToOn) {
+        positions << M_PI/4, M_PI/3, 2*M_PI/3, M_PI/3, M_PI/4, 0;
+        arm -> setGoal(arm::Goal::createFromPosition(single_time, positions));
+      }
+
+      // Button B3 - Waypoint 2
+      if (mobile->getButtonDiff(3) == util::MobileIO::ButtonState::ToOn) {
+        positions << -M_PI/4, M_PI/3, 2*M_PI/3, M_PI/3, 3*M_PI/4, 0;
+        arm -> setGoal(arm::Goal::createFromPosition(single_time, positions));
+
+      }
+
+      // Button B6 - Grav Comp Mode
+      if (mobile->getButtonDiff(6) == util::MobileIO::ButtonState::ToOn) {
+        // cancel any goal that is set, returning arm into gravComp mode
+        arm -> cancelGoal();
+      }
+
+      // Button B8 - End Demo
+      if (mobile->getButtonDiff(8) == util::MobileIO::ButtonState::ToOn) {
+        // Clear MobileIO text
+        mobile->resetUI();
+        return 1;
+      }
     }
-
-    // Button B2 - Waypoint 1
-    if (diff.get(2) == MobileIODiff::ButtonState::ToOn)
-    {
-      positions << M_PI/4, M_PI/3, 2*M_PI/3, M_PI/3, M_PI/4, 0;
-      arm -> setGoal(arm::Goal::createFromPosition(single_time, positions));
-    }
-
-    // Button B3 - Waypoint 2
-    if (diff.get(3) == MobileIODiff::ButtonState::ToOn)
-    {
-      positions << -M_PI/4, M_PI/3, 2*M_PI/3, M_PI/3, 3*M_PI/4, 0;
-      arm -> setGoal(arm::Goal::createFromPosition(single_time, positions));
-
-    }
-
-    // Button B6 - Grav Comp Mode
-    if (diff.get(6) == MobileIODiff::ButtonState::ToOn)
-    {
-      // cancel any goal that is set, returning arm into gravComp mode
-      arm -> cancelGoal();
-    }
-
-    // Button B8 - End Demo
-    if (diff.get(8) == experimental::MobileIODiff::ButtonState::ToOn)
-    {
-      // Clear MobileIO text
-      mobile -> clearText();
-      return 1;
-    }
-
-    /////////////////
-    // Update & send
-    /////////////////
-
-    // Update to the new last_state for mobile device
-    last_state = state;
 
     // Send latest commands to the arm
     arm->send();
   }
 
   // Clear MobileIO text
-  mobile -> clearText();
+  mobile->clearText();
 
   return 0;
 }

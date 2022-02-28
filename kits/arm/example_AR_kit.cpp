@@ -61,10 +61,15 @@ int main(int argc, char* argv[])
   /////////////////////////
 
   // Create the MobileIO object
-  std::unique_ptr<MobileIO> mobile = MobileIO::create(params.families_[0], "mobileIO");
+  std::unique_ptr<util::MobileIO> mobile = util::MobileIO::create(params.families_[0], "mobileIO");
+  if (!mobile)
+  {
+    std::cout << "couldn't find mobile IO device!\n";
+    return 1;
+  }
 
   // Clear any garbage on screen
-  mobile -> clearText(); 
+  mobile->resetUI();
 
   // Setup instructions for display
   std::string instructions;
@@ -72,11 +77,10 @@ int main(int argc, char* argv[])
                   "B6 - Grav Comp Mode\nB8 - Quit\n");
 
   // Display instructions on screen
-  mobile -> sendText(instructions); 
+  mobile->appendText(instructions); 
 
   // Setup state variable for mobile device
-  auto last_mobile_state = mobile->getState();
-
+  auto last_mobile_state = mobile->update();
 
   //////////////////////////
   //// Main Control Loop ///
@@ -113,47 +117,51 @@ int main(int argc, char* argv[])
     if (softstart) {
       // End softstart when arm reaches its homePosition
       if (arm -> atGoal()){
-        mobile -> sendText("Softstart Complete!");
+        mobile->appendText("Softstart Complete!");
         softstart = false; 
         continue;
+        }
+        arm -> send();
+
+        // Stay in softstart, don't do any other behavior
+        continue;
+      } 
+
+      // Get latest mobile_state
+      auto updated_mobile = mobile->update(0);
+      
+      if (!updated_mobile)
+        std::cout << "Failed to get feedback from mobile I/O; check connection!\n";
+      else
+      {
+      // Button B1 - Return to home position
+      if (mobile->getButtonDiff(1) == util::MobileIO::ButtonState::ToOn) {
+          ar_mode = false;
+          arm -> setGoal(arm::Goal::createFromPosition(4, home_position));
       }
-      arm -> send();
 
-      // Stay in softstart, don't do any other behavior
-      continue;
-    } 
+      // Button B3 - Start AR Control
+      if (mobile->getButtonDiff(3) == util::MobileIO::ButtonState::ToOn) {
+        xyz_phone_init << mobile -> getLastFeedback().mobile().arPosition().get().getX(),
+                          mobile -> getLastFeedback().mobile().arPosition().get().getY(),
+                          mobile -> getLastFeedback().mobile().arPosition().get().getZ();
+        std::cout << xyz_phone_init << std::endl;
+        rot_phone_init = makeRotationMatrix(mobile -> getLastFeedback().mobile().arOrientation().get());
+        ar_mode = true;
+      }
 
-    // Get latest mobile_state
-    auto mobile_state = mobile->getState();
-    MobileIODiff diff(last_mobile_state, mobile_state);
-
-    // Button B1 - Return to home position
-    if (diff.get(1) == MobileIODiff::ButtonState::ToOn) {
+      // Button B6 - Grav Comp Mode
+      if (mobile->getButtonDiff(6) == util::MobileIO::ButtonState::ToOn) {
+        arm -> cancelGoal();
         ar_mode = false;
-        arm -> setGoal(arm::Goal::createFromPosition(4, home_position));
-    }
+      }
 
-    // Button B3 - Start AR Control
-    if (diff.get(3) == MobileIODiff::ButtonState::ToOn) {
-      xyz_phone_init << mobile -> getLastFeedback().mobile().arPosition().get().getX(),
-                        mobile -> getLastFeedback().mobile().arPosition().get().getY(),
-                        mobile -> getLastFeedback().mobile().arPosition().get().getZ();
-      std::cout << xyz_phone_init << std::endl;
-      rot_phone_init = makeRotationMatrix(mobile -> getLastFeedback().mobile().arOrientation().get());
-      ar_mode = true;
-    }
-
-    // Button B6 - Grav Comp Mode
-    if (diff.get(6) == experimental::MobileIODiff::ButtonState::ToOn) {
-      arm -> cancelGoal();
-      ar_mode = false;
-    }
-
-    // Button B8 - End Demo
-    if (diff.get(8) == experimental::MobileIODiff::ButtonState::ToOn) {
-      // Clear MobileIO text
-      mobile -> clearText();
-      return 1;
+      // Button B8 - End Demo
+      if (mobile->getButtonDiff(8) == util::MobileIO::ButtonState::ToOn) {
+        // Clear MobileIO text
+        mobile->resetUI();
+        return 1;
+      }
     }
 
     if (ar_mode) {
@@ -179,16 +187,13 @@ int main(int argc, char* argv[])
       // Create and send new goal to the arm
       arm -> setGoal(arm::Goal::createFromPosition(target_joints));
     }
-   
-    // Update mobile device to the new last_state
-    last_mobile_state = mobile_state;
 
     // Send latest commands to the arm
     arm->send();
   }
 
   // Clear MobileIO text
-  mobile -> clearText();
+  mobile->resetUI();
 
   return 0;
 }
