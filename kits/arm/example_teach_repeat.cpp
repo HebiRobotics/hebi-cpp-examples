@@ -75,7 +75,8 @@ int main(int argc, char* argv[])
   arm::Arm::Params params;
 
   // Setup Module Family and Module Names
-  params.families_ = {"Arm"};
+  std::string family = "Arm";
+  params.families_ = {family};
   params.names_ = {"J1_base", "J2_shoulder", "J3_elbow", "J4_wrist1", "J5_wrist2", "J6_wrist3"};
   
   // Read HRDF file to setup a RobotModel object for the 6-DoF Arm
@@ -96,7 +97,12 @@ int main(int argc, char* argv[])
   /////////////////////////
 
   // Create the MobileIO object
-  std::unique_ptr<MobileIO> mobile = MobileIO::create("Arm", "mobileIO");
+  std::unique_ptr<util::MobileIO> mobile = util::MobileIO::create(family, "mobileIO");
+  if (!mobile)
+  {
+    std::cout << "couldn't find mobile IO device!\n";
+    return 1;
+  }
 
   // Clear any garbage on screen
   mobile -> clearText(); 
@@ -108,10 +114,10 @@ int main(int argc, char* argv[])
                   "B6 - Grav comp mode\nB8 - Quit\n");
 
   // Display instructions on screen
-  mobile -> sendText(instructions); 
+  mobile->appendText(instructions); 
 
   // Setup state variable for mobile device
-  auto last_mobile_state = mobile->getState();
+  auto last_mobile_state = mobile->update();
 
 
   //////////////////////////
@@ -120,66 +126,63 @@ int main(int argc, char* argv[])
 
   // Teach Repeat Variables
   State state;
-  state.num_modules = arm -> robotModel().getDoFCount();
+  state.num_modules = arm->robotModel().getDoFCount();
 
   while(arm->update())
   {
      // Get latest mobile_state
-    auto mobile_state = mobile->getState();
-    MobileIODiff diff(last_mobile_state, mobile_state);
+    bool updated_mobile = mobile->update(0);
 
-    // Buttton B1 - Add Stop Waypoint
-    if (diff.get(1) == MobileIODiff::ButtonState::ToOn) {
-      addWaypoint(state, arm -> lastFeedback(), true);
-    }
+    if (!updated_mobile)
+      std::cout << "Failed to get feedback from mobile I/O; check connection!\n";
+    else
+    {
+      // Buttton B1 - Add Stop Waypoint
+      if (mobile->getButtonDiff(1) == util::MobileIO::ButtonState::ToOn) {
+        addWaypoint(state, arm -> lastFeedback(), true);
+      }
 
-    // Button B2 - Clear Waypoints
-    if (diff.get(2) == MobileIODiff::ButtonState::ToOn) {
-      state.waypoints.clear();
-    }
+      // Button B2 - Clear Waypoints
+      if (mobile->getButtonDiff(2) == util::MobileIO::ButtonState::ToOn) {
+        state.waypoints.clear();
+      }
 
-    // Button B3 - Add Through Waypoint
-    if (diff.get(3) == MobileIODiff::ButtonState::ToOn) {
-      addWaypoint(state, arm -> lastFeedback(), false);
-    }
+      // Button B3 - Add Through Waypoint
+      if (mobile->getButtonDiff(3) == util::MobileIO::ButtonState::ToOn) {
+        addWaypoint(state, arm -> lastFeedback(), false);
+      }
 
-    // Button B5 - Playback Waypoints
-    if (diff.get(5) == MobileIODiff::ButtonState::ToOn) {
-      if (state.waypoints.size() == 0){
-        printf("You have not added any Waypoints!\n");
-      } 
-      else {
-        const arm::Goal playback = playWaypoints(state, 2.5);
-        arm -> setGoal(playback);       
+      // Button B5 - Playback Waypoints
+      if (mobile->getButtonDiff(5) == util::MobileIO::ButtonState::ToOn) {
+        if (state.waypoints.size() <= 1){
+          printf("You have not added enough waypoints!\n");
+        } 
+        else {
+          const arm::Goal playback = playWaypoints(state, 2.5);
+          arm->setGoal(playback);       
+        }
+      }
+
+      // Button B6 - Grav Comp Mode
+      if (mobile->getButtonDiff(6) == util::MobileIO::ButtonState::ToOn) {
+        // Cancel any goal that is set, returning arm into gravComp mode
+        arm->cancelGoal();
+      }
+
+      // Button B8 - End Demo
+      if (mobile->getButtonDiff(8) == util::MobileIO::ButtonState::ToOn) {
+        // Clear MobileIO text
+        mobile->clearText();
+        return 1;
       }
     }
-
-    // Button B6 - Grav Comp Mode
-    if (diff.get(6) == MobileIODiff::ButtonState::ToOn) {
-      // Cancel any goal that is set, returning arm into gravComp mode
-      arm -> cancelGoal();
-    }
-
-    // Button B8 - End Demo
-    if (diff.get(8) == MobileIODiff::ButtonState::ToOn) {
-      // Clear MobileIO text
-      mobile -> clearText();
-      return 1;
-    }
-
-    // Update to the new last_state
-    last_mobile_state = mobile_state;
 
     // Send latest commands to the arm
     arm->send();
   }
 
   // Clear MobileIO text
-  mobile -> clearText();
+  mobile->clearText();
 
   return 0;
 }
-
-
-
-
