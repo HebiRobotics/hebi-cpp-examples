@@ -12,14 +12,13 @@
 #include <thread>
 
 #include "double_arm_teach_repeat_state.hpp"
+#include "double_arm_teach_repeat_display.hpp"
 
 #include "group_command.hpp"
 #include "group_feedback.hpp"
 #include "robot_model.hpp"
 #include "arm/arm.hpp"
 #include "util/mobile_io.hpp"
-#include "waypoints.hpp"
-#include "util/mobile_io_state.hpp"
 
 namespace arm = hebi::experimental::arm;
 
@@ -42,7 +41,7 @@ enum class DemoMode
 // right column for the "back" and "exit" state.
 // This mapping handles the converstion from 
 // mobile IO button -> displayed value.
-constexpr std::map<int, int> SaveLoadButtonMap
+const std::map<int, int> SaveLoadButtonMap
 {
   {1, 1},
   {2, 3},
@@ -58,17 +57,18 @@ constexpr std::map<int, int> SaveLoadButtonMap
 using namespace hebi;
 using namespace hebi::examples;
 
+template <class CanLoadGains>
+bool tryLoadGains(CanLoadGains& obj, const std::string& gains) {
+  for (int i = 0; i < 3; ++i)
+  {
+    if (obj->loadGains(gains))
+      return true;
+  }
+  return false;
+}
+
 int main(int argc, char* argv[])
 {
-  auto tryLoadGains = [](auto& obj, const std::string& gains) {
-    for (int i = 0; i < 3; ++i)
-    {
-      if (obj->loadGains(gains))
-        return true;
-    }
-    return false;
-  };
-
   //////////////////////////
   ///// Arm Setup //////////
   //////////////////////////
