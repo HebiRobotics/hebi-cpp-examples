@@ -4,6 +4,7 @@
  * teach repeat example.
  */
 
+#include <fstream>
 #include <set>
 
 #include <Eigen/Eigen>
@@ -260,10 +261,25 @@ struct DemoState {
     return true;
   }
 
+  inline static bool exists(const std::string& name) {
+    if (FILE *file = fopen(name.c_str(), "r")) {
+      fclose(file);
+      return true;
+    } else {
+      return false;
+    }   
+  }
+
   static std::set<std::string> listSavedWaypoints(const std::map<int, std::string>& waypoint_name_map)
   {
-    // TODO: implement
-    return {};
+    std::set<std::string> founds;
+    for (auto& kvp : waypoint_name_map)
+    {
+      if (exists(kvp.second + "_left.wtf") && exists(kvp.second + "_right.wtf"))
+        founds.insert(kvp.second);
+    }
+
+    return founds;
   }
 
   bool loadWaypoints(std::string waypoint_option)
