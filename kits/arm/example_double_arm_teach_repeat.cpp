@@ -41,21 +41,15 @@ enum class DemoMode
 // right column for the "back" and "exit" state.
 // This mapping handles the converstion from 
 // mobile IO button -> displayed value.
-const std::map<int, int> SaveLoadButtonMap
+const std::map<int, std::string> SaveLoadButtonMap
 {
-  {1, 1},
-  {2, 3},
-  {3, 2},
-  {4, 4},
-  {5, 5},
-  {7, 6},
+  {1, "1"},
+  {2, "3"},
+  {3, "2"},
+  {4, "4"},
+  {5, "5"},
+  {7, "6"},
 };
-
-} // namespace hebi
-} // namespace examples
-
-using namespace hebi;
-using namespace hebi::examples;
 
 template <class CanLoadGains>
 bool tryLoadGains(CanLoadGains& obj, const std::string& gains) {
@@ -66,6 +60,12 @@ bool tryLoadGains(CanLoadGains& obj, const std::string& gains) {
   }
   return false;
 }
+
+} // namespace hebi
+} // namespace examples
+
+using namespace hebi;
+using namespace hebi::examples;
 
 int main(int argc, char* argv[])
 {
@@ -168,7 +168,8 @@ int main(int argc, char* argv[])
   auto mode = DemoMode::TrainingNone;
 
   // Print instructions on mobile IO display
-  setTrainingDisplay(*mobile, true); 
+  MobileIoState current_state = trainingDisplay(true);
+  bool mobile_io_view_updated = current_state.sendTo(*mobile, 3);
 
   // Populate "last state" for diffs (not really necessary, but helps if
   // program started with button pressed on mobile IO)
@@ -202,13 +203,20 @@ int main(int argc, char* argv[])
     }
     else
     {
-      mobile_io_stale_count = 0;
       if (mobile->getButtonDiff(8) == util::MobileIO::ButtonState::ToOn)
       {
         abort_flag = true;
         std::cout << "Quitting!\n";
         break;
       }
+
+      // Coming back from away -- resend state in case we've reset the app for some reason:
+      if (mobile_io_stale_count >= 5 || !mobile_io_view_updated)
+      {
+        // Just send once, though; don't want to hang things too long...
+        mobile_io_view_updated = current_state.sendTo(*mobile);
+      }
+      mobile_io_stale_count = 0;
 
       auto lr_select = mobile->getAxis(3);
       auto speed = mobile->getAxis(4);
@@ -222,7 +230,8 @@ int main(int argc, char* argv[])
 
         // Update L/R mode based on slider
         if (lr_select > 0.3) {
-          mobile->setAxisLabel(3, "Left");
+          mobile_io_view_updated = mobile->setAxisLabel(3, "Left") && mobile_io_view_updated;
+          current_state.setAxisLabel(3, "Left");
           if (mode == DemoMode::TrainingRight) {
             state.stopArm(*r_arm, state.right_.current_gripper_state_);
           }
@@ -231,7 +240,8 @@ int main(int argc, char* argv[])
           }
           mode = DemoMode::TrainingLeft;
         } else if (lr_select < -0.3) {
-          mobile->setAxisLabel(3, "Right");
+          mobile_io_view_updated = mobile->setAxisLabel(3, "Right") && mobile_io_view_updated;
+          current_state.setAxisLabel(3, "Right");
           if (mode == DemoMode::TrainingLeft) {
             state.stopArm(*l_arm, state.left_.current_gripper_state_);
           }
@@ -240,7 +250,8 @@ int main(int argc, char* argv[])
           }
           mode = DemoMode::TrainingRight;
         } else {
-          mobile->setAxisLabel(3, "None");
+          mobile_io_view_updated = mobile->setAxisLabel(3, "None") && mobile_io_view_updated;
+          current_state.setAxisLabel(3, "None");
           if (mode == DemoMode::TrainingLeft) {
             state.stopArm(*l_arm, state.left_.current_gripper_state_);
           }
@@ -252,8 +263,10 @@ int main(int argc, char* argv[])
 
         // Update Single/Repeat mode based on slider
         if (repeat <= 0) {
+          mobile_io_view_updated = mobile->setAxisLabel(5, "Repeat") && mobile_io_view_updated;
           mobile->setAxisLabel(5, "Repeat");
         } else {
+          mobile_io_view_updated = mobile->setAxisLabel(5, "Single") && mobile_io_view_updated;
           mobile->setAxisLabel(5, "Single");
         }
 
@@ -289,7 +302,8 @@ int main(int argc, char* argv[])
         if (mobile->getButtonDiff(5) == util::MobileIO::ButtonState::ToOn) {
           std::cout << "Transitioning to load waypoints menu\n";
           mode = DemoMode::Load;
-          setLoadDisplay(*mobile);
+          current_state = loadDisplay(SaveLoadButtonMap, state.listSavedWaypoints(SaveLoadButtonMap));
+          mobile_io_view_updated = current_state.sendTo(*mobile);
         }
         
         // Button B6 - Save Waypoints
@@ -301,7 +315,8 @@ int main(int argc, char* argv[])
             state.stopArm(*l_arm, state.left_.current_gripper_state_);
           else if (mode == DemoMode::TrainingLeft)
             state.stopArm(*r_arm, state.right_.current_gripper_state_);
-          setSaveDisplay(*mobile);
+          current_state = saveDisplay(SaveLoadButtonMap, state.listSavedWaypoints(SaveLoadButtonMap));
+          mobile_io_view_updated = current_state.sendTo(*mobile);
         }
 
         // Button B7 - Toggle Training/Playback
@@ -315,7 +330,8 @@ int main(int argc, char* argv[])
               mode = DemoMode::PlaybackRepeat;
             else
               mode = DemoMode::PlaybackSingle;
-            setPlaybackDisplay(*mobile);
+            current_state = playbackDisplay();
+            mobile_io_view_updated = current_state.sendTo(*mobile);
             state.playWaypoints(repeat);
           }
         }
@@ -326,7 +342,8 @@ int main(int argc, char* argv[])
         if (mobile->getButtonDiff(7) == util::MobileIO::ButtonState::ToOn)
         {
           std::cout << "Transitioning to training mode\n";
-          setTrainingDisplay(*mobile, mode == DemoMode::PlaybackRepeat);
+          current_state = trainingDisplay(mode == DemoMode::PlaybackRepeat);
+          mobile_io_view_updated = current_state.sendTo(*mobile);
           mode = DemoMode::TrainingNone;
           // Cancel any old goal that is set, stopping the arm so it holds position
           state.stopArm(*l_arm, state.left_.current_gripper_state_);
@@ -359,7 +376,8 @@ int main(int argc, char* argv[])
         if (loaded_waypoints || mobile->getButtonDiff(6) == util::MobileIO::ButtonState::ToOn)
         {
           std::cout << "Transitioning to training mode\n";
-          setTrainingDisplay(*mobile, repeat);
+          current_state = trainingDisplay(repeat);
+          mobile_io_view_updated = current_state.sendTo(*mobile);
           mode = DemoMode::TrainingNone;
           state.stopArm(*l_arm, state.left_.current_gripper_state_);
           state.stopArm(*r_arm, state.right_.current_gripper_state_);
@@ -381,7 +399,8 @@ int main(int argc, char* argv[])
         if (saved_waypoints || mobile->getButtonDiff(6) == util::MobileIO::ButtonState::ToOn)
         {
           std::cout << "Transitioning to training mode\n";
-          setTrainingDisplay(*mobile, repeat);
+          current_state = trainingDisplay(repeat);
+          mobile_io_view_updated = current_state.sendTo(*mobile);
           mode = DemoMode::TrainingNone;
         }
       }

@@ -164,8 +164,8 @@ MobileIoState playbackDisplay()
   return st;  
 }
     
-MobileIoState setLoadDisplay(const std::map<int, std::string>& button_file_map,
-                             const std::set<std::string>& existing_files)
+MobileIoState loadDisplay(const std::map<int, std::string>& button_file_map,
+                          const std::set<std::string>& existing_files)
 {
   MobileIoState st;
   st.setText("Select saved waypoints to load, or press BACK to return to training mode with no changes.\n");
@@ -181,8 +181,8 @@ MobileIoState setLoadDisplay(const std::map<int, std::string>& button_file_map,
   return st;
 }
 
-MobileIoState setSaveDisplay(const std::map<int, std::string>& button_file_map,
-                             const std::set<std::string>& existing_files)
+MobileIoState saveDisplay(const std::map<int, std::string>& button_file_map,
+                          const std::set<std::string>& existing_files)
 {
   MobileIoState st;
   st.setText("Select where to save waypoints, or return to previous screen with no changes.\n"
