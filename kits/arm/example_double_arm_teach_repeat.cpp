@@ -366,7 +366,7 @@ int main(int argc, char* argv[])
         {
           if (mobile->getButtonDiff(kvp.first) == util::MobileIO::ButtonState::ToOn)
           {
-            loaded_waypoints = state.loadWaypoints(kvp.second);
+            loaded_waypoints = state.loadWaypoints(kvp.second) == DemoState::LoadResult::Success;
             break;
           }
         }

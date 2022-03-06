@@ -6,6 +6,7 @@
 
 #include <fstream>
 #include <set>
+#include <string>
 
 #include <Eigen/Eigen>
 
@@ -27,8 +28,17 @@ struct Waypoint {
   GripperState gripper_state;
   double time_from_prev;
 };
+
 static constexpr double gripperEffort(GripperState gs) {
   return gs == GripperState::Open ? 1 : -5;
+}
+
+// Estimation for reversing the above function
+static constexpr GripperState gripperState(float effort) {
+  auto open = gripperEffort(GripperState::Open);
+  auto close = gripperEffort(GripperState::Close);
+  // Choose whatever this is closest to:
+  return (std::abs(open - effort) < std::abs(close - effort)) ? GripperState::Open : GripperState::Close;
 }
 
 enum class LeftRight {
@@ -282,10 +292,126 @@ struct DemoState {
     return founds;
   }
 
-  bool loadWaypoints(std::string waypoint_option)
+  static std::vector<std::string> split(const std::string& s, char seperator)
   {
-    // TODO: implement
-    return true;
+    std::vector<std::string> output;
+    std::string::size_type prev_pos = 0, pos = 0;
+    while((pos = s.find(seperator, pos)) != std::string::npos)
+    {
+        std::string substring( s.substr(prev_pos, pos-prev_pos) );
+        output.push_back(substring);
+        prev_pos = ++pos;
+    }
+    output.push_back(s.substr(prev_pos, pos-prev_pos));
+    return output;
+  }
+
+  enum class LoadResult
+  {
+    Success, // New waypoints loaded successfully!
+    NoFile, // Couldn't access file; existing waypoints unchanged
+    Failure // Resets waypoints in this case!
+  };
+
+  LoadResult loadWaypoints(std::string waypoint_option)
+  {
+    auto left_filename = waypoint_option + "_left.wtf";
+    auto right_filename = waypoint_option + "_right.wtf";
+    std::ifstream left_in, right_in;
+    left_in.open(left_filename);
+    right_in.open(right_filename);
+
+    if (!left_in.is_open() || !left_in.good() || !right_in.is_open() || !right_in.good())
+      return LoadResult::NoFile;
+
+    auto addWP = [](ArmState& state, std::string& line) {
+      // Empty line...
+      if (line == "")
+        return true;
+      int dofs = state.num_modules_;
+      auto splits = split(line, ',');
+      if (splits.size() != 1 + dofs * 3 + 1) // time + (pos, vel, accel) * num dof + gripper
+        return false;
+      // Note: could have better error checking here
+      Waypoint wp;
+      wp.time_from_prev = std::stod(splits[0]);
+      wp.positions.resize(dofs);
+      wp.vels.resize(dofs);
+      wp.accels.resize(dofs);
+      for (int i = 0; i < dofs; ++i)
+        wp.positions[i] = std::stod(splits[1 + i]);
+      for (int i = 0; i < dofs; ++i)
+        wp.vels[i] = std::stod(splits[1 + dofs + i]);
+      for (int i = 0; i < dofs; ++i)
+        wp.accels[i] = std::stod(splits[1 + 2 * dofs + i]);
+      auto raw_gripper = std::stod(splits[3 * dofs + 1]);
+      wp.gripper_state = gripperState(raw_gripper);
+      
+      state.waypoints_.push_back(wp);
+      
+      return true;
+    };
+
+    left_.reset();
+    right_.reset();
+
+    // Metadata:
+    std::string line;
+    if (!std::getline(left_in, line))
+      return LoadResult::Failure;
+    {
+      auto left_meta = split(line, ',');
+      if (left_meta.size() != 2)
+        return LoadResult::Failure;
+      // Check for single end effector!
+      if (std::stod(left_meta[1]) != 1)
+        return LoadResult::Failure;
+      // Check that it is the correct number of DOFs
+      if (std::stod(left_meta[0]) != left_.num_modules_)
+        return LoadResult::Failure;
+    }
+    if (!std::getline(right_in, line))
+      return LoadResult::Failure;
+    {
+      auto right_meta = split(line, ',');
+      if (right_meta.size() != 2)
+        return LoadResult::Failure;
+      // Check for single end effector!
+      if (std::stod(right_meta[1]) != 1)
+        return LoadResult::Failure;
+      // Check that it is the correct number of DOFs
+      if (std::stod(right_meta[0]) != right_.num_modules_)
+        return LoadResult::Failure;
+    }
+    while (std::getline(left_in, line))
+    {
+      bool success = addWP(left_, line);
+      if (!success)
+      {
+        left_.reset();
+        return LoadResult::Failure;
+      } 
+    }
+    while (std::getline(right_in, line))
+    {
+      bool success = addWP(right_, line);
+      if (!success)
+      {
+        left_.reset();
+        right_.reset();
+        return LoadResult::Failure;
+      }
+    }
+
+    // Check for consistency:
+    if (left_.waypoints_.size() != right_.waypoints_.size())
+    {
+      left_.reset();
+      right_.reset();
+      return LoadResult::Failure;
+    }
+
+    return LoadResult::Success;
   }
 
   arm::Arm& l_arm_;
