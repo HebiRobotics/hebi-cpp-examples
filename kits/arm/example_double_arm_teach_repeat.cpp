@@ -102,12 +102,12 @@ int main(int argc, char* argv[])
       std::cout << "Waiting for right gripper!\n";
       r_gripper = hebi::experimental::arm::EffortEndEffector<1>::create({r_family}, {"gripperSpool"});
     }
-    if (!tryLoadGains(l_gripper, "gains/gripper_spool_gains.xml"))
+    if (!tryLoadGains(l_gripper, "kits/arm/gains/gripper_spool_gains.xml"))
     {
       std::cerr << "Could not load gains for left gripper!\n";
       return 1;
     }
-    if (!tryLoadGains(r_gripper, "gains/gripper_spool_gains.xml"))
+    if (!tryLoadGains(r_gripper, "kits/arm/gains/gripper_spool_gains.xml"))
     {
       std::cerr << "Could not load gains for right gripper!\n";
       return 1;
@@ -261,7 +261,7 @@ int main(int argc, char* argv[])
         }
 
         // Update Single/Repeat mode based on slider
-        if (repeat <= 0) {
+        if (repeat) {
           mobile_io_view_updated = mobile->setAxisLabel(5, "Repeat") && mobile_io_view_updated;
           mobile->setAxisLabel(5, "Repeat");
         } else {
@@ -297,16 +297,8 @@ int main(int argc, char* argv[])
           state.reset();
         }
 
-        // Button B5 - Load Waypoints
+        // Button B5 - Save Waypoints
         if (mobile->getButtonDiff(5) == util::MobileIO::ButtonState::ToOn) {
-          std::cout << "Transitioning to load waypoints menu\n";
-          mode = DemoMode::Load;
-          current_state = loadDisplay(SaveLoadButtonMap, state.listSavedWaypoints(SaveLoadButtonMap));
-          mobile_io_view_updated = current_state.sendTo(*mobile);
-        }
-        
-        // Button B6 - Save Waypoints
-        else if (mobile->getButtonDiff(6) == util::MobileIO::ButtonState::ToOn) {
           std::cout << "Transitioning to save waypoints menu\n";
           mode = DemoMode::Save;
           // Stop the arm if not already stopped:
@@ -315,6 +307,14 @@ int main(int argc, char* argv[])
           else if (mode == DemoMode::TrainingLeft)
             state.stopArm(*r_arm, state.right_.current_gripper_state_);
           current_state = saveDisplay(SaveLoadButtonMap, state.listSavedWaypoints(SaveLoadButtonMap));
+          mobile_io_view_updated = current_state.sendTo(*mobile);
+        }
+        
+        // Button B6 - Load Waypoints
+        else if (mobile->getButtonDiff(6) == util::MobileIO::ButtonState::ToOn) {
+          std::cout << "Transitioning to load waypoints menu\n";
+          mode = DemoMode::Load;
+          current_state = loadDisplay(SaveLoadButtonMap, state.listSavedWaypoints(SaveLoadButtonMap));
           mobile_io_view_updated = current_state.sendTo(*mobile);
         }
 
