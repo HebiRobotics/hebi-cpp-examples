@@ -274,7 +274,8 @@ SET(ARM_SOURCES
   ${ROOT_DIR}/kits/arm/example_mobile_io_control.cpp
   ${ROOT_DIR}/kits/arm/example_teach_repeat.cpp
   ${ROOT_DIR}/kits/arm/example_AR_kit.cpp
-  ${ROOT_DIR}/kits/arm/example_teach_repeat_with_gripper.cpp)
+  ${ROOT_DIR}/kits/arm/example_teach_repeat_with_gripper.cpp
+  ${ROOT_DIR}/kits/arm/example_double_arm_teach_repeat.cpp)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY kits/arm)
 foreach (EXAMPLE ${ARM_SOURCES})
@@ -313,8 +314,8 @@ endforeach (EXAMPLE ${KIT_SOURCES})
 
 
 # Copy the HRDF files for kits into the build directory
-file(COPY ${ROOT_DIR}/kits/arm/hrdf DESTINATION ${ROOT_DIR}/build/kits/arm)
-file(COPY ${ROOT_DIR}/kits/arm/gains DESTINATION ${ROOT_DIR}/build/kits/arm)
+file(COPY ${ROOT_DIR}/kits/arm/hrdf DESTINATION ${CMAKE_BINARY_DIR}/kits/arm)
+file(COPY ${ROOT_DIR}/kits/arm/gains DESTINATION ${CMAKE_BINARY_DIR}/kits/arm)
 
 
 
