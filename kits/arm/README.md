@@ -18,9 +18,13 @@ Note that you can change the time to reach the waypoint you add by adjusting the
 
 "CLR" will clear all waypoints that have been added.
 
+![Training Mode](img/double_arm_train.png)
+
 ### Playback
 
 While in training mode, move the slider at the bottom right to "Single" or "Repeat", depending on if you wish for the motion to be replayed on repeat or not.  Press the "Play" button to enter playback mode.
+
+![Playback Mode](img/double_arm_playback.png)
 
 When finished, press "Pause" to return to training mode.
 
@@ -30,7 +34,11 @@ From the training screen, you can press the save (disk icon) or load (folder ico
 
 When saving, a green circle will surround files that already exist on the system to alert you that saving here will overwrite the previous files.
 
+![Saving](img/double_arm_save.png)
+
 When loading, only available waypoint files will be shown as options.
+
+![Loading](img/double_arm_load.png)
 
 ### Quitting
 
