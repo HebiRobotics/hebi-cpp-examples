@@ -8,8 +8,6 @@ This example demonstrates a simple teach-repeat with a two-armed robot, using th
 
 First, ensure you update the code variables for the HRDF and family name of your system, (default "LeftArm" and "RightArm" with 6-DOF arms) and configure your Mobile IO device with the name and family in the code (defaulting to "Arm" and "mobileIO").
 
-(Note that button labels are currently supported in iOS only, and are coming soon in Android)
-
 ### Training
 
 The main mode when running the demo is the "Training" mode. This allows you to add waypoints, either "STOP" waypoints or "FLOW" waypoints (where the arm moves through the waypoint).  First, move each arm of the robot into position, one at a time.  The slider at the bottom left controls which arm is active; the other is held in place.  The active arm's gripper can be toggled with the "GRIP" button. Once both arms are in position, add the desired type of waypoint.  Continue until all desired waypoints are added.
