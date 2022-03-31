@@ -66,6 +66,8 @@ For example, for 64-bit builds on Visual Studio 2017, change the final line to:
 cmake -G"Visual Studio 15 2017 Win64" ../projects/cmake/
 ```
 
+Note that if you have not installed the debug symbols when you installed python, then you will need to compile in "Release" mode for examples which link against the python runtime.
+
 ## Directory Layout
 
 - **hebi-cpp** The C++ API and C binaries are stored in this directory (if cloning

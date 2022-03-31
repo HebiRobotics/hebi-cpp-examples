@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.12)
 project(hebi_cpp_examples)
 
 SET (CMAKE_CXX_STANDARD 11)
@@ -27,7 +27,11 @@ get_filename_component(hebi_cpp_build_dir "${CMAKE_CURRENT_BINARY_DIR}/${hebi_cp
 
 add_subdirectory(${HEBI_DIR} ${hebi_cpp_build_dir})
 
-find_package(PythonLibs 3.6)
+find_package(Python 3.6 COMPONENTS Interpreter Development.Module Development.Embed NumPy)
+
+# Due to an issue in Windows and mac with some versions of numpy/distutils/etc, need
+# to manually add this here:
+set(NUMPY_INCLUDE_DIR ${Python_SITELIB}/numpy/core/include)
 
 # Make one metatarget for all examples
 add_custom_target(examples)
@@ -84,8 +88,8 @@ foreach (EXAMPLE ${X_SERIES_SOURCES})
   add_dependencies(examples ${EX_NAME})
   target_include_directories(${EX_NAME} PRIVATE ${ROOT_DIR})
 
-  target_include_directories(${EX_NAME} PRIVATE ${PYTHON_INCLUDE_DIRS})
-  target_link_libraries(${EX_NAME} ${PYTHON_LIBRARIES})
+  target_include_directories(${EX_NAME} PRIVATE ${Python_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIR})
+  target_link_libraries(${EX_NAME} ${Python_LIBRARIES})
   if(WIN32)
     target_link_libraries(${EX_NAME} hebi kernel32)
     target_include_directories(${EX_NAME} PRIVATE ${HEBI_DIR}/src ${HEBI_DIR}/include ${HEBI_DIR}/Eigen)
@@ -140,8 +144,8 @@ foreach (EXAMPLE ${MOBILE_IO_SOURCES})
   add_dependencies(examples ${EX_NAME})
   target_include_directories(${EX_NAME} PRIVATE ${ROOT_DIR})
 
-  target_include_directories(${EX_NAME} PRIVATE ${PYTHON_INCLUDE_DIRS})
-  target_link_libraries(${EX_NAME} ${PYTHON_LIBRARIES})
+  target_include_directories(${EX_NAME} PRIVATE ${Python_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIR})
+  target_link_libraries(${EX_NAME} ${Python_LIBRARIES})
   if(WIN32)
     target_link_libraries(${EX_NAME} hebi kernel32)
     target_include_directories(${EX_NAME} PRIVATE ${HEBI_DIR}/src ${HEBI_DIR}/include ${HEBI_DIR}/Eigen)
@@ -191,8 +195,8 @@ foreach (EXAMPLE ${IO_BOARD_SOURCES})
   add_dependencies(examples ${EX_NAME})
   target_include_directories(${EX_NAME} PRIVATE ${ROOT_DIR})
 
-  target_include_directories(${EX_NAME} PRIVATE ${PYTHON_INCLUDE_DIRS})
-  target_link_libraries(${EX_NAME} ${PYTHON_LIBRARIES})
+  target_include_directories(${EX_NAME} PRIVATE ${Python_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIR})
+  target_link_libraries(${EX_NAME} ${Python_LIBRARIES})
   if(WIN32)
     target_link_libraries(${EX_NAME} hebi kernel32)
     target_include_directories(${EX_NAME} PRIVATE ${HEBI_DIR}/src ${HEBI_DIR}/include ${HEBI_DIR}/Eigen)
@@ -243,8 +247,8 @@ foreach (EXAMPLE ${ADVANCED_SOURCES})
   add_dependencies(examples ${EX_NAME})
   target_include_directories(${EX_NAME} PRIVATE ${ROOT_DIR})
 
-  target_include_directories(${EX_NAME} PRIVATE ${PYTHON_INCLUDE_DIRS})
-  target_link_libraries(${EX_NAME} ${PYTHON_LIBRARIES})
+  target_include_directories(${EX_NAME} PRIVATE ${Python_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIR})
+  target_link_libraries(${EX_NAME} ${Python_LIBRARIES})
   if(WIN32)
     target_link_libraries(${EX_NAME} hebi kernel32)
     target_include_directories(${EX_NAME} PRIVATE ${HEBI_DIR}/src ${HEBI_DIR}/include ${HEBI_DIR}/Eigen)
@@ -291,8 +295,8 @@ foreach (EXAMPLE ${ARM_SOURCES})
   add_dependencies(examples ${EX_NAME})
   target_include_directories(${EX_NAME} PRIVATE ${ROOT_DIR})
 
-  target_include_directories(${EX_NAME} PRIVATE ${PYTHON_INCLUDE_DIRS})
-  target_link_libraries(${EX_NAME} ${PYTHON_LIBRARIES})
+  target_include_directories(${EX_NAME} PRIVATE ${Python_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIR})
+  target_link_libraries(${EX_NAME} ${Python_LIBRARIES})
   if(WIN32)
     target_link_libraries(${EX_NAME} hebi kernel32)
     target_include_directories(${EX_NAME} PRIVATE ${HEBI_DIR}/src ${HEBI_DIR}/include ${HEBI_DIR}/Eigen)
