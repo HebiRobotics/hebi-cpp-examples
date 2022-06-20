@@ -321,13 +321,44 @@ endforeach (EXAMPLE ${KIT_SOURCES})
 file(COPY ${ROOT_DIR}/kits/arm/hrdf DESTINATION ${CMAKE_BINARY_DIR}/kits/arm)
 file(COPY ${ROOT_DIR}/kits/arm/gains DESTINATION ${CMAKE_BINARY_DIR}/kits/arm)
 
+SET(BASE_SOURCES
 
+  ${ROOT_DIR}/kits/base/omni_waypoints.cpp
+  ${ROOT_DIR}/kits/base/omni_mobile_io_control.cpp)
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY kits/base)
+foreach (EXAMPLE ${BASE_SOURCES})
 
+  # The target for the individual example is based on the filename
+  get_filename_component(EX_NAME ${EXAMPLE} NAME_WE)
+  
+  if(WIN32)
+    add_executable(${EX_NAME} ${EXAMPLE} $<TARGET_OBJECTS:_hebic++-obj>)
+  else()
+    add_executable(${EX_NAME} ${EXAMPLE})
+  endif()
+  add_dependencies(examples ${EX_NAME})
+  target_include_directories(${EX_NAME} PRIVATE ${ROOT_DIR})
 
+  target_include_directories(${EX_NAME} PRIVATE ${PYTHON_INCLUDE_DIRS})
+  target_link_libraries(${EX_NAME} ${PYTHON_LIBRARIES})
+  if(WIN32)
+    target_link_libraries(${EX_NAME} hebi kernel32)
+    target_include_directories(${EX_NAME} PRIVATE ${HEBI_DIR}/src ${HEBI_DIR}/include ${HEBI_DIR}/Eigen)
+    # For Windows, we copy the .dll file into the binary directory so that we
+    # don't have to set the PATH variable.
 
+    set(LIBHEBI_LOCATION "lib/win_${LIBHEBI_TARGET_ARCHITECTURE}")
+    set(HEBI_CPP_LIB_DIRECTORY ${HEBI_DIR}/hebi/${LIBHEBI_LOCATION}/)
 
+    add_custom_command(TARGET ${EX_NAME} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "${HEBI_CPP_LIB_DIRECTORY}/hebi.dll"
+      $<TARGET_FILE_DIR:${EX_NAME}>)
+  elseif(UNIX)
+    target_link_libraries(${EX_NAME} hebi hebic++ m pthread)
+  endif()
 
-
+endforeach (EXAMPLE ${BASE_SOURCES})
 
 
