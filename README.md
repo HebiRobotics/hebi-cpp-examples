@@ -36,25 +36,9 @@ From the root directory of the checkout, run:
 mkdir build
 cd build
 cmake -DLIBHEBI_TARGET_ARCHITECTURE=armhf ../projects/cmake/
+# LIBHEBI_TARGET_ARCHITECTURE is set x86_64 by default
 make
 ```
-
-to compile the examples.
-
-**64-bit Linux; generates a makefile project**
- 
-From the root directory of the checkout, run:
-
-```
-mkdir build
-cd build
-cmake -DARCH=x86_64 ../projects/cmake/
-```
-
-If CMake is configured to create a Makefile project (the default for Linux), you
-can then run
-
-```make```
 
 to compile the examples.
 
