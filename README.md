@@ -28,6 +28,19 @@ first install CMake.  After doing so, you can run cmake to create the project
 files for your desired platform.  You can run `cmake --help` to get platform-specific
 options, but here are a couple basic examples:
 
+**armhf (raspbian)**
+ 
+From the root directory of the checkout, run:
+
+```
+mkdir build
+cd build
+cmake -DLIBHEBI_TARGET_ARCHITECTURE=armhf ../projects/cmake/
+make
+```
+
+to compile the examples.
+
 **64-bit Linux; generates a makefile project**
  
 From the root directory of the checkout, run:
