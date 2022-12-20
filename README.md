@@ -28,18 +28,28 @@ first install CMake.  After doing so, you can run cmake to create the project
 files for your desired platform.  You can run `cmake --help` to get platform-specific
 options, but here are a couple basic examples:
 
-**64-bit Linux; generates a makefile project**
+**64-bit (aarch64 or x86_64) Linux or MacOS; generates a makefile project**
  
 From the root directory of the checkout, run:
 
 ```
 mkdir build
 cd build
-cmake -DARCH=x86_64 ../projects/cmake/
+cmake ../projects/cmake/
 ```
 
-If CMake is configured to create a Makefile project (the default for Linux), you
-can then run
+Note -- for Linux aarch64 arm builds, change the final line to:
+```
+cmake -DLIBHEBI_TARGET_ARCHITECTURE=aarch64 ../projects/cmake/
+```
+
+For MacOS arm64 (M1) builds, change the final line to:
+```
+cmake -DLIBHEBI_TARGET_ARCHITECTURE=arm64 ../projects/cmake/
+```
+
+If CMake is configured to create a Makefile project (the default for Linux/Mac command
+line), you can then run
 
 ```make```
 
