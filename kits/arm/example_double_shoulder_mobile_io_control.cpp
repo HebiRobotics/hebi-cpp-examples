@@ -1,7 +1,7 @@
 /**
- * Mobile IO Control
+ * Double Shoulder Mobile IO Control
  * An example for setting up your arm for simple control from a mobile io devoce
- * to pre-programmed waypoints.
+ * to pre-programmed waypoints.  This uses a "double shoulder" 7-dof robot.
  */
 
 // #include "lookup.hpp"
