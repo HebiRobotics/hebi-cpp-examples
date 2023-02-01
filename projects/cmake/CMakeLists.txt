@@ -276,6 +276,7 @@ SET(ARM_SOURCES
 
   ${ROOT_DIR}/kits/arm/example_gravity_compensation.cpp
   ${ROOT_DIR}/kits/arm/example_mobile_io_control.cpp
+  ${ROOT_DIR}/kits/arm/example_double_shoulder_mobile_io_control.cpp
   ${ROOT_DIR}/kits/arm/example_teach_repeat.cpp
   ${ROOT_DIR}/kits/arm/example_AR_kit.cpp
   ${ROOT_DIR}/kits/arm/example_teach_repeat_with_gripper.cpp
