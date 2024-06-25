@@ -35,10 +35,8 @@ static constexpr double gripperEffort(GripperState gs) {
 
 // Estimation for reversing the above function
 static constexpr GripperState gripperState(float effort) {
-  auto open = gripperEffort(GripperState::Open);
-  auto close = gripperEffort(GripperState::Close);
   // Choose whatever this is closest to:
-  return (std::abs(open - effort) < std::abs(close - effort)) ? GripperState::Open : GripperState::Close;
+  return (std::abs(gripperEffort(GripperState::Open) - effort) < std::abs(gripperEffort(GripperState::Close) - effort)) ? GripperState::Open : GripperState::Close;
 }
 
 enum class LeftRight {
