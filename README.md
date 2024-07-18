@@ -11,7 +11,7 @@ network.
 The C++ API should reside in a folder called `hebi-cpp` in the root directory of this repository. This must be downloaded prior to building, and there are two ways to do this:
 
 1. Using the CMake project
-   - Follow the instructions under [CMake](###CMake) and the dependencies will be automatically downloaded.
+   - Follow the instructions under [CMake](#cmake) and the dependencies will be automatically downloaded.
    - The API's version is specified in `projects/cmake/DownloadHebiCpp.cmake` through:
     ```
     set(HEBI_CPP_VERSION "x.x.x")
