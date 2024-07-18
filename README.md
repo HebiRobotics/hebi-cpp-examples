@@ -8,7 +8,23 @@ network.
 
 ## Downloading Dependencies
 
-If cloning the repo directly, you will need to download the C++ API from http://docs.hebi.us/downloads_changelogs.html#software to build the examples and place it in a folder called `hebi-cpp`. If you use the CMake project, it will automatically be downloaded, assuming you have a working internet connection.
+The C++ API should reside in a folder called `hebi-cpp` in the root directory of this repository. This must be downloaded prior to building, and there are two ways to do this:
+
+1. Using the CMake project
+   - Follow the instructions under [CMake](###CMake) and the dependencies will be automatically downloaded.
+   - The API's version is specified in `projects/cmake/DownloadHebiCpp.cmake` through:
+    ```
+    set(HEBI_CPP_VERSION "x.x.x")
+    ```
+    along with its corresponding hash map:
+    ```
+    set(HEBI_CPP_LIB_SHA256 "longstringofcharacters")
+    ```
+    - To change this, first edit the version field, and run the `cmake` command in the build directory. This should give you an error containing the expected hash. Swap this in and run the `cmake` command again.
+
+2. Downloading Manually
+   - Prior to building, you can download your preferred version from [the docs](http://docs.hebi.us/downloads_changelogs.html#software).
+   - Extract the `hebi-cpp` folder from the `hebi-cpp-x.x.x` folder into the root directory of this repository.
 
 For examples which use plotting, python is needed. To install it, execute "sudo apt-get install python3-matplotlib python3-numpy python3.6-dev" in terminal. (Plotting is enabled using a header file matplotlib.h which is a modified version of the one found at https://github.com/lava/matplotlib-cpp)
 
