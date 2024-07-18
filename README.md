@@ -16,7 +16,7 @@ The C++ API should reside in a folder called `hebi-cpp` in the root directory of
     ```
     set(HEBI_CPP_VERSION "x.x.x")
     ```
-    along with its corresponding hash map:
+    along with its corresponding hash:
     ```
     set(HEBI_CPP_LIB_SHA256 "longstringofcharacters")
     ```
