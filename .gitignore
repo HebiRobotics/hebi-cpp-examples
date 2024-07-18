@@ -3,4 +3,6 @@ projects/**/Debug
 projects/**/Release
 projects/**/x64
 projects/**/*.user
+build
+hebi-cpp
 
