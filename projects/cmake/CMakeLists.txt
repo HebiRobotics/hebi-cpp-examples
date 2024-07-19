@@ -281,6 +281,7 @@ SET(ARM_SOURCES
   ${ROOT_DIR}/kits/arm/example_teach_repeat_with_gripper.cpp
   ${ROOT_DIR}/kits/arm/example_double_arm_teach_repeat.cpp
   ${ROOT_DIR}/kits/arm/example_impedance_control_fixed.cpp
+  ${ROOT_DIR}/kits/arm/example_impedance_control_cartesian.cpp
   ${ROOT_DIR}/kits/arm/example_impedance_control_gimbal.cpp
   )
 

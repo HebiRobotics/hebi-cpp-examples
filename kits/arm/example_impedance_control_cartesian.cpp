@@ -14,7 +14,7 @@ This comprises the following demos:
 - Gimbal: A gimbal that locks a specific end-effector orientation, while keeping the rest of the arm compliant.
 - Floor: The end-effector is free to move but can't travel below a virtual floor. To further simulate sliding on the floor, see force_control example.
 
-The following example is for the "Fixed" demo:
+The following example is for the "Cartesian" demo:
 */
 
 // #include "lookup.hpp"
@@ -60,9 +60,9 @@ int main(int argc, char* argv[])
   //       Make sure that the rotational gains are high enough to prevent large angular errors (greater than pi/2). The gains provided in these examples are well behaved.
   //       Interacting with the end-effector in these examples is perfectly safe.
   //       However, ensure that nothing prevents the wrist's actuators from moving, and DO NOT place your fingers between them. 
-  
+
   hebi::experimental::arm::PluginConfig impedance_config("ImpedanceController", "ImpedanceController");
-  impedance_config.float_lists_["kp"] = {300.0, 300.0, 300.0, 5.0, 5.0, 1.0};
+  impedance_config.float_lists_["kp"] = {300.0, 300.0, 300.0, 0.0, 0.0, 0.0};
   impedance_config.float_lists_["kd"] = {5.0, 5.0, 5.0, 0.0, 0.0, 0.0};
   impedance_config.float_lists_["ki"] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   impedance_config.float_lists_["i_clamp"] = {10.0, 10.0, 10.0, 1.0, 1.0, 1.0};
@@ -105,7 +105,7 @@ int main(int argc, char* argv[])
   mobile->setButtonLabel(2, "💪");
 
   std::string instructions;
-  instructions = "                           Fixed demo";
+  instructions = "                    Cartesian demo";
   
   // Clear any garbage on screen
   mobile->clearText(); 

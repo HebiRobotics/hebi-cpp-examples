@@ -55,6 +55,12 @@ int main(int argc, char* argv[])
   arm -> loadGains("kits/arm/gains/T-arm.xml");
 
   // Create and configure the ImpedanceController plugin
+
+  // NOTE: Angle wraparound is an unresolved issue which can lead to unstable behaviour for any case involving rotational positional control. 
+  //       Make sure that the rotational gains are high enough to prevent large angular errors (greater than pi/2). The gains provided in these examples are well behaved.
+  //       Interacting with the end-effector in these examples is perfectly safe.
+  //       However, ensure that nothing prevents the wrist's actuators from moving, and DO NOT place your fingers between them. 
+  
   hebi::experimental::arm::PluginConfig impedance_config("ImpedanceController", "ImpedanceController");
   impedance_config.float_lists_["kp"] = {0.0, 0.0, 0.0, 5.0, 5.0, 1.0};
   impedance_config.float_lists_["kd"] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
@@ -99,7 +105,7 @@ int main(int argc, char* argv[])
   mobile->setButtonLabel(2, "💪");
 
   std::string instructions;
-  instructions = "                           Gimbal demo";
+  instructions = "                        Gimbal demo";
   
   // Clear any garbage on screen
   mobile->clearText(); 
