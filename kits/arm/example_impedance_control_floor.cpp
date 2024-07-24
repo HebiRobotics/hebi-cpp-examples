@@ -88,10 +88,6 @@ int main(int argc, char* argv[])
   pos_nan.fill(std::numeric_limits<double>::quiet_NaN());
   vel_nan.fill(std::numeric_limits<double>::quiet_NaN());
 
-  // Keep a reference to the ImpedanceController plugin
-  // You will have to do this if you intend to reconfigure the impedance control after adding it.
-  auto impedance_plugin_ptr = impedance_plugin.get();
-
   // Add the plugin to the arm
   if (!arm->addPlugin(std::move(impedance_plugin))) {
     std::cerr << "Failed to add ImpedanceController plugin to arm." << std::endl;
@@ -209,117 +205,6 @@ int main(int argc, char* argv[])
       // Snap goal to floor if end-effector is at or below floor, only when it first reaches the floor
       if(ee_position_curr(2) <= floor_level && floor_command_flag)
       {
-          // Set surface stiffness of floor
-          // impedance_config.float_lists_["kp"] = {300.0, 300.0, 300.0, 5.0, 5.0, 1.0};
-          // impedance_config.float_lists_["kd"] = {5.0, 5.0, 5.0, 0.0, 0.0, 0.0};
-          // impedance_config.float_lists_["ki"] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-          // impedance_config.float_lists_["i_clamp"] = {10.0, 10.0, 10.0, 1.0, 1.0, 1.0};
-
-          // std::vector<float> new_kp = {300.0, 300.0, 300.0, 5.0, 5.0, 5.0};
-          // std::vector<float> new_kd = {5.0, 5.0, 5.0, 5.0, 5.0, 1.0};
-          // std::vector<float> new_ki = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-          // std::vector<float> new_i_clamp = {10.0, 10.0, 10.0, 1.0, 1.0, 1.0};
-
-          std::cout << "1" << std::endl;
-          std::cout << impedance_plugin_ptr->kp()(2) << std::endl;
-          std::cout << impedance_plugin_ptr->kd()(2) << std::endl;
-          std::cout << impedance_plugin_ptr->ki()(2) << std::endl;
-          std::cout << impedance_plugin_ptr->iClamp().size() << std::endl;
-          std::cout << impedance_plugin_ptr->gainsInEndEffectorFrame() << std::endl;
-
-          Eigen::VectorXd new_kp(6), new_kd(6), new_ki(6), new_i_clamp(6);
-          new_kp << 2.0, 2.0, 2.0, 2.0, 2.0, 2.0;
-          new_kd << 2.0, 2.0, 2.0, 2.0, 2.0, 2.0;
-          new_ki << 2.0, 2.0, 2.0, 2.0, 2.0, 2.0;
-          new_i_clamp << 2.0, 2.0, 2.0, 2.0, 2.0, 2.0;
-          bool new_gains = false;
-
-          std::vector<bool> vals;
-          vals.push_back(impedance_plugin_ptr->setKp(new_kp));
-          vals.push_back(impedance_plugin_ptr->setKd(new_kd));
-          vals.push_back(impedance_plugin_ptr->setKi(new_ki));
-          vals.push_back(impedance_plugin_ptr->setIClamp(new_i_clamp));
-          impedance_plugin_ptr->setGainsInEndEffectorFrame(new_gains);
-          std::cout << vals.at(0) << vals.at(1) << vals.at(2) << vals.at(3) << std::endl;
-
-          std::cout << "2" << std::endl;
-          std::cout << impedance_plugin_ptr->kp()(2) << std::endl;
-          std::cout << impedance_plugin_ptr->kd()(2) << std::endl;
-          std::cout << impedance_plugin_ptr->ki()(2) << std::endl;
-          std::cout << impedance_plugin_ptr->iClamp().size() << std::endl;
-          std::cout << impedance_plugin_ptr->gainsInEndEffectorFrame() << std::endl;
-
-          Eigen::VectorXd new_kp2, new_kd2, new_ki2, new_i_clamp2;
-          bool new_gains2 = true;
-
-          std::vector<bool> vals2;
-          vals2.push_back(impedance_plugin_ptr->setKp(new_kp2));
-          vals2.push_back(impedance_plugin_ptr->setKd(new_kd2));
-          vals2.push_back(impedance_plugin_ptr->setKi(new_ki2));
-          vals2.push_back(impedance_plugin_ptr->setIClamp(new_i_clamp2));
-          impedance_plugin_ptr->setGainsInEndEffectorFrame(new_gains2);
-          std::cout << vals2.at(0) << vals2.at(1) << vals2.at(2) << vals2.at(3) << std::endl;
-
-          std::cout << "3" << std::endl;
-          std::cout << impedance_plugin_ptr->kp()(2) << std::endl;
-          std::cout << impedance_plugin_ptr->kd()(2) << std::endl;
-          std::cout << impedance_plugin_ptr->ki()(2) << std::endl;
-          std::cout << impedance_plugin_ptr->iClamp().size() << std::endl;
-          std::cout << impedance_plugin_ptr->gainsInEndEffectorFrame() << std::endl;
-
-          Eigen::VectorXd new_kp3(6), new_kd3(7), new_ki3(5), new_i_clamp3(6);
-          new_kp3 << 2.0, 2.0, -2.0, 2.0, 2.0, 2.0;
-          new_kd3 << 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0;
-          new_ki3 << 2.0, 2.0, 2.0, 2.0, 2.0;
-          new_i_clamp3 << 2.0, -2.0, 2.0, 2.0, 2.0, 2.0;
-          bool new_gains3 = false;
-
-          std::vector<bool> vals3;
-          vals3.push_back(impedance_plugin_ptr->setKp(new_kp3));
-          vals3.push_back(impedance_plugin_ptr->setKd(new_kd3));
-          vals3.push_back(impedance_plugin_ptr->setKi(new_ki3));
-          vals3.push_back(impedance_plugin_ptr->setIClamp(new_i_clamp3));
-          impedance_plugin_ptr->setGainsInEndEffectorFrame(new_gains3);
-          std::cout << vals3.at(0) << vals3.at(1) << vals3.at(2) << vals3.at(3) << std::endl;
-
-          std::cout << "4" << std::endl;
-          std::cout << impedance_plugin_ptr->kp()(2) << std::endl;
-          std::cout << impedance_plugin_ptr->kd()(2) << std::endl;
-          std::cout << impedance_plugin_ptr->ki()(2) << std::endl;
-          std::cout << impedance_plugin_ptr->iClamp().size() << std::endl;
-          std::cout << impedance_plugin_ptr->gainsInEndEffectorFrame() << std::endl;
-
-          Eigen::VectorXd new_kp4(6), new_kd4(6), new_ki4(6), new_i_clamp4(6);
-          new_kp4 << 2.0, 2.0, 2.0, 2.0, 2.0, 2.0;
-          new_kd4 << 2.0, 2.0, 2.0, 2.0, 2.0, 2.0;
-          new_ki4 << 2.0, 2.0, 2.0, 2.0, 2.0, 2.0;
-          new_i_clamp4 << 2.0, 2.0, 2.0, 2.0, 2.0, 2.0;
-          bool new_gains4 = false;
-
-          std::vector<bool> vals4;
-          vals4.push_back(impedance_plugin_ptr->setKp(new_kp4));
-          vals4.push_back(impedance_plugin_ptr->setKd(new_kd4));
-          vals4.push_back(impedance_plugin_ptr->setKi(new_ki4));
-          vals4.push_back(impedance_plugin_ptr->setIClamp(new_i_clamp4));
-          impedance_plugin_ptr->setGainsInEndEffectorFrame(new_gains4);
-          std::cout << vals4.at(0) << vals4.at(1) << vals4.at(2) << vals4.at(3) << std::endl;
-
-          std::cout << "5" << std::endl;
-          std::cout << impedance_plugin_ptr->kp()(2) << std::endl;
-          std::cout << impedance_plugin_ptr->kd()(2) << std::endl;
-          std::cout << impedance_plugin_ptr->ki()(2) << std::endl;
-          std::cout << impedance_plugin_ptr->iClamp().size() << std::endl;
-          std::cout << impedance_plugin_ptr->gainsInEndEffectorFrame() << std::endl;
-
-          // std::cout << impedance_plugin->kp()(2);
-          // impedance_plugin_ptr->applyParameter("kp", new_kp);
-          // impedance_plugin_ptr->applyParameter("kd", new_kd);
-          // impedance_plugin_ptr->applyParameter("ki", new_ki);
-          // impedance_plugin_ptr->applyParameter("i_clamp", new_i_clamp);
-
-          // impedance_plugin_ptr->applyParameters(impedance_config, {"gains_in_end_effector_frame", "kp", "kd", "ki", "i_clamp"});
-          // impedance_plugin_ptr->applyParameterImpl("kp", new_kp);
-
           // Snap current pose to floor
           ee_position_floor = ee_position_curr;
           ee_position_floor(2) = floor_level;
@@ -330,7 +215,7 @@ int main(int argc, char* argv[])
           // Set snapped pose as goal
           arm->setGoal(arm::Goal::createFromPosition(0.001, joint_position_floor)); // Time is very small to make less complex trajectories
 
-          std::cout << "goal set\n";
+          std::cout << "Hit floor!\n";
 
           // Update flags to indicate being in contact with the floor
           floor_command_flag = false;
@@ -339,14 +224,10 @@ int main(int argc, char* argv[])
       // Cancel goal if end-effector is above the floor, only when it leaves the floor
       else if (ee_position_curr(2) > floor_level and cancel_command_flag)
       {
-          // Set stiffness in air
-          impedance_config.float_lists_["kp"] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-          impedance_config.float_lists_["kd"] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-          impedance_config.float_lists_["ki"] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-          impedance_config.float_lists_["i_clamp"] = {10.0, 10.0, 10.0, 1.0, 1.0, 1.0};
-
           // Cancel goal to move freely
           arm->cancelGoal();
+
+          std::cout << "Left floor!\n";
 
           // Update flags to indicate having left the floor
           cancel_command_flag = false;

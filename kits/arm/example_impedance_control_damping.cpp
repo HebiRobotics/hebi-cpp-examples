@@ -108,7 +108,7 @@ int main(int argc, char* argv[])
   mobile->setButtonLabel(2, "💪");
 
   std::string instructions;
-  instructions = "                           Damping demo";
+  instructions = "                     Damping demo";
   
   // Clear any garbage on screen
   mobile->clearText(); 
