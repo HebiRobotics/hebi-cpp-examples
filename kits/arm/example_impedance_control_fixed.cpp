@@ -13,6 +13,7 @@ This comprises the following demos:
 - Cartesian: Locks onto a particular end-effector position while having some compliant orientation.
 - Gimbal: A gimbal that locks a specific end-effector orientation, while keeping the rest of the arm compliant.
 - Floor: The end-effector is free to move but can't travel below a virtual floor. To further simulate sliding on the floor, see force_control example.
+- Damping: The end-effector behaves as 3-different damped systems (overdamped, critically damped, and underdamped), at 3 different heights.
 
 The following example is for the "Fixed" demo:
 */
@@ -60,7 +61,7 @@ int main(int argc, char* argv[])
   //       Make sure that the rotational gains are high enough to prevent large angular errors (greater than pi/2). The gains provided in these examples are well behaved.
   //       Interacting with the end-effector in these examples is perfectly safe.
   //       However, ensure that nothing prevents the wrist's actuators from moving, and DO NOT place your fingers between them. 
-  
+
   hebi::experimental::arm::PluginConfig impedance_config("ImpedanceController", "ImpedanceController");
   impedance_config.float_lists_["kp"] = {300.0, 300.0, 300.0, 5.0, 5.0, 1.0};
   impedance_config.float_lists_["kd"] = {5.0, 5.0, 5.0, 0.0, 0.0, 0.0};
@@ -155,7 +156,7 @@ int main(int argc, char* argv[])
 
         controller_on = true;
 
-        arm->setGoal(arm::Goal::createFromPosition(arm->lastFeedback().getPositionCommand()));
+        arm->setGoal(arm::Goal::createFromPosition(arm->lastFeedback().getPosition()));
       }
       else if (mobile->getButtonDiff(2) == util::MobileIO::ButtonState::ToOff){
 

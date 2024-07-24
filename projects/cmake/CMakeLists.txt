@@ -283,6 +283,8 @@ SET(ARM_SOURCES
   ${ROOT_DIR}/kits/arm/example_impedance_control_fixed.cpp
   ${ROOT_DIR}/kits/arm/example_impedance_control_cartesian.cpp
   ${ROOT_DIR}/kits/arm/example_impedance_control_gimbal.cpp
+  ${ROOT_DIR}/kits/arm/example_impedance_control_floor.cpp
+  ${ROOT_DIR}/kits/arm/example_impedance_control_damping.cpp
   )
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY kits/arm)
