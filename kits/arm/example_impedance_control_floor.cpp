@@ -63,16 +63,12 @@ int main(int argc, char* argv[])
   //       However, ensure that nothing prevents the wrist's actuators from moving, and DO NOT place your fingers between them. 
   
   hebi::experimental::arm::PluginConfig impedance_config("ImpedanceController", "ImpedanceController");
-  // impedance_config.float_lists_["kp"] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-  // impedance_config.float_lists_["kd"] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-  // impedance_config.float_lists_["ki"] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-  // impedance_config.float_lists_["i_clamp"] = {10.0, 10.0, 10.0, 1.0, 1.0, 1.0};
-  impedance_config.bools_["gains_in_end_effector_frame"] = true;
 
   impedance_config.float_lists_["kp"] = {300.0, 300.0, 300.0, 5.0, 5.0, 1.0};
   impedance_config.float_lists_["kd"] = {5.0, 5.0, 5.0, 0.0, 0.0, 0.0};
   impedance_config.float_lists_["ki"] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   impedance_config.float_lists_["i_clamp"] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+  impedance_config.bools_["gains_in_end_effector_frame"] = true;
 
   auto impedance_plugin = hebi::experimental::arm::plugin::ImpedanceController::create(impedance_config);
   if (!impedance_plugin) {
