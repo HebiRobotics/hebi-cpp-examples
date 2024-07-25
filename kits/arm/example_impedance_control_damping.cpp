@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
 
   // Meters above the base for overdamped, critically damped, and underdamped cases respectively
   std::vector<double> lower_limits = {0.0, 0.15, 0.3}; 
-  // State variable for current mode: 0 for overdamped, 1 for crtically damped, 2 for underdamped, -1 for 
+  // State variable for current mode: 0 for overdamped, 1 for crtically damped, 2 for underdamped, -1 for free
   int mode = -1;
   int prevmode = -1;
   std::vector<Eigen::VectorXd> damping_kp, damping_kd;
@@ -189,7 +189,7 @@ int main(int argc, char* argv[])
     if (!controller_on)
     {
       arm->cancelGoal();
-      mode = -1;
+      mode = -1; // Free
     }
     else
     {
@@ -198,7 +198,7 @@ int main(int argc, char* argv[])
       Eigen::Matrix3d ee_orientation_curr;
       arm->FK(arm->lastFeedback().getPosition(), ee_position_curr, ee_orientation_curr);
 
-      // 
+      // Assign mode based on current position
       for (int i = 0; i < static_cast<int>(lower_limits.size()); i++)
       {
         if (ee_position_curr(2) > lower_limits[i])
@@ -207,6 +207,7 @@ int main(int argc, char* argv[])
         }
       }
 
+      // Change gains only upon mode switches
       if (mode != prevmode)
       {
         impedance_plugin_ptr->setKp(damping_kp.at(mode));

@@ -66,8 +66,8 @@ int main(int argc, char* argv[])
 
   impedance_config.float_lists_["kp"] = {300.0, 300.0, 300.0, 5.0, 5.0, 1.0};
   impedance_config.float_lists_["kd"] = {5.0, 5.0, 5.0, 0.0, 0.0, 0.0};
-  impedance_config.float_lists_["ki"] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-  impedance_config.float_lists_["i_clamp"] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+  impedance_config.float_lists_["ki"] = {20.0, 20.0, 20.0, 0.5, 0.5, 0.5};
+  impedance_config.float_lists_["i_clamp"] = {10.0, 10.0, 10.0, 1.0, 1.0, 1.0};
   impedance_config.bools_["gains_in_end_effector_frame"] = true;
 
   auto impedance_plugin = hebi::experimental::arm::plugin::ImpedanceController::create(impedance_config);
