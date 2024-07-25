@@ -190,6 +190,7 @@ int main(int argc, char* argv[])
     {
       arm->cancelGoal();
       mode = -1; // Free
+      prevmode = -1; 
     }
     else
     {
