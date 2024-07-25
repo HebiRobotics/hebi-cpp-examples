@@ -209,7 +209,7 @@ int main(int argc, char* argv[])
       }
 
       // Change gains only upon mode switches
-      if (mode != prevmode)
+      if (mode != prevmode && mode >= 0)
       {
         impedance_plugin_ptr->setKp(damping_kp.at(mode));
         impedance_plugin_ptr->setKd(damping_kd.at(mode));
