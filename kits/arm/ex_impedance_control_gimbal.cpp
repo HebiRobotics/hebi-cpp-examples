@@ -15,7 +15,7 @@ This comprises the following demos:
 - Floor: The end-effector is free to move but can't travel below a virtual floor. To further simulate sliding on the floor, see force_control example.
 - Damping: The end-effector behaves as 3-different damped systems (overdamped, critically damped, and underdamped), at 3 different heights.
 
-The following example is for the "Floor" demo:
+The following example is for the "Gimbal" demo:
 */
 
 // #include "lookup.hpp"
@@ -58,16 +58,15 @@ int main(int argc, char* argv[])
   // Create and configure the ImpedanceController plugin
 
   // NOTE: Angle wraparound is an unresolved issue which can lead to unstable behaviour for any case involving rotational positional control. 
-  //       Make sure that the rotational gains are high enough to prevent large angular errors (greater than pi/2). The gains provided in these examples are well behaved.
+  //       Make sure that the rotational gains are either all zero, or are high enough to prevent large angular errors (greater than pi/2). The gains provided in these examples are well behaved.
   //       Interacting with the end-effector in these examples is perfectly safe.
   //       However, ensure that nothing prevents the wrist's actuators from moving, and DO NOT place your fingers between them. 
-  
-  hebi::experimental::arm::PluginConfig impedance_config("ImpedanceController", "ImpedanceController");
 
-  impedance_config.float_lists_["kp"] = {300.0, 300.0, 300.0, 5.0, 5.0, 1.0};
-  impedance_config.float_lists_["kd"] = {5.0, 5.0, 5.0, 0.0, 0.0, 0.0};
-  impedance_config.float_lists_["ki"] = {20.0, 20.0, 20.0, 0.5, 0.5, 0.5};
-  impedance_config.float_lists_["i_clamp"] = {10.0, 10.0, 10.0, 1.0, 1.0, 1.0};
+  hebi::experimental::arm::PluginConfig impedance_config("ImpedanceController", "ImpedanceController");
+  impedance_config.float_lists_["kp"] = {0.0, 0.0, 0.0, 5.0, 5.0, 1.0};
+  impedance_config.float_lists_["kd"] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+  impedance_config.float_lists_["ki"] = {0.0, 0.0, 0.0, 0.5, 0.5, 0.5};
+  impedance_config.float_lists_["i_clamp"] = {0.0, 0.0, 0.0, 1.0, 1.0, 1.0}; // Clamp on the end-effector wrench and NOT on the integral error
   impedance_config.bools_["gains_in_end_effector_frame"] = true;
 
   auto impedance_plugin = hebi::experimental::arm::plugin::ImpedanceController::create(impedance_config);
@@ -107,7 +106,7 @@ int main(int argc, char* argv[])
   mobile->setButtonLabel(2, "💪");
 
   std::string instructions;
-  instructions = "                           Floor demo";
+  instructions = "                        Gimbal demo";
   
   // Clear any garbage on screen
   mobile->clearText(); 
@@ -127,14 +126,6 @@ int main(int argc, char* argv[])
   /////////////////////////////
   // Control Variables Setup //
   /////////////////////////////
-
-  // Initialize floor demo variables
-  double floor_level = 0.0;
-  double floor_buffer = 0.01; // 1cm
-
-  // Initialize floor demo flags
-  bool floor_command_flag = false; // Indicates whether or not to command floor stiffness goals
-  bool cancel_command_flag = false; // Indicates whether or not to cancel goals
 
   // Flag to indicate when impedance controller is on
   bool controller_on = false;
@@ -166,19 +157,6 @@ int main(int argc, char* argv[])
         controller_on = true;
 
         arm->setGoal(arm::Goal::createFromPosition(arm->lastFeedback().getPosition()));
-
-        // Store current height as floor level, for floor demo
-
-        // Use forward kinematics to find end-effector pose
-        Eigen::Vector3d ee_position0;
-        Eigen::Matrix3d ee_orientation0;
-        arm->FK(arm->lastFeedback().getPosition(), ee_position0, ee_orientation0);
-
-        // Give a little margin to floor level
-        floor_level = ee_position0(2) - floor_buffer;
-
-        // Update flags to indicate having left the floor
-        cancel_command_flag = true;
       }
       else if (mobile->getButtonDiff(2) == util::MobileIO::ButtonState::ToOff){
 
@@ -189,46 +167,6 @@ int main(int argc, char* argv[])
     if (!controller_on)
     {
       arm->cancelGoal();
-    }
-    else
-    {
-      // Use forward kinematics to calculate pose of end-effector
-      Eigen::Vector3d ee_position_curr, ee_position_floor;
-      Eigen::VectorXd joint_position_floor(num_joints);
-      Eigen::Matrix3d ee_orientation_curr;
-      arm->FK(arm->lastFeedback().getPosition(), ee_position_curr, ee_orientation_curr);
-
-      // Snap goal to floor if end-effector is at or below floor, only when it first reaches the floor
-      if(ee_position_curr(2) <= floor_level && floor_command_flag)
-      {
-          // Snap current pose to floor
-          ee_position_floor = ee_position_curr;
-          ee_position_floor(2) = floor_level;
-
-          // Use inverse kinematics to calculate appropriate joint positions
-          joint_position_floor = arm->solveIK(arm->lastFeedback().getPosition(), ee_position_floor, ee_orientation_curr);
-
-          // Set snapped pose as goal
-          arm->setGoal(arm::Goal::createFromPosition(0.001, joint_position_floor)); // Time is very small to make less complex trajectories
-
-          std::cout << "Hit floor!\n";
-
-          // Update flags to indicate being in contact with the floor
-          floor_command_flag = false;
-          cancel_command_flag = true;
-      }
-      // Cancel goal if end-effector is above the floor, only when it leaves the floor
-      else if (ee_position_curr(2) > floor_level and cancel_command_flag)
-      {
-          // Cancel goal to move freely
-          arm->cancelGoal();
-
-          std::cout << "Left floor!\n";
-
-          // Update flags to indicate having left the floor
-          cancel_command_flag = false;
-          floor_command_flag = true;
-      }
     }
 
     // Clear all position and velocity commands

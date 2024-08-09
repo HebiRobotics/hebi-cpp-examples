@@ -274,17 +274,17 @@ endforeach (EXAMPLE ${ADVANCED_SOURCES})
 # Kit Examples
 SET(ARM_SOURCES
 
-  ${ROOT_DIR}/kits/arm/example_gravity_compensation.cpp
-  ${ROOT_DIR}/kits/arm/example_mobile_io_control.cpp
-  ${ROOT_DIR}/kits/arm/example_teach_repeat.cpp
-  ${ROOT_DIR}/kits/arm/example_AR_kit.cpp
-  ${ROOT_DIR}/kits/arm/example_teach_repeat_with_gripper.cpp
-  ${ROOT_DIR}/kits/arm/example_double_arm_teach_repeat.cpp
-  ${ROOT_DIR}/kits/arm/example_impedance_control_fixed.cpp
-  ${ROOT_DIR}/kits/arm/example_impedance_control_cartesian.cpp
-  ${ROOT_DIR}/kits/arm/example_impedance_control_gimbal.cpp
-  ${ROOT_DIR}/kits/arm/example_impedance_control_floor.cpp
-  ${ROOT_DIR}/kits/arm/example_impedance_control_damping.cpp
+  ${ROOT_DIR}/kits/arm/ex_gravity_compensation.cpp
+  ${ROOT_DIR}/kits/arm/ex_mobile_io_control.cpp
+  ${ROOT_DIR}/kits/arm/ex_teach_repeat.cpp
+  ${ROOT_DIR}/kits/arm/ex_AR_kit.cpp
+  ${ROOT_DIR}/kits/arm/ex_teach_repeat_w_gripper.cpp
+  ${ROOT_DIR}/kits/arm/ex_double_arm_teach_repeat.cpp
+  ${ROOT_DIR}/kits/arm/ex_impedance_control_fixed.cpp
+  ${ROOT_DIR}/kits/arm/ex_impedance_control_cartesian.cpp
+  ${ROOT_DIR}/kits/arm/ex_impedance_control_gimbal.cpp
+  ${ROOT_DIR}/kits/arm/ex_impedance_control_floor.cpp
+  ${ROOT_DIR}/kits/arm/ex_impedance_control_damping.cpp
   )
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY kits/arm)
@@ -294,9 +294,9 @@ foreach (EXAMPLE ${ARM_SOURCES})
   get_filename_component(EX_NAME ${EXAMPLE} NAME_WE)
   
   if(WIN32)
-    add_executable(${EX_NAME} ${EXAMPLE} $<TARGET_OBJECTS:_hebic++-obj>)
+    add_executable(${EX_NAME} ${EXAMPLE} ${ROOT_DIR}/kits/arm/hebi_util.cpp $<TARGET_OBJECTS:_hebic++-obj>)
   else()
-    add_executable(${EX_NAME} ${EXAMPLE})
+    add_executable(${EX_NAME} ${EXAMPLE} ${ROOT_DIR}/kits/arm/hebi_util.cpp)
   endif()
   add_dependencies(examples ${EX_NAME})
   target_include_directories(${EX_NAME} PRIVATE ${ROOT_DIR})
@@ -323,9 +323,8 @@ foreach (EXAMPLE ${ARM_SOURCES})
 endforeach (EXAMPLE ${KIT_SOURCES})
 
 
-# Copy the HRDF files for kits into the build directory
-file(COPY ${ROOT_DIR}/kits/arm/hrdf DESTINATION ${CMAKE_BINARY_DIR}/kits/arm)
-file(COPY ${ROOT_DIR}/kits/arm/gains DESTINATION ${CMAKE_BINARY_DIR}/kits/arm)
+# Copy the config directory for kits into the build directory
+file(COPY ${ROOT_DIR}/kits/arm/config DESTINATION ${CMAKE_BINARY_DIR}/kits/arm)
 
 
 

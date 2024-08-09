@@ -15,7 +15,7 @@ This comprises the following demos:
 - Floor: The end-effector is free to move but can't travel below a virtual floor. To further simulate sliding on the floor, see force_control example.
 - Damping: The end-effector behaves as 3-different damped systems (overdamped, critically damped, and underdamped), at 3 different heights.
 
-The following example is for the "Gimbal" demo:
+The following example is for the "Damping" demo:
 */
 
 // #include "lookup.hpp"
@@ -58,16 +58,14 @@ int main(int argc, char* argv[])
   // Create and configure the ImpedanceController plugin
 
   // NOTE: Angle wraparound is an unresolved issue which can lead to unstable behaviour for any case involving rotational positional control. 
-  //       Make sure that the rotational gains are high enough to prevent large angular errors (greater than pi/2). The gains provided in these examples are well behaved.
+  //       Make sure that the rotational gains are either all zero, or are high enough to prevent large angular errors (greater than pi/2). The gains provided in these examples are well behaved.
   //       Interacting with the end-effector in these examples is perfectly safe.
   //       However, ensure that nothing prevents the wrist's actuators from moving, and DO NOT place your fingers between them. 
-
+  
   hebi::experimental::arm::PluginConfig impedance_config("ImpedanceController", "ImpedanceController");
-  impedance_config.float_lists_["kp"] = {0.0, 0.0, 0.0, 5.0, 5.0, 1.0};
+  impedance_config.float_lists_["kp"] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   impedance_config.float_lists_["kd"] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-  impedance_config.float_lists_["ki"] = {0.0, 0.0, 0.0, 0.5, 0.5, 0.5};
-  impedance_config.float_lists_["i_clamp"] = {0.0, 0.0, 0.0, 1.0, 1.0, 1.0}; // Clamp on the end-effector wrench and NOT on the integral error
-  impedance_config.bools_["gains_in_end_effector_frame"] = true;
+  impedance_config.bools_["gains_in_end_effector_frame"] = false;
 
   auto impedance_plugin = hebi::experimental::arm::plugin::ImpedanceController::create(impedance_config);
   if (!impedance_plugin) {
@@ -82,6 +80,10 @@ int main(int argc, char* argv[])
   Eigen::VectorXd pos_nan(num_joints), vel_nan(num_joints);
   pos_nan.fill(std::numeric_limits<double>::quiet_NaN());
   vel_nan.fill(std::numeric_limits<double>::quiet_NaN());
+
+  // Keep a reference to the ImpedanceController plugin
+  // You will have to do this if you intend to reconfigure the impedance control after adding it.
+  auto impedance_plugin_ptr = impedance_plugin.get();
 
   // Add the plugin to the arm
   if (!arm->addPlugin(std::move(impedance_plugin))) {
@@ -106,7 +108,7 @@ int main(int argc, char* argv[])
   mobile->setButtonLabel(2, "💪");
 
   std::string instructions;
-  instructions = "                        Gimbal demo";
+  instructions = "                     Damping demo";
   
   // Clear any garbage on screen
   mobile->clearText(); 
@@ -126,6 +128,26 @@ int main(int argc, char* argv[])
   /////////////////////////////
   // Control Variables Setup //
   /////////////////////////////
+
+  // Meters above the base for overdamped, critically damped, and underdamped cases respectively
+  std::vector<double> lower_limits = {0.0, 0.15, 0.3}; 
+  // State variable for current mode: 0 for overdamped, 1 for crtically damped, 2 for underdamped, -1 for free
+  int mode = -1;
+  int prevmode = -1;
+  std::vector<Eigen::VectorXd> damping_kp, damping_kd;
+
+  // 0: Overdamped
+  damping_kp.push_back((Eigen::VectorXd(6) << 100.0f, 100.0f, 0.0f, 5.0f, 5.0f, 1.0f).finished());
+  damping_kd.push_back((Eigen::VectorXd(6) << 15.0f, 15.0f, 15.0f, 0.0f, 0.0f, 0.0f).finished());
+
+  // 1: Critically damped
+  damping_kp.push_back((Eigen::VectorXd(6) << 100.0f, 100.0f, 0.0f, 5.0f, 5.0f, 1.0f).finished());
+  damping_kd.push_back((Eigen::VectorXd(6) << 5.0f, 5.0f, 5.0f, 0.0f, 0.0f, 0.0f).finished());
+
+  // 2: Underdamped
+  damping_kp.push_back((Eigen::VectorXd(6) << 100.0f, 100.0f, 0.0f, 5.0f, 5.0f, 1.0f).finished());
+  damping_kd.push_back((Eigen::VectorXd(6) << 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f).finished());
+
 
   // Flag to indicate when impedance controller is on
   bool controller_on = false;
@@ -167,6 +189,33 @@ int main(int argc, char* argv[])
     if (!controller_on)
     {
       arm->cancelGoal();
+      mode = -1; // Free
+      prevmode = -1; 
+    }
+    else
+    {
+      // Use forward kinematics to calculate pose of end-effector
+      Eigen::Vector3d ee_position_curr;
+      Eigen::Matrix3d ee_orientation_curr;
+      arm->FK(arm->lastFeedback().getPosition(), ee_position_curr, ee_orientation_curr);
+
+      // Assign mode based on current position
+      for (int i = 0; i < static_cast<int>(lower_limits.size()); i++)
+      {
+        if (ee_position_curr(2) > lower_limits[i])
+        {
+          mode = i;
+        }
+      }
+
+      // Change gains only upon mode switches
+      if (mode != prevmode && mode >= 0)
+      {
+        impedance_plugin_ptr->setKp(damping_kp.at(mode));
+        impedance_plugin_ptr->setKd(damping_kd.at(mode));
+        std::cout << "Mode: " << mode << std::endl;
+      }
+      prevmode = mode;
     }
 
     // Clear all position and velocity commands
