@@ -26,6 +26,8 @@ The following example is for the "Damping" demo:
 #include "arm/arm.hpp"
 #include "util/mobile_io.hpp"
 #include <chrono>
+#include <thread>
+#include "hebi_util.hpp"
 
 using namespace hebi;
 using namespace experimental; 
@@ -33,61 +35,74 @@ using namespace experimental;
 int main(int argc, char* argv[])
 {
   //////////////////////////
-  ///// Arm Setup //////////
+  ///// Config Setup ///////
   //////////////////////////
 
-  arm::Arm::Params params;
-
-  // Setup Module Family and Module Names
-  params.families_ = {"HEBIArm-T"};
-  params.names_ = {"J1_base", "J2_shoulder", "J3_elbow", "J4_wrist1", "J5_wrist2", "J6_wrist3"};
-
-  // Read HRDF file to seutp a RobotModel object for the 6-DoF Arm
-  // Make sure you are running this from the correct directory!
-  params.hrdf_file_ = "kits/arm/hrdf/T-arm.hrdf";
-
-  // Create the Arm Object
-  auto arm = arm::Arm::create(params);
-  while (!arm) {
-    arm = arm::Arm::create(params);
-  }
-
-  // Load the gains file that is approriate to the arm
-  arm -> loadGains("kits/arm/gains/T-arm.xml");
-
-  // Create and configure the ImpedanceController plugin
-
-  // NOTE: Angle wraparound is an unresolved issue which can lead to unstable behaviour for any case involving rotational positional control. 
-  //       Make sure that the rotational gains are either all zero, or are high enough to prevent large angular errors (greater than pi/2). The gains provided in these examples are well behaved.
-  //       Interacting with the end-effector in these examples is perfectly safe.
-  //       However, ensure that nothing prevents the wrist's actuators from moving, and DO NOT place your fingers between them. 
+  const std::string example_config_file = "config/examples/ex_impedance_control_damping.cfg.yaml";
+  std::vector<std::string> errors;
   
-  hebi::experimental::arm::PluginConfig impedance_config("ImpedanceController", "ImpedanceController");
-  impedance_config.float_lists_["kp"] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-  impedance_config.float_lists_["kd"] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-  impedance_config.bools_["gains_in_end_effector_frame"] = false;
-
-  auto impedance_plugin = hebi::experimental::arm::plugin::ImpedanceController::create(impedance_config);
-  if (!impedance_plugin) {
-    std::cerr << "Failed to create ImpedanceController plugin." << std::endl;
+  const auto example_config = RobotConfig::loadConfig(example_config_file, errors);
+  for (const auto& error : errors) {
+    std::cerr << error << std::endl;
+  }
+  if (!example_config) {
+    std::cerr << "Failed to load configuration from: " << example_config_file << std::endl;
     return -1;
   }
 
+  // For this demo, we need the arm and mobile_io
+  std::unique_ptr<hebi::experimental::arm::Arm> arm;
+  std::unique_ptr<hebi::util::MobileIO> mobile_io;
+
+  //////////////////////////
+  ///// Arm Setup //////////
+  //////////////////////////
+
+  // Create the arm object from the configuration
+  arm = hebi::experimental::arm::Arm::create(*example_config);
+
+  // Keep retrying if arm not found
+  while (!arm) {
+      std::cerr << "Failed to create arm, retrying..." << std::endl;
+
+      // Wait for 1 second before retrying
+      std::this_thread::sleep_for(std::chrono::seconds(1));  
+
+      // Retry
+      arm = hebi::experimental::arm::Arm::create(*example_config);
+  }
+  std::cout << "Arm connected." << std::endl;
+
+  // Ideally, in the impedance control demos, positions and velocities must not be commanded
+
   // Initialize variables used to clear the commanded position and velocity in every cycle
+  // Get the pending command pointer
   hebi::GroupCommand& command = arm->pendingCommand();
 
+  // Create nan vectors for positions and velocities
   auto num_joints = arm->robotModel().getDoFCount();
   Eigen::VectorXd pos_nan(num_joints), vel_nan(num_joints);
   pos_nan.fill(std::numeric_limits<double>::quiet_NaN());
   vel_nan.fill(std::numeric_limits<double>::quiet_NaN());
 
-  // Keep a reference to the ImpedanceController plugin
-  // You will have to do this if you intend to reconfigure the impedance control after adding it.
-  auto impedance_plugin_ptr = impedance_plugin.get();
+  // Retrieve the impedance controller plugin from the arm
+  
+  // Pointer magic
 
-  // Add the plugin to the arm
-  if (!arm->addPlugin(std::move(impedance_plugin))) {
-    std::cerr << "Failed to add ImpedanceController plugin to arm." << std::endl;
+  // Lock the weak_ptr and get a shared_ptr
+  auto plugin_shared_ptr = arm->getPluginByName("impedanceController").lock();
+
+  // Check if the shared_ptr is valid
+  if (!plugin_shared_ptr) {
+    std::cerr << "Failed to lock plugin shared_ptr. The plugin may have been destroyed." << std::endl;
+    return -1;
+  }
+
+  // Downcast to ImpedanceController
+  auto impedance_plugin_ptr = std::dynamic_pointer_cast<hebi::experimental::arm::plugin::ImpedanceController>(plugin_shared_ptr);
+
+  if (!impedance_plugin_ptr) {
+    std::cerr << "Failed to cast plugin to ImpedanceController." << std::endl;
     return -1;
   }
 
@@ -95,29 +110,33 @@ int main(int argc, char* argv[])
   //// MobileIO Setup //////
   //////////////////////////
 
-  // Set up MobileIO
-  std::unique_ptr<util::MobileIO> mobile = util::MobileIO::create(params.families_[0], "mobileIO");
-  if (!mobile)
-  {
-    std::cout << "couldn't find mobile IO device!\n";
-    return 1;
+  // Create the mobile_io object from the configuration
+  std::cout << "Waiting for Mobile IO device to come online..." << std::endl;
+  mobile_io = createMobileIOFromConfig(*example_config, example_config_file);
+
+  // Keep retrying if Mobile IO not found
+  while (mobile_io == nullptr) {
+      std::cout << "Couldn't find Mobile IO. Check name, family, or device status..." << std::endl;
+
+      // Wait for 1 second before retrying
+      std::this_thread::sleep_for(std::chrono::seconds(1));  
+
+      // Retry
+      mobile_io = createMobileIOFromConfig(*example_config, example_config_file);
   }
-  mobile->setButtonMode(1, util::MobileIO::ButtonMode::Momentary);
-  mobile->setButtonLabel(1, "❌");
-  mobile->setButtonMode(2, util::MobileIO::ButtonMode::Toggle);
-  mobile->setButtonLabel(2, "💪");
+  std::cout << "Mobile IO connected." << std::endl;
 
   std::string instructions;
-  instructions = "                     Damping demo";
+  instructions = "                      Damping demo";
   
   // Clear any garbage on screen
-  mobile->clearText(); 
+  mobile_io->clearText(); 
 
   // Display instructions on screen
-  mobile->appendText(instructions); 
+  mobile_io->appendText(instructions); 
 
   // Setup instructions
-  auto last_state = mobile->update();
+  auto last_state = mobile_io->update();
 
   std::cout <<  "Commanded gravity-compensated zero force to the arm.\n"
             <<  "  💪 (B2) - Toggles an impedance controller on/off:\n"
@@ -130,24 +149,26 @@ int main(int argc, char* argv[])
   /////////////////////////////
 
   // Meters above the base for overdamped, critically damped, and underdamped cases respectively
-  std::vector<double> lower_limits = {0.0, 0.15, 0.3}; 
+  std::vector<double> lower_limits = example_config->getUserData().float_lists_.at("lower_limits"); 
+
   // State variable for current mode: 0 for overdamped, 1 for crtically damped, 2 for underdamped, -1 for free
   int mode = -1;
   int prevmode = -1;
+
+  // Kp and Kd in different modes
   std::vector<Eigen::VectorXd> damping_kp, damping_kd;
 
   // 0: Overdamped
-  damping_kp.push_back((Eigen::VectorXd(6) << 100.0f, 100.0f, 0.0f, 5.0f, 5.0f, 1.0f).finished());
-  damping_kd.push_back((Eigen::VectorXd(6) << 15.0f, 15.0f, 15.0f, 0.0f, 0.0f, 0.0f).finished());
+  damping_kp.push_back(Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().float_lists_.at("overdamped_kp").data(), example_config->getUserData().float_lists_.at("overdamped_kp").size()));
+  damping_kd.push_back(Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().float_lists_.at("overdamped_kd").data(), example_config->getUserData().float_lists_.at("overdamped_kd").size()));
 
   // 1: Critically damped
-  damping_kp.push_back((Eigen::VectorXd(6) << 100.0f, 100.0f, 0.0f, 5.0f, 5.0f, 1.0f).finished());
-  damping_kd.push_back((Eigen::VectorXd(6) << 5.0f, 5.0f, 5.0f, 0.0f, 0.0f, 0.0f).finished());
+  damping_kp.push_back(Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().float_lists_.at("critically_damped_kp").data(), example_config->getUserData().float_lists_.at("critically_damped_kp").size()));
+  damping_kd.push_back(Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().float_lists_.at("critically_damped_kd").data(), example_config->getUserData().float_lists_.at("critically_damped_kd").size()));
 
   // 2: Underdamped
-  damping_kp.push_back((Eigen::VectorXd(6) << 100.0f, 100.0f, 0.0f, 5.0f, 5.0f, 1.0f).finished());
-  damping_kd.push_back((Eigen::VectorXd(6) << 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f).finished());
-
+  damping_kp.push_back(Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().float_lists_.at("underdamped_kp").data(), example_config->getUserData().float_lists_.at("underdamped_kp").size()));
+  damping_kd.push_back(Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().float_lists_.at("underdamped_kd").data(), example_config->getUserData().float_lists_.at("underdamped_kd").size()));
 
   // Flag to indicate when impedance controller is on
   bool controller_on = false;
@@ -158,29 +179,29 @@ int main(int argc, char* argv[])
 
   while(arm->update())
   {
-    auto updated_mobile = mobile->update(0);
+    auto updated_mobile_io = mobile_io->update(0);
 
-    if (updated_mobile)
+    if (updated_mobile_io)
     {
       /////////////////
       // Button Presses
       /////////////////
 
       // Buttton B1 - End demo
-      if (mobile->getButtonDiff(1) == util::MobileIO::ButtonState::ToOn) {
+      if (mobile_io->getButtonDiff(1) == util::MobileIO::ButtonState::ToOn) {
         // Clear MobileIO text
-        mobile->resetUI();
+        mobile_io->resetUI();
         return 1;
       }
 
       // Button B2 - Set and unset impedance mode when button is pressed and released, respectively
-      if (mobile->getButtonDiff(2) == util::MobileIO::ButtonState::ToOn) {
+      if (mobile_io->getButtonDiff(2) == util::MobileIO::ButtonState::ToOn) {
 
         controller_on = true;
 
         arm->setGoal(arm::Goal::createFromPosition(arm->lastFeedback().getPosition()));
       }
-      else if (mobile->getButtonDiff(2) == util::MobileIO::ButtonState::ToOff){
+      else if (mobile_io->getButtonDiff(2) == util::MobileIO::ButtonState::ToOff){
 
         controller_on = false;
       }
@@ -227,7 +248,7 @@ int main(int argc, char* argv[])
   }
 
   // Clear MobileIO text
-  mobile->clearText();
+  mobile_io->clearText();
 
   return 0;
 }

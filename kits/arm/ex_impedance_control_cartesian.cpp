@@ -18,9 +18,14 @@ This comprises the following demos:
 The following example is for the "Cartesian" demo:
 */
 
-#include "hebi_util.hpp"
-#include <thread>
+#include "group_command.hpp"
+#include "group_feedback.hpp"
+#include "robot_model.hpp"
+#include "arm/arm.hpp"
+#include "util/mobile_io.hpp"
 #include <chrono>
+#include <thread>
+#include "hebi_util.hpp"
 
 using namespace hebi;
 using namespace experimental; 
@@ -53,16 +58,26 @@ int main(int argc, char* argv[])
 
   // Create the arm object from the configuration
   arm = hebi::experimental::arm::Arm::create(*example_config);
+
+  // Keep retrying if arm not found
   while (!arm) {
       std::cerr << "Failed to create arm, retrying..." << std::endl;
-      std::this_thread::sleep_for(std::chrono::seconds(1));  // Wait for 1 second before retrying
+
+      // Wait for 1 second before retrying
+      std::this_thread::sleep_for(std::chrono::seconds(1));  
+
+      // Retry
       arm = hebi::experimental::arm::Arm::create(*example_config);
   }
   std::cout << "Arm connected." << std::endl;
 
+  // Ideally, in the impedance control demos, positions and velocities must not be commanded
+
   // Initialize variables used to clear the commanded position and velocity in every cycle
+  // Get the pending command pointer
   hebi::GroupCommand& command = arm->pendingCommand();
 
+  // Create nan vectors for positions and velocities
   auto num_joints = arm->robotModel().getDoFCount();
   Eigen::VectorXd pos_nan(num_joints), vel_nan(num_joints);
   pos_nan.fill(std::numeric_limits<double>::quiet_NaN());
@@ -73,13 +88,20 @@ int main(int argc, char* argv[])
   //////////////////////////
 
   // Create the mobile_io object from the configuration
+  std::cout << "Waiting for Mobile IO device to come online..." << std::endl;
   mobile_io = createMobileIOFromConfig(*example_config, example_config_file);
-  while (!mobile_io) {
-      std::cout << "Waiting for Mobile IO device to come online..." << std::endl;
-      std::this_thread::sleep_for(std::chrono::seconds(1));  // Wait for 1 second before retrying
+
+  // Keep retrying if Mobile IO not found
+  while (mobile_io == nullptr) {
+      std::cout << "Couldn't find Mobile IO. Check name, family, or device status..." << std::endl;
+
+      // Wait for 1 second before retrying
+      std::this_thread::sleep_for(std::chrono::seconds(1));  
+
+      // Retry
       mobile_io = createMobileIOFromConfig(*example_config, example_config_file);
   }
-  std::cout << "MobileIO connected." << std::endl;
+  std::cout << "Mobile IO connected." << std::endl;
 
   std::string instructions;
   instructions = "                    Cartesian demo";
@@ -94,7 +116,7 @@ int main(int argc, char* argv[])
   auto last_state = mobile_io->update();
 
   std::cout <<  "Commanded gravity-compensated zero force to the arm.\n"
-            <<  "  💪 (B2) - Toggles an impedance controller on/off:\n"
+            <<  "  📌 (B2) - Toggles an impedance controller on/off:\n"
             <<  "            ON  - Apply controller based on current position\n"
             <<  "            OFF - Go back to gravity-compensated mode\n"
             <<  "  ❌ (B1) - Exits the demo.\n";
