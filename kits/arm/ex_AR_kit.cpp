@@ -11,7 +11,8 @@
 #include "arm/arm.hpp"
 #include "util/mobile_io.hpp"
 #include <chrono>
-#include <iostream>
+#include <thread>
+#include "hebi_util.hpp"
 
 using namespace hebi;
 using namespace experimental; // For all things mobileIO 
@@ -31,56 +32,79 @@ Eigen::Matrix3d makeRotationMatrix (hebi::Quaternionf phone_orientation) {
 int main(int argc, char* argv[])
 {
   //////////////////////////
+  ///// Config Setup ///////
+  //////////////////////////
+
+  // Config file path
+  const std::string example_config_file = "config/ex_AR_kit.cfg.yaml";
+  std::vector<std::string> errors;
+  
+  // Load the config
+  const auto example_config = RobotConfig::loadConfig(example_config_file, errors);
+  for (const auto& error : errors) {
+    std::cerr << error << std::endl;
+  }
+  if (!example_config) {
+    std::cerr << "Failed to load configuration from: " << example_config_file << std::endl;
+    return -1;
+  }
+
+  // For this demo, we need the arm and mobile_io
+  std::unique_ptr<hebi::experimental::arm::Arm> arm;
+  std::unique_ptr<hebi::util::MobileIO> mobile_io;
+
+  //////////////////////////
   ///// Arm Setup //////////
   //////////////////////////
 
-  arm::Arm::Params params;
+  // Create the arm object from the configuration
+  arm = hebi::experimental::arm::Arm::create(*example_config);
 
-  // Setup Module Family and Module Names
-  params.families_ = {"Arm"};
-  params.names_ = {"J1_base", "J2_shoulder", "J3_elbow", "J4_wrist1", "J5_wrist2", "J6_wrist3"};
-  
-  // Read HRDF file to setup a RobotModel object for the 6-DoF Arm
-  params.hrdf_file_ = "kits/arm/hrdf/A-2085-06.hrdf";  
-
-  // Setup Gripper
-  // std::shared_ptr<arm::EffortEndEffector<1>> gripper(arm::EffortEndEffector<1>::create(params.families_[0], "gripperSpool").release());
-  // params.end_effector_ = gripper;
-
-  // Create the Arm Object
-  auto arm = arm::Arm::create(params);
+  // Keep retrying if arm not found
   while (!arm) {
-    arm = arm::Arm::create(params);
+      std::cerr << "Failed to create arm, retrying..." << std::endl;
+
+      // Wait for 1 second before retrying
+      std::this_thread::sleep_for(std::chrono::seconds(1));  
+
+      // Retry
+      arm = hebi::experimental::arm::Arm::create(*example_config);
   }
+  std::cout << "Arm connected." << std::endl;
 
-  // Load the gains file that is approriate to the arm
-  arm -> loadGains("kits/arm/gains/A-2085-06.xml");
+  //////////////////////////
+  //// MobileIO Setup //////
+  //////////////////////////
 
-  /////////////////////////
-  //// MobileIO Setup /////
-  /////////////////////////
+  // Create the mobile_io object from the configuration
+  std::cout << "Waiting for Mobile IO device to come online..." << std::endl;
+  mobile_io = createMobileIOFromConfig(*example_config, example_config_file);
 
-  // Create the MobileIO object
-  std::unique_ptr<util::MobileIO> mobile = util::MobileIO::create(params.families_[0], "mobileIO");
-  if (!mobile)
-  {
-    std::cout << "couldn't find mobile IO device!\n";
-    return 1;
+  // Keep retrying if Mobile IO not found
+  while (mobile_io == nullptr) {
+      std::cout << "Couldn't find Mobile IO. Check name, family, or device status..." << std::endl;
+
+      // Wait for 1 second before retrying
+      std::this_thread::sleep_for(std::chrono::seconds(1));  
+
+      // Retry
+      mobile_io = createMobileIOFromConfig(*example_config, example_config_file);
   }
-
-  // Clear any garbage on screen
-  mobile->resetUI();
+  std::cout << "Mobile IO connected." << std::endl;
 
   // Setup instructions for display
   std::string instructions;
-  instructions = ("B1 - Home Position\nB3 - AR Control Mode\n"
-                  "B6 - Grav Comp Mode\nB8 - Quit\n");
+  instructions = ("🏠 - Home Position\n📲 - AR Control Mode\n"
+                  "🌍 - Grav Comp Mode\n❌ - Quit\n");
+
+  // Clear any garbage on screen
+  mobile_io->clearText();
 
   // Display instructions on screen
-  mobile->appendText(instructions); 
+  mobile_io->appendText(instructions); 
 
   // Setup state variable for mobile device
-  auto last_mobile_state = mobile->update();
+  auto last_mobile_state = mobile_io->update();
 
   //////////////////////////
   //// Main Control Loop ///
@@ -90,13 +114,15 @@ int main(int argc, char* argv[])
   bool softstart = true;
   bool ar_mode = false;
   
-  // Make sure we softstart the arm first.
+  // Load user data from config
   Eigen::VectorXd home_position(arm -> robotModel().getDoFCount());
-  home_position << 0, M_PI/3, 2*M_PI/3, 5*M_PI/6, -M_PI/2, 0; // Adjust depending on your DoFs
+  home_position = Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().float_lists_.at("home_position").data(), example_config->getUserData().float_lists_.at("home_position").size());  
+  double soft_start_time = example_config->getUserData().floats_.at("soft_start_time");
+  double xyz_scale = example_config->getUserData().floats_.at("xyz_scale");
 
   // Command the softstart to home position
   arm -> update();
-  arm -> setGoal(arm::Goal::createFromPosition(4, home_position)); // take 4 seconds
+  arm -> setGoal(arm::Goal::createFromPosition(soft_start_time, home_position)); // take 4 seconds
   arm -> send();
 
   // Get the cartesian position and rotation matrix @ home position
@@ -117,7 +143,7 @@ int main(int argc, char* argv[])
     if (softstart) {
       // End softstart when arm reaches its homePosition
       if (arm -> atGoal()){
-        mobile->appendText("Softstart Complete!");
+        mobile_io->appendText("Softstart Complete!");
         softstart = false; 
         continue;
         }
@@ -128,54 +154,52 @@ int main(int argc, char* argv[])
       } 
 
       // Get latest mobile_state
-      auto updated_mobile = mobile->update(0);
+      auto updated_mobile_io = mobile_io->update(0);
       
-      if (!updated_mobile)
-        std::cout << "Failed to get feedback from mobile I/O; check connection!\n";
-      else
+      if (updated_mobile_io)
       {
-      // Button B1 - Return to home position
-      if (mobile->getButtonDiff(1) == util::MobileIO::ButtonState::ToOn) {
+        // Button B1 - Return to home position
+        if (mobile_io->getButtonDiff(1) == util::MobileIO::ButtonState::ToOn) {
+            ar_mode = false;
+            arm -> setGoal(arm::Goal::createFromPosition(4, home_position));
+        }
+
+        // Button B3 - Start AR Control
+        if (mobile_io->getButtonDiff(3) == util::MobileIO::ButtonState::ToOn) {
+          xyz_phone_init << mobile_io -> getLastFeedback().mobile().arPosition().get().getX(),
+                            mobile_io -> getLastFeedback().mobile().arPosition().get().getY(),
+                            mobile_io -> getLastFeedback().mobile().arPosition().get().getZ();
+          std::cout << xyz_phone_init << std::endl;
+          rot_phone_init = makeRotationMatrix(mobile_io -> getLastFeedback().mobile().arOrientation().get());
+          ar_mode = true;
+        }
+
+        // Button B6 - Grav Comp Mode
+        if (mobile_io->getButtonDiff(6) == util::MobileIO::ButtonState::ToOn) {
+          arm -> cancelGoal();
           ar_mode = false;
-          arm -> setGoal(arm::Goal::createFromPosition(4, home_position));
-      }
+        }
 
-      // Button B3 - Start AR Control
-      if (mobile->getButtonDiff(3) == util::MobileIO::ButtonState::ToOn) {
-        xyz_phone_init << mobile -> getLastFeedback().mobile().arPosition().get().getX(),
-                          mobile -> getLastFeedback().mobile().arPosition().get().getY(),
-                          mobile -> getLastFeedback().mobile().arPosition().get().getZ();
-        std::cout << xyz_phone_init << std::endl;
-        rot_phone_init = makeRotationMatrix(mobile -> getLastFeedback().mobile().arOrientation().get());
-        ar_mode = true;
-      }
-
-      // Button B6 - Grav Comp Mode
-      if (mobile->getButtonDiff(6) == util::MobileIO::ButtonState::ToOn) {
-        arm -> cancelGoal();
-        ar_mode = false;
-      }
-
-      // Button B8 - End Demo
-      if (mobile->getButtonDiff(8) == util::MobileIO::ButtonState::ToOn) {
-        // Clear MobileIO text
-        mobile->resetUI();
-        return 1;
-      }
+        // Button B8 - End Demo
+        if (mobile_io->getButtonDiff(8) == util::MobileIO::ButtonState::ToOn) {
+          // Clear MobileIO text
+          mobile_io->resetUI();
+          return 1;
+        }
     }
 
     if (ar_mode) {
       // Get the latest mobile position and orientation
       Eigen::Vector3d xyz_phone;
-      xyz_phone << mobile->getLastFeedback().mobile().arPosition().get().getX(),
-                   mobile->getLastFeedback().mobile().arPosition().get().getY(),
-                   mobile->getLastFeedback().mobile().arPosition().get().getZ();
-      auto rot_phone = makeRotationMatrix(mobile->getLastFeedback().mobile().arOrientation().get());
+      xyz_phone << mobile_io->getLastFeedback().mobile().arPosition().get().getX(),
+                   mobile_io->getLastFeedback().mobile().arPosition().get().getY(),
+                   mobile_io->getLastFeedback().mobile().arPosition().get().getZ();
+      auto rot_phone = makeRotationMatrix(mobile_io->getLastFeedback().mobile().arOrientation().get());
 
       // Calculate new targets
-      Eigen::Vector3d xyz_scale;
-      xyz_scale << 1, 1, 2;
-      Eigen::Vector3d xyz_target = xyz_home + (0.75 * xyz_scale.array() *
+      Eigen::Vector3d xyz_scale_vec;
+      xyz_scale_vec << 1, 1, 2;
+      Eigen::Vector3d xyz_target = xyz_home + (xyz_scale * xyz_scale_vec.array() *
                                 (rot_phone_init.transpose() * (xyz_phone - xyz_phone_init)).array()).matrix();
       Eigen::Matrix3d rot_target = rot_phone_init.transpose() * rot_phone * rot_home;
 
@@ -193,7 +217,7 @@ int main(int argc, char* argv[])
   }
 
   // Clear MobileIO text
-  mobile->resetUI();
+  mobile_io->resetUI();
 
   return 0;
 }
