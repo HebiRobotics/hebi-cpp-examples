@@ -1,14 +1,12 @@
 /**
- * Mobile IO Control
- * An example for setting up your arm for simple control from a mobile io devoce
- * to pre-programmed waypoints.
+ * This file is a barebones skeleton of how to setup an arm for use.
+ * It demonstrates gravity compensation behavior by commanding torques
+ * equal to the force from gravity on the links and joints of an arm.
+ * Note that this only approximately balances out gravity, as imperfections in
+ * the torque sensing and modeled system can lead to "drift".  Also, the
+ * particular choice of PID control gains can affect the performance of this
+ * demo.
  */
-
-/*
-CAUTION: 
-This example uses waypoints containing fixed joint angles, which is a bad idea if your actuators have large wind-up. 
-The correct way to store waypoints is by using se3 coordinates, and converting them to joint positions using our IK functions.
-*/
 
 #include "group_command.hpp"
 #include "group_feedback.hpp"
@@ -20,7 +18,7 @@ The correct way to store waypoints is by using se3 coordinates, and converting t
 #include "hebi_util.hpp"
 
 using namespace hebi;
-using namespace experimental; 
+using namespace experimental;
 
 int main(int argc, char* argv[])
 {
@@ -29,7 +27,7 @@ int main(int argc, char* argv[])
   //////////////////////////
 
   // Config file path
-  const std::string example_config_file = "config/ex_mobile_io_control.cfg.yaml";
+  const std::string example_config_file = "config/ex_gravity_compensation_toggle.cfg.yaml";
   std::vector<std::string> errors;
   
   // Load the config
@@ -65,6 +63,27 @@ int main(int argc, char* argv[])
   }
   std::cout << "Arm connected." << std::endl;
 
+  // Retrieve the gravcomp plugin from the arm
+
+  // Pointer magic
+
+  // Lock the weak_ptr and get a shared_ptr
+  auto plugin_shared_ptr = arm->getPluginByName("gravComp").lock();
+
+  // Check if the shared_ptr is valid
+  if (!plugin_shared_ptr) {
+    std::cerr << "Failed to lock plugin shared_ptr. The plugin may have been destroyed." << std::endl;
+    return -1;
+  }
+
+  // Downcast to ImpedanceController
+  auto gravcomp_plugin_ptr = std::dynamic_pointer_cast<hebi::experimental::arm::plugin::GravityCompensationEffort>(plugin_shared_ptr);
+
+  if (!gravcomp_plugin_ptr) {
+    std::cerr << "Failed to cast plugin to GravityCompensationEffort." << std::endl;
+    return -1;
+  }
+
   //////////////////////////
   //// MobileIO Setup //////
   //////////////////////////
@@ -86,9 +105,8 @@ int main(int argc, char* argv[])
   std::cout << "Mobile IO connected." << std::endl;
 
   std::string instructions;
-  instructions = ("B1 - Waypoint 1\nB2 - Waypoint 2\n"
-                  "B3 - Waypoint 3\n"
-                  "B6 - Grav comp mode\nB8 - Quit\n");
+  instructions = "                    Gravcomp demo";
+  
   // Clear any garbage on screen
   mobile_io->clearText(); 
 
@@ -98,19 +116,11 @@ int main(int argc, char* argv[])
   // Setup instructions
   auto last_state = mobile_io->update();
 
-  /////////////////////////////
-  // Control Variables Setup //
-  /////////////////////////////
-
-  // Waypoints
-  auto num_joints = arm->robotModel().getDoFCount();
-  std::vector<Eigen::VectorXd> waypoints;
-  waypoints.push_back(Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().float_lists_.at("waypoint_1").data(), example_config->getUserData().float_lists_.at("waypoint_1").size()));
-  waypoints.push_back(Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().float_lists_.at("waypoint_2").data(), example_config->getUserData().float_lists_.at("waypoint_2").size()));
-  waypoints.push_back(Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().float_lists_.at("waypoint_3").data(), example_config->getUserData().float_lists_.at("waypoint_3").size()));
-
-  // Travel time
-  double travel_time = example_config->getUserData().floats_.at("travel_time");
+  std::cout <<  "Commanded gravity-compensated zero force to the arm.\n"
+            <<  "  🌍 (B2) - Toggles the gravity compensation on/off:\n"
+            <<  "            ON  - Apply controller \n"
+            <<  "            OFF - Disable  controller\n"
+            <<  "  ❌ (B1) - Exits the demo.\n";
 
   //////////////////////////
   //// Main Control Loop ///
@@ -126,34 +136,28 @@ int main(int argc, char* argv[])
       // Button Presses
       /////////////////
 
-      // BN - Waypoint N (N = 1, 2 , 3)
-      for (int button = 1; button <= 3; button++)
-      {
-        if (mobile_io->getButtonDiff(button) == util::MobileIO::ButtonState::ToOn) {
-          arm -> setGoal(arm::Goal::createFromPosition(travel_time, waypoints.at(button-1)));
-        }
-      }
-
-      // Button B6 - Grav Comp Mode
-      if (mobile_io->getButtonDiff(6) == util::MobileIO::ButtonState::ToOn) {
-        // cancel any goal that is set, returning arm into gravComp mode
-        arm -> cancelGoal();
-      }
-
-      // Button B8 - End Demo
-      if (mobile_io->getButtonDiff(8) == util::MobileIO::ButtonState::ToOn) {
+      // Buttton B1 - End demo
+      if (mobile_io->getButtonDiff(1) == util::MobileIO::ButtonState::ToOn) {
         // Clear MobileIO text
         mobile_io->resetUI();
         return 1;
       }
-    }
 
+      // Button B2 - Set and unset gravcomp mode when button is pressed and released, respectively
+      if (mobile_io->getButtonDiff(2) == util::MobileIO::ButtonState::ToOn) {
+        
+        // Enable gravcomp  
+        gravcomp_plugin_ptr->setEnabled(true);
+      }
+      else if (mobile_io->getButtonDiff(2) == util::MobileIO::ButtonState::ToOff){
+
+        // Disable gravcomp
+        gravcomp_plugin_ptr->setEnabled(false);
+      }
+    }
     // Send latest commands to the arm
     arm->send();
   }
-
-  // Clear MobileIO text
-  mobile_io->clearText();
 
   return 0;
 }

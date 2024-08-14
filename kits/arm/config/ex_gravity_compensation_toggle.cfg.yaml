@@ -11,10 +11,16 @@ plugins:
 
   - type: GravityCompensationEffort
     name: gravComp
-    enabled: true
+    enabled: false
     ramp_time: 0
 
   - type: DynamicsCompensationEffort
     name: dynamicsComp
     enabled: true
     ramp_time: 0
+
+user_data:
+
+  mobile_io_family: "Arm"
+  mobile_io_name: "mobileIO"
+  mobile_io_layout: "layouts/ex_gravity_compensation_toggle.json"

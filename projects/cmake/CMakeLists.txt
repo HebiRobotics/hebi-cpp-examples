@@ -275,6 +275,7 @@ endforeach (EXAMPLE ${ADVANCED_SOURCES})
 SET(ARM_SOURCES
 
   ${ROOT_DIR}/kits/arm/ex_gravity_compensation.cpp
+  ${ROOT_DIR}/kits/arm/ex_gravity_compensation_toggle.cpp
   ${ROOT_DIR}/kits/arm/ex_mobile_io_control.cpp
   ${ROOT_DIR}/kits/arm/ex_teach_repeat.cpp
   ${ROOT_DIR}/kits/arm/ex_AR_kit.cpp

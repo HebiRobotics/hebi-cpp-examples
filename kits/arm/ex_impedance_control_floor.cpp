@@ -36,9 +36,11 @@ int main(int argc, char* argv[])
   ///// Config Setup ///////
   //////////////////////////
 
+  // Config file path
   const std::string example_config_file = "config/ex_impedance_control_floor.cfg.yaml";
   std::vector<std::string> errors;
   
+  // Load the config
   const auto example_config = RobotConfig::loadConfig(example_config_file, errors);
   for (const auto& error : errors) {
     std::cerr << error << std::endl;
@@ -237,7 +239,7 @@ int main(int argc, char* argv[])
   }
 
   // Clear MobileIO text
-  mobile->clearText();
+  mobile_io->clearText();
 
   return 0;
 }
