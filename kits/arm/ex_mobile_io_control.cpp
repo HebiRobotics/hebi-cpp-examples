@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
   ///// Config Setup ///////
   //////////////////////////
 
-  const std::string example_config_file = "config/examples/ex_mobile_io_control.cfg.yaml";
+  const std::string example_config_file = "config/ex_mobile_io_control.cfg.yaml";
   std::vector<std::string> errors;
   
   const auto example_config = RobotConfig::loadConfig(example_config_file, errors);

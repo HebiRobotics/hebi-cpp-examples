@@ -38,7 +38,7 @@ int main(int argc, char* argv[])
   ///// Config Setup ///////
   //////////////////////////
 
-  const std::string example_config_file = "config/examples/ex_impedance_control_damping.cfg.yaml";
+  const std::string example_config_file = "config/ex_impedance_control_damping.cfg.yaml";
   std::vector<std::string> errors;
   
   const auto example_config = RobotConfig::loadConfig(example_config_file, errors);
@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
   vel_nan.fill(std::numeric_limits<double>::quiet_NaN());
 
   // Retrieve the impedance controller plugin from the arm
-  
+
   // Pointer magic
 
   // Lock the weak_ptr and get a shared_ptr

@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
   ///// Config Setup ///////
   //////////////////////////
 
-  const std::string example_config_file = "config/examples/ex_impedance_control_floor.cfg.yaml";
+  const std::string example_config_file = "config/ex_impedance_control_floor.cfg.yaml";
   std::vector<std::string> errors;
   
   const auto example_config = RobotConfig::loadConfig(example_config_file, errors);
@@ -104,7 +104,7 @@ int main(int argc, char* argv[])
   std::cout << "Mobile IO connected." << std::endl;
 
   std::string instructions;
-  instructions = "                       Fixed demo";
+  instructions = "                       Floor demo";
   
   // Clear any garbage on screen
   mobile_io->clearText(); 
@@ -114,7 +114,7 @@ int main(int argc, char* argv[])
 
   // Setup instructions
   auto last_state = mobile_io->update();
-  
+
   std::cout <<  "Commanded gravity-compensated zero force to the arm.\n"
             <<  "  🧱 (B2) - Toggles an impedance controller on/off:\n"
             <<  "            ON  - Apply controller based on current position\n"
@@ -237,7 +237,7 @@ int main(int argc, char* argv[])
   }
 
   // Clear MobileIO text
-  mobile_io->clearText();
+  mobile->clearText();
 
   return 0;
 }
