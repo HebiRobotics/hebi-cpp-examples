@@ -43,17 +43,17 @@ std::unique_ptr<hebi::util::MobileIO> createMobileIOFromConfig(const hebi::Robot
         config.getUserData().strings_.count("mobile_io_layout")) {
 
         // Check that all required fields are present and are strings
-        if (config.getUserData().strings_.at("mobile_io_family").empty() ||
-            config.getUserData().strings_.at("mobile_io_name").empty()) {
+        if (config.getUserData().getString("mobile_io_family").empty() ||
+            config.getUserData().getString("mobile_io_name").empty()) {
             errors.push_back("HEBI config \"user_data\"'s \"mobile_io_...\" fields must be non-empty strings.");
         }
 
         // Populate the dictionary
-        mobile_io_dict["family"] = config.getUserData().strings_.at("mobile_io_family");
-        mobile_io_dict["name"] = config.getUserData().strings_.at("mobile_io_name");
+        mobile_io_dict["family"] = config.getUserData().getString("mobile_io_family");
+        mobile_io_dict["name"] = config.getUserData().getString("mobile_io_name");
 
         // Use check_file to validate and convert layout to absolute path
-        mobile_io_dict["layout"] = check_file("mobile_io_layout", config.getUserData().strings_.at("mobile_io_layout"));
+        mobile_io_dict["layout"] = check_file("mobile_io_layout", config.getUserData().getString("mobile_io_layout"));
         if (mobile_io_dict["layout"].empty()) {
             errors.push_back("HEBI config \"user_data\"'s \"mobile_io_layout\" file is invalid.");
         }

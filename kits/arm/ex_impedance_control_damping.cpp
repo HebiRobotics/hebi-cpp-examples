@@ -129,7 +129,7 @@ int main(int argc, char* argv[])
   /////////////////////////////
 
   // Meters above the base for overdamped, critically damped, and underdamped cases respectively
-  std::vector<double> lower_limits = example_config->getUserData().float_lists_.at("lower_limits"); 
+  std::vector<double> lower_limits = example_config->getUserData().getFloatList("lower_limits"); 
 
   // State variable for current mode: 0 for overdamped, 1 for crtically damped, 2 for underdamped, -1 for free
   int mode = -1;
@@ -139,16 +139,16 @@ int main(int argc, char* argv[])
   std::vector<Eigen::VectorXd> damping_kp, damping_kd;
 
   // 0: Overdamped
-  damping_kp.push_back(Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().float_lists_.at("overdamped_kp").data(), example_config->getUserData().float_lists_.at("overdamped_kp").size()));
-  damping_kd.push_back(Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().float_lists_.at("overdamped_kd").data(), example_config->getUserData().float_lists_.at("overdamped_kd").size()));
+  damping_kp.push_back(Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().getFloatList("overdamped_kp").data(), example_config->getUserData().getFloatList("overdamped_kp").size()));
+  damping_kd.push_back(Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().getFloatList("overdamped_kd").data(), example_config->getUserData().getFloatList("overdamped_kd").size()));
 
   // 1: Critically damped
-  damping_kp.push_back(Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().float_lists_.at("critically_damped_kp").data(), example_config->getUserData().float_lists_.at("critically_damped_kp").size()));
-  damping_kd.push_back(Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().float_lists_.at("critically_damped_kd").data(), example_config->getUserData().float_lists_.at("critically_damped_kd").size()));
+  damping_kp.push_back(Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().getFloatList("critically_damped_kp").data(), example_config->getUserData().getFloatList("critically_damped_kp").size()));
+  damping_kd.push_back(Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().getFloatList("critically_damped_kd").data(), example_config->getUserData().getFloatList("critically_damped_kd").size()));
 
   // 2: Underdamped
-  damping_kp.push_back(Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().float_lists_.at("underdamped_kp").data(), example_config->getUserData().float_lists_.at("underdamped_kp").size()));
-  damping_kd.push_back(Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().float_lists_.at("underdamped_kd").data(), example_config->getUserData().float_lists_.at("underdamped_kd").size()));
+  damping_kp.push_back(Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().getFloatList("underdamped_kp").data(), example_config->getUserData().getFloatList("underdamped_kp").size()));
+  damping_kd.push_back(Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().getFloatList("underdamped_kd").data(), example_config->getUserData().getFloatList("underdamped_kd").size()));
 
   // Flag to indicate when impedance controller is on
   bool controller_on = false;

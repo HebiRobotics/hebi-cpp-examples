@@ -101,9 +101,9 @@ int main(int argc, char* argv[])
   
   // Load user data from config
   Eigen::VectorXd home_position(arm -> robotModel().getDoFCount());
-  home_position = Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().float_lists_.at("home_position").data(), example_config->getUserData().float_lists_.at("home_position").size());  
-  double soft_start_time = example_config->getUserData().floats_.at("soft_start_time");
-  double xyz_scale = example_config->getUserData().floats_.at("xyz_scale");
+  home_position = Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().getFloatList("home_position").data(), example_config->getUserData().getFloatList("home_position").size());  
+  double soft_start_time = example_config->getUserData().getFloat("soft_start_time");
+  double xyz_scale = example_config->getUserData().getFloat("xyz_scale");
 
   // Command the softstart to home position
   arm -> update();

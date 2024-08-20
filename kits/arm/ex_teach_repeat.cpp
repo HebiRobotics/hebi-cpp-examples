@@ -146,8 +146,8 @@ int main(int argc, char* argv[])
   double slider3 = 0.0;
 
   // Load travel times from config
-  double base_travel_time = example_config->getUserData().floats_.at("base_travel_time");
-  double min_travel_time = example_config->getUserData().floats_.at("min_travel_time");
+  double base_travel_time = example_config->getUserData().getFloat("base_travel_time");
+  double min_travel_time = example_config->getUserData().getFloat("min_travel_time");
 
   //////////////////////////
   //// Main Control Loop ///

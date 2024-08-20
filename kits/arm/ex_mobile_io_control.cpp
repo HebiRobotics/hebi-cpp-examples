@@ -91,12 +91,12 @@ int main(int argc, char* argv[])
   // Waypoints
   auto num_joints = arm->robotModel().getDoFCount();
   std::vector<Eigen::VectorXd> waypoints;
-  waypoints.push_back(Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().float_lists_.at("waypoint_1").data(), example_config->getUserData().float_lists_.at("waypoint_1").size()));
-  waypoints.push_back(Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().float_lists_.at("waypoint_2").data(), example_config->getUserData().float_lists_.at("waypoint_2").size()));
-  waypoints.push_back(Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().float_lists_.at("waypoint_3").data(), example_config->getUserData().float_lists_.at("waypoint_3").size()));
+  waypoints.push_back(Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().getFloatList("waypoint_1").data(), example_config->getUserData().getFloatList("waypoint_1").size()));
+  waypoints.push_back(Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().getFloatList("waypoint_2").data(), example_config->getUserData().getFloatList("waypoint_2").size()));
+  waypoints.push_back(Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().getFloatList("waypoint_3").data(), example_config->getUserData().getFloatList("waypoint_3").size()));
 
   // Travel time
-  double travel_time = example_config->getUserData().floats_.at("travel_time");
+  double travel_time = example_config->getUserData().getFloat("travel_time");
 
   //////////////////////////
   //// Main Control Loop ///
