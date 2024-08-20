@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
   //////////////////////////
 
   // Create the arm object from the configuration
-  arm = hebi::experimental::arm::Arm::create(*example_config);
+  arm = arm::Arm::create(*example_config);
 
   // Keep retrying if arm not found
   while (!arm) {
@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
       // std::this_thread::sleep_for(std::chrono::seconds(1));  
 
       // Retry
-      arm = hebi::experimental::arm::Arm::create(*example_config);
+      arm = arm::Arm::create(*example_config);
   }
   std::cout << "Arm connected." << std::endl;
 
@@ -107,6 +107,9 @@ int main(int argc, char* argv[])
   
   // Clear any garbage on screen
   mobile_io->clearText(); 
+
+  // Refresh mobile_io
+  auto last_state = mobile_io->update();
 
   std::cout <<  "Commanded gravity-compensated zero force to the arm.\n"
             <<  "  📌 (B2) - Toggles an impedance controller on/off:\n"

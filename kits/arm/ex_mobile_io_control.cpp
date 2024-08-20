@@ -88,6 +88,9 @@ int main(int argc, char* argv[])
   // Clear any garbage on screen
   mobile_io->clearText(); 
 
+  // Refresh mobile_io
+  auto last_state = mobile_io->update();
+
   /////////////////////////////
   // Control Variables Setup //
   /////////////////////////////

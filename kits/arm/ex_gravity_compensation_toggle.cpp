@@ -107,6 +107,9 @@ int main(int argc, char* argv[])
   // Clear any garbage on screen
   mobile_io->clearText(); 
 
+  // Refresh mobile_io
+  auto last_state = mobile_io->update();
+
   std::cout <<  "Commanded gravity-compensated zero force to the arm.\n"
             <<  "  🌍 (B2) - Toggles the gravity compensation on/off:\n"
             <<  "            ON  - Apply controller \n"
