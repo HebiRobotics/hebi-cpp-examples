@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
   }
 
   // For this demo, we need the arm and mobile_io
-  std::unique_ptr<hebi::experimental::arm::Arm> arm;
+  std::unique_ptr<arm::Arm> arm;
   std::unique_ptr<hebi::util::MobileIO> mobile_io;
 
   //////////////////////////
@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
       std::cerr << "Failed to create arm, retrying..." << std::endl;
 
       // Wait for 1 second before retrying
-      std::this_thread::sleep_for(std::chrono::seconds(1));  
+      // std::this_thread::sleep_for(std::chrono::seconds(1));  
 
       // Retry
       arm = hebi::experimental::arm::Arm::create(*example_config);
@@ -98,24 +98,15 @@ int main(int argc, char* argv[])
       std::cout << "Couldn't find Mobile IO. Check name, family, or device status..." << std::endl;
 
       // Wait for 1 second before retrying
-      std::this_thread::sleep_for(std::chrono::seconds(1));  
+      // std::this_thread::sleep_for(std::chrono::seconds(1));  
 
       // Retry
       mobile_io = createMobileIOFromConfig(*example_config, example_config_file);
   }
   std::cout << "Mobile IO connected." << std::endl;
-
-  std::string instructions;
-  instructions = "                    Cartesian demo";
   
   // Clear any garbage on screen
   mobile_io->clearText(); 
-
-  // Display instructions on screen
-  mobile_io->appendText(instructions); 
-
-  // Setup instructions
-  auto last_state = mobile_io->update();
 
   std::cout <<  "Commanded gravity-compensated zero force to the arm.\n"
             <<  "  📌 (B2) - Toggles an impedance controller on/off:\n"

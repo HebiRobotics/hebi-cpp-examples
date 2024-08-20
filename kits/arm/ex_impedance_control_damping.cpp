@@ -127,18 +127,9 @@ int main(int argc, char* argv[])
       mobile_io = createMobileIOFromConfig(*example_config, example_config_file);
   }
   std::cout << "Mobile IO connected." << std::endl;
-
-  std::string instructions;
-  instructions = "                      Damping demo";
   
   // Clear any garbage on screen
   mobile_io->clearText(); 
-
-  // Display instructions on screen
-  mobile_io->appendText(instructions); 
-
-  // Setup instructions
-  auto last_state = mobile_io->update();
 
   std::cout <<  "Commanded gravity-compensated zero force to the arm.\n"
             <<  "  💪 (B2) - Toggles an impedance controller on/off:\n"

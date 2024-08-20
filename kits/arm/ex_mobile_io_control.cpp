@@ -85,18 +85,8 @@ int main(int argc, char* argv[])
   }
   std::cout << "Mobile IO connected." << std::endl;
 
-  std::string instructions;
-  instructions = ("B1 - Waypoint 1\nB2 - Waypoint 2\n"
-                  "B3 - Waypoint 3\n"
-                  "B6 - Grav comp mode\nB8 - Quit\n");
   // Clear any garbage on screen
   mobile_io->clearText(); 
-
-  // Display instructions on screen
-  mobile_io->appendText(instructions); 
-
-  // Setup instructions
-  auto last_state = mobile_io->update();
 
   /////////////////////////////
   // Control Variables Setup //

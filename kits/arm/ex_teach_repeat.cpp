@@ -135,20 +135,6 @@ int main(int argc, char* argv[])
   // Clear any garbage on screen
   mobile_io -> clearText(); 
 
-  // Setup instructions for display
-  std::string instructions;
-
-  instructions = ("📌 - Add stop WP\n🗑️- Clear waypoints\n"
-                  "🚏 - Add flow WP\n🔄 - Toggle training/playback\n"
-                  "⏱️ - Up/down for longer/shorter time to waypoint\n"
-                  "❌ - Quit\n");
-
-  // Display instructions on screen
-  mobile_io->appendText(instructions); 
-
-  // Setup state variable for mobile device
-  auto last_mobile_state = mobile_io->update();
-
   /////////////////////////////
   // Control Variables Setup //
   /////////////////////////////

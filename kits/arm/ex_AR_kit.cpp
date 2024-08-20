@@ -92,19 +92,8 @@ int main(int argc, char* argv[])
   }
   std::cout << "Mobile IO connected." << std::endl;
 
-  // Setup instructions for display
-  std::string instructions;
-  instructions = ("🏠 - Home Position\n📲 - AR Control Mode\n"
-                  "🌍 - Grav Comp Mode\n❌ - Quit\n");
-
   // Clear any garbage on screen
   mobile_io->clearText();
-
-  // Display instructions on screen
-  mobile_io->appendText(instructions); 
-
-  // Setup state variable for mobile device
-  auto last_mobile_state = mobile_io->update();
 
   //////////////////////////
   //// Main Control Loop ///
