@@ -154,7 +154,6 @@ int main(int argc, char* argv[])
           xyz_phone_init << mobile_io -> getLastFeedback().mobile().arPosition().get().getX(),
                             mobile_io -> getLastFeedback().mobile().arPosition().get().getY(),
                             mobile_io -> getLastFeedback().mobile().arPosition().get().getZ();
-          std::cout << xyz_phone_init << std::endl;
           rot_phone_init = makeRotationMatrix(mobile_io -> getLastFeedback().mobile().arOrientation().get());
           ar_mode = true;
         }
