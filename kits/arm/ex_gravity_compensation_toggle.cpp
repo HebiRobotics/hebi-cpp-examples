@@ -61,20 +61,13 @@ int main(int argc, char* argv[])
 
   // Retrieve the gravcomp plugin from the arm
 
-  // Pointer magic
-
-  // Lock the weak_ptr and get a shared_ptr
-  auto plugin_shared_ptr = arm->getPluginByName("gravComp").lock();
-
-  // Check if the shared_ptr is valid
+  // Get a weak_ptr from the arm API, lock it as a shared_ptr, and then downcast it from a general plugin pointer to a specific plugin pointer
+  auto plugin_shared_ptr = arm->getPluginByType<arm::plugin::GravityCompensationEffort>().lock();
   if (!plugin_shared_ptr) {
     std::cerr << "Failed to lock plugin shared_ptr. The plugin may have been destroyed." << std::endl;
     return -1;
   }
-
-  // Downcast to ImpedanceController
   auto gravcomp_plugin_ptr = std::dynamic_pointer_cast<arm::plugin::GravityCompensationEffort>(plugin_shared_ptr);
-
   if (!gravcomp_plugin_ptr) {
     std::cerr << "Failed to cast plugin to GravityCompensationEffort." << std::endl;
     return -1;
