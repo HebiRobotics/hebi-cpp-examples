@@ -14,7 +14,6 @@
 #include "arm/arm.hpp"
 #include "util/mobile_io.hpp"
 #include <chrono>
-#include <thread>
 #include "hebi_util.hpp"
 
 using namespace hebi;
@@ -53,9 +52,6 @@ int main(int argc, char* argv[])
   // Keep retrying if arm not found
   while (!arm) {
       std::cerr << "Failed to create arm, retrying..." << std::endl;
-
-      // Wait for 1 second before retrying
-      std::this_thread::sleep_for(std::chrono::seconds(1));  
 
       // Retry
       arm = arm::Arm::create(*example_config);

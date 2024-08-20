@@ -24,7 +24,6 @@ The following example is for the "Gimbal" demo:
 #include "arm/arm.hpp"
 #include "util/mobile_io.hpp"
 #include <chrono>
-#include <thread>
 #include "hebi_util.hpp"
 
 using namespace hebi;
@@ -65,9 +64,6 @@ int main(int argc, char* argv[])
   while (!arm) {
       std::cerr << "Failed to create arm, retrying..." << std::endl;
 
-      // Wait for 1 second before retrying
-      std::this_thread::sleep_for(std::chrono::seconds(1));  
-
       // Retry
       arm = arm::Arm::create(*example_config);
   }
@@ -96,9 +92,6 @@ int main(int argc, char* argv[])
   // Keep retrying if Mobile IO not found
   while (mobile_io == nullptr) {
       std::cout << "Couldn't find Mobile IO. Check name, family, or device status..." << std::endl;
-
-      // Wait for 1 second before retrying
-      std::this_thread::sleep_for(std::chrono::seconds(1));  
 
       // Retry
       mobile_io = createMobileIOFromConfig(*example_config, example_config_file);
