@@ -144,20 +144,20 @@ int main(int argc, char* argv[])
       /////////////////
 
       // Buttton B1 - End demo
-      if (mobile_io->getButtonDiff(1) == util::MobileIO::ButtonState::ToOn) {
+      if (mobile_io->getButtonDiff(1) == hebi::util::MobileIO::ButtonState::ToOn) {
         // Clear MobileIO text
         mobile_io->resetUI();
         return 1;
       }
 
       // Button B2 - Set and unset impedance mode when button is pressed and released, respectively
-      if (mobile_io->getButtonDiff(2) == util::MobileIO::ButtonState::ToOn) {
+      if (mobile_io->getButtonDiff(2) == hebi::util::MobileIO::ButtonState::ToOn) {
 
         controller_on = true;
 
         arm->setGoal(arm::Goal::createFromPosition(arm->lastFeedback().getPosition()));
       }
-      else if (mobile_io->getButtonDiff(2) == util::MobileIO::ButtonState::ToOff){
+      else if (mobile_io->getButtonDiff(2) == hebi::util::MobileIO::ButtonState::ToOff){
 
         controller_on = false;
       }

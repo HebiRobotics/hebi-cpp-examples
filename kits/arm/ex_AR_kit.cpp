@@ -50,7 +50,7 @@ int main(int argc, char* argv[])
   }
 
   // For this demo, we need the arm and mobile_io
-  std::unique_ptr<hebi::experimental::arm::Arm> arm;
+  std::unique_ptr<arm::Arm> arm;
   std::unique_ptr<hebi::util::MobileIO> mobile_io;
 
   //////////////////////////
@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
   //////////////////////////
 
   // Create the arm object from the configuration
-  arm = hebi::experimental::arm::Arm::create(*example_config);
+  arm = arm::Arm::create(*example_config);
 
   // Keep retrying if arm not found
   while (!arm) {
@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
       std::this_thread::sleep_for(std::chrono::seconds(1));  
 
       // Retry
-      arm = hebi::experimental::arm::Arm::create(*example_config);
+      arm = arm::Arm::create(*example_config);
   }
   std::cout << "Arm connected." << std::endl;
 
@@ -151,13 +151,13 @@ int main(int argc, char* argv[])
       if (updated_mobile_io)
       {
         // Button B1 - Return to home position
-        if (mobile_io->getButtonDiff(1) == util::MobileIO::ButtonState::ToOn) {
+        if (mobile_io->getButtonDiff(1) == hebi::util::MobileIO::ButtonState::ToOn) {
             ar_mode = false;
             arm -> setGoal(arm::Goal::createFromPosition(4, home_position));
         }
 
         // Button B3 - Start AR Control
-        if (mobile_io->getButtonDiff(3) == util::MobileIO::ButtonState::ToOn) {
+        if (mobile_io->getButtonDiff(3) == hebi::util::MobileIO::ButtonState::ToOn) {
           xyz_phone_init << mobile_io -> getLastFeedback().mobile().arPosition().get().getX(),
                             mobile_io -> getLastFeedback().mobile().arPosition().get().getY(),
                             mobile_io -> getLastFeedback().mobile().arPosition().get().getZ();
@@ -167,13 +167,13 @@ int main(int argc, char* argv[])
         }
 
         // Button B6 - Grav Comp Mode
-        if (mobile_io->getButtonDiff(6) == util::MobileIO::ButtonState::ToOn) {
+        if (mobile_io->getButtonDiff(6) == hebi::util::MobileIO::ButtonState::ToOn) {
           arm -> cancelGoal();
           ar_mode = false;
         }
 
         // Button B8 - End Demo
-        if (mobile_io->getButtonDiff(8) == util::MobileIO::ButtonState::ToOn) {
+        if (mobile_io->getButtonDiff(8) == hebi::util::MobileIO::ButtonState::ToOn) {
           // Clear MobileIO text
           mobile_io->resetUI();
           return 1;

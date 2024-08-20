@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
   }
 
   // For this demo, we need the arm and mobile_io
-  std::unique_ptr<hebi::experimental::arm::Arm> arm;
+  std::unique_ptr<arm::Arm> arm;
   std::unique_ptr<hebi::util::MobileIO> mobile_io;
 
   //////////////////////////
@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
   //////////////////////////
 
   // Create the arm object from the configuration
-  arm = hebi::experimental::arm::Arm::create(*example_config);
+  arm = arm::Arm::create(*example_config);
 
   // Keep retrying if arm not found
   while (!arm) {
@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
       std::this_thread::sleep_for(std::chrono::seconds(1));  
 
       // Retry
-      arm = hebi::experimental::arm::Arm::create(*example_config);
+      arm = arm::Arm::create(*example_config);
   }
   std::cout << "Arm connected." << std::endl;
 
@@ -122,19 +122,19 @@ int main(int argc, char* argv[])
       // BN - Waypoint N (N = 1, 2 , 3)
       for (int button = 1; button <= 3; button++)
       {
-        if (mobile_io->getButtonDiff(button) == util::MobileIO::ButtonState::ToOn) {
+        if (mobile_io->getButtonDiff(button) == hebi::util::MobileIO::ButtonState::ToOn) {
           arm -> setGoal(arm::Goal::createFromPosition(travel_time, waypoints.at(button-1)));
         }
       }
 
       // Button B6 - Grav Comp Mode
-      if (mobile_io->getButtonDiff(6) == util::MobileIO::ButtonState::ToOn) {
+      if (mobile_io->getButtonDiff(6) == hebi::util::MobileIO::ButtonState::ToOn) {
         // cancel any goal that is set, returning arm into gravComp mode
         arm -> cancelGoal();
       }
 
       // Button B8 - End Demo
-      if (mobile_io->getButtonDiff(8) == util::MobileIO::ButtonState::ToOn) {
+      if (mobile_io->getButtonDiff(8) == hebi::util::MobileIO::ButtonState::ToOn) {
         // Clear MobileIO text
         mobile_io->resetUI();
         return 1;

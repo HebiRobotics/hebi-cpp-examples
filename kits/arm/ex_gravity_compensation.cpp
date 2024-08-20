@@ -41,14 +41,14 @@ int main(int argc, char* argv[])
   }
 
   // For this demo, we need just the arm
-  std::unique_ptr<hebi::experimental::arm::Arm> arm;
+  std::unique_ptr<arm::Arm> arm;
 
   //////////////////////////
   ///// Arm Setup //////////
   //////////////////////////
 
   // Create the arm object from the configuration
-  arm = hebi::experimental::arm::Arm::create(*example_config);
+  arm = arm::Arm::create(*example_config);
 
   // Keep retrying if arm not found
   while (!arm) {
@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
       std::this_thread::sleep_for(std::chrono::seconds(1));  
 
       // Retry
-      arm = hebi::experimental::arm::Arm::create(*example_config);
+      arm = arm::Arm::create(*example_config);
   }
   std::cout << "Arm connected." << std::endl;
 

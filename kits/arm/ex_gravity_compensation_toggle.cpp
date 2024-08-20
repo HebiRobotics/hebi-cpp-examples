@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
   }
 
   // For this demo, we need the arm and mobile_io
-  std::unique_ptr<hebi::experimental::arm::Arm> arm;
+  std::unique_ptr<arm::Arm> arm;
   std::unique_ptr<hebi::util::MobileIO> mobile_io;
 
   //////////////////////////
@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
   //////////////////////////
 
   // Create the arm object from the configuration
-  arm = hebi::experimental::arm::Arm::create(*example_config);
+  arm = arm::Arm::create(*example_config);
 
   // Keep retrying if arm not found
   while (!arm) {
@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
       std::this_thread::sleep_for(std::chrono::seconds(1));  
 
       // Retry
-      arm = hebi::experimental::arm::Arm::create(*example_config);
+      arm = arm::Arm::create(*example_config);
   }
   std::cout << "Arm connected." << std::endl;
 
@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
   }
 
   // Downcast to ImpedanceController
-  auto gravcomp_plugin_ptr = std::dynamic_pointer_cast<hebi::experimental::arm::plugin::GravityCompensationEffort>(plugin_shared_ptr);
+  auto gravcomp_plugin_ptr = std::dynamic_pointer_cast<arm::plugin::GravityCompensationEffort>(plugin_shared_ptr);
 
   if (!gravcomp_plugin_ptr) {
     std::cerr << "Failed to cast plugin to GravityCompensationEffort." << std::endl;
@@ -131,19 +131,19 @@ int main(int argc, char* argv[])
       /////////////////
 
       // Buttton B1 - End demo
-      if (mobile_io->getButtonDiff(1) == util::MobileIO::ButtonState::ToOn) {
+      if (mobile_io->getButtonDiff(1) == hebi::util::MobileIO::ButtonState::ToOn) {
         // Clear MobileIO text
         mobile_io->resetUI();
         return 1;
       }
 
       // Button B2 - Set and unset gravcomp mode when button is pressed and released, respectively
-      if (mobile_io->getButtonDiff(2) == util::MobileIO::ButtonState::ToOn) {
+      if (mobile_io->getButtonDiff(2) == hebi::util::MobileIO::ButtonState::ToOn) {
         
         // Enable gravcomp  
         gravcomp_plugin_ptr->setEnabled(true);
       }
-      else if (mobile_io->getButtonDiff(2) == util::MobileIO::ButtonState::ToOff){
+      else if (mobile_io->getButtonDiff(2) == hebi::util::MobileIO::ButtonState::ToOff){
 
         // Disable gravcomp
         gravcomp_plugin_ptr->setEnabled(false);

@@ -64,7 +64,7 @@ arm::Goal playWaypoints (State& state) {
     target_pos.col(i) << state.waypoints[i].positions;
     target_vels.col(i) << state.waypoints[i].vels;
     target_accels.col(i) << state.waypoints[i].accels;
-    times[i] = state.waypoints[i].time;
+    times[i] = state.waypoints[i].time + (i > 0 ? times[i-1] : 0.0);
   }
   return arm::Goal::createFromWaypoints(times, target_pos, target_vels, target_accels);
 }
@@ -90,7 +90,7 @@ int main(int argc, char* argv[])
   }
 
   // For this demo, we need the arm and mobile_io
-  std::unique_ptr<hebi::experimental::arm::Arm> arm;
+  std::unique_ptr<arm::Arm> arm;
   std::unique_ptr<hebi::util::MobileIO> mobile_io;
 
   //////////////////////////
@@ -98,7 +98,7 @@ int main(int argc, char* argv[])
   //////////////////////////
 
   // Create the arm object from the configuration
-  arm = hebi::experimental::arm::Arm::create(*example_config);
+  arm = arm::Arm::create(*example_config);
 
   // Keep retrying if arm not found
   while (!arm) {
@@ -108,7 +108,7 @@ int main(int argc, char* argv[])
       std::this_thread::sleep_for(std::chrono::seconds(1));  
 
       // Retry
-      arm = hebi::experimental::arm::Arm::create(*example_config);
+      arm = arm::Arm::create(*example_config);
   }
   std::cout << "Arm connected." << std::endl;
 
@@ -173,7 +173,7 @@ int main(int argc, char* argv[])
         slider3 = mobile_io->getAxis(3);
 
         // Buttton B1 - Add Stop Waypoint
-        if (mobile_io->getButtonDiff(1) == util::MobileIO::ButtonState::ToOn) {
+        if (mobile_io->getButtonDiff(1) == hebi::util::MobileIO::ButtonState::ToOn) {
           addWaypoint(state, 
                       base_travel_time + slider3 * (base_travel_time - min_travel_time),
                       arm -> lastFeedback(), 
@@ -181,7 +181,7 @@ int main(int argc, char* argv[])
         }
 
         // Button B2 - Add Through Waypoint
-        if (mobile_io->getButtonDiff(2) == util::MobileIO::ButtonState::ToOn) {
+        if (mobile_io->getButtonDiff(2) == hebi::util::MobileIO::ButtonState::ToOn) {
           addWaypoint(state, 
                       base_travel_time + slider3 * (base_travel_time - min_travel_time),
                       arm -> lastFeedback(), 
@@ -189,7 +189,7 @@ int main(int argc, char* argv[])
         }
 
         // Button B3 - Toggle to Playback Waypoints
-        if (mobile_io->getButtonDiff(3) == util::MobileIO::ButtonState::ToOn) {
+        if (mobile_io->getButtonDiff(3) == hebi::util::MobileIO::ButtonState::ToOn) {
           if (state.waypoints.size() <= 1){
             std::cout << "You have not added enough waypoints! You need at least two.\n" << std::endl;
           } 
@@ -202,7 +202,7 @@ int main(int argc, char* argv[])
         }
 
         // Button B4 - Clear Waypoints
-        if (mobile_io->getButtonDiff(4) == util::MobileIO::ButtonState::ToOn) {
+        if (mobile_io->getButtonDiff(4) == hebi::util::MobileIO::ButtonState::ToOn) {
           std::cout << "Discarding waypoints.\n" << std::endl;
           state.waypoints.clear();
         }
@@ -210,7 +210,7 @@ int main(int argc, char* argv[])
       else if (run_mode == "playback") 
       {
         // Button B3 - Toggle to Training Mode
-        if (mobile_io->getButtonDiff(3) == util::MobileIO::ButtonState::ToOn) {
+        if (mobile_io->getButtonDiff(3) == hebi::util::MobileIO::ButtonState::ToOn) {
           std::cout << "Entering training mode.\n" << std::endl;
           arm->cancelGoal();
           run_mode = "training";
@@ -224,7 +224,7 @@ int main(int argc, char* argv[])
       }
 
       // Button B8 - End Demo
-      if (mobile_io->getButtonDiff(8) == util::MobileIO::ButtonState::ToOn) {
+      if (mobile_io->getButtonDiff(8) == hebi::util::MobileIO::ButtonState::ToOn) {
         // Clear MobileIO text
         mobile_io->clearText();
         return 1;
