@@ -12,12 +12,11 @@
 
 #include "hebi_util.hpp"
 
-std::unique_ptr<hebi::util::MobileIO> createMobileIOFromConfig(const hebi::RobotConfig& config, const std::string& config_file_path) {
+std::unique_ptr<hebi::util::MobileIO> createMobileIOFromConfig(const hebi::RobotConfig& config) {
     std::map<std::string, std::string> mobile_io_dict;
     std::vector<std::string> errors;
 
-    hebi::util::file::File cfg_file(config_file_path);
-    auto parent_dir_absolute = cfg_file.getParentDirectory().getAbsolutePath();
+    auto parent_dir_absolute = config.getLocation();
 
     // Lambda function to check file paths
     auto check_file = [&errors, &parent_dir_absolute](const std::string& type, const std::string& relative_filename) {

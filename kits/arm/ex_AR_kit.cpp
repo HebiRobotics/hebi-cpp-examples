@@ -74,14 +74,14 @@ int main(int argc, char* argv[])
 
   // Create the mobile_io object from the configuration
   std::cout << "Waiting for Mobile IO device to come online..." << std::endl;
-  mobile_io = createMobileIOFromConfig(*example_config, example_config_file);
+  mobile_io = createMobileIOFromConfig(*example_config);
 
   // Keep retrying if Mobile IO not found
   while (mobile_io == nullptr) {
       std::cout << "Couldn't find Mobile IO. Check name, family, or device status..." << std::endl;
 
       // Retry
-      mobile_io = createMobileIOFromConfig(*example_config, example_config_file);
+      mobile_io = createMobileIOFromConfig(*example_config);
   }
   std::cout << "Mobile IO connected." << std::endl;
 

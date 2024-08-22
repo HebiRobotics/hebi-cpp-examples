@@ -21,7 +21,7 @@
 // hebi_util stores helper functions that may be rolled into the API under hebi::util
 
 // Function to create Mobile IO from the config
-std::unique_ptr<hebi::util::MobileIO> createMobileIOFromConfig(const hebi::RobotConfig& example_config, const std::string& config_file_path);
+std::unique_ptr<hebi::util::MobileIO> createMobileIOFromConfig(const hebi::RobotConfig& example_config);
 
 // TODO: Function to create gripper from the config
 // std::unique_ptr<hebi::experimental::arm::EndEffectorBase> createGripperFromConfig(const hebi::RobotConfig& example_config, const std::string& config_file_path);
