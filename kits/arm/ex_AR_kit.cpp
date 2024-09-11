@@ -146,7 +146,7 @@ int main(int argc, char* argv[])
         // Button B1 - Return to home position
         if (mobile_io->getButtonDiff(1) == hebi::util::MobileIO::ButtonState::ToOn) {
             ar_mode = false;
-            arm -> setGoal(arm::Goal::createFromPosition(4, home_position));
+            arm -> setGoal(arm::Goal::createFromPosition(soft_start_time, home_position));
         }
 
         // Button B3 - Start AR Control
@@ -193,7 +193,7 @@ int main(int argc, char* argv[])
                                               rot_target);
 
       // Create and send new goal to the arm
-      arm -> setGoal(arm::Goal::createFromPosition(target_joints));
+      arm -> setGoal(arm::Goal::createFromPosition(example_config->getUserData().getFloat("latency"), target_joints));
     }
 
     // Send latest commands to the arm
