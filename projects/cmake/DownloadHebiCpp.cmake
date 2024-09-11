@@ -1,9 +1,9 @@
 # Used to download the C++ API - this should not be used directly.
 cmake_minimum_required(VERSION 3.0)
 
-set(HEBI_CPP_VERSION "3.9.0")
+set(HEBI_CPP_VERSION "3.10.0")
 set(HEBI_CPP_FILE_NAME "hebi-cpp-${HEBI_CPP_VERSION}.tar.gz")
-set(HEBI_CPP_LIB_SHA256 "9ad5752448117fb4f5e0f0822c0c596205e4eb33a97aa94e47e81d4d9bc77695")
+set(HEBI_CPP_LIB_SHA256 "df04b75f75a407164cb7edf6d5d2a162ff52998d7c493f8ed346543f648ded38")
 set(HEBI_CPP_URL "https://files.hebi.us/download/cpp/${HEBI_CPP_FILE_NAME}")
 
 # If the CMakeLists.txt is not found, then redownload the C++ API 

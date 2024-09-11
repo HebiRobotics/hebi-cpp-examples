@@ -71,15 +71,21 @@ int main(int argc, char* argv[])
 
   // Ideally, in the impedance control demos, positions and velocities must not be commanded
 
-  // Initialize variables used to clear the commanded position and velocity in every cycle
   // Get the pending command pointer
   hebi::GroupCommand& command = arm->pendingCommand();
 
-  // Create nan vectors for positions and velocities
+  // Clear gains for all position and velocity commands
   auto num_joints = arm->robotModel().getDoFCount();
-  Eigen::VectorXd pos_nan(num_joints), vel_nan(num_joints);
-  pos_nan.fill(std::numeric_limits<double>::quiet_NaN());
-  vel_nan.fill(std::numeric_limits<double>::quiet_NaN());
+  for (size_t i = 0; i < num_joints; ++i)
+  {
+    command[i].settings().actuator().positionGains().kP().set(0);
+    command[i].settings().actuator().velocityGains().kP().set(0);
+  }
+  while (!arm->send())
+  {
+    std::cerr << "Couldn't set actuator position gains to zero!" << std::endl;
+  }
+  command.clear();
 
   //////////////////////////
   //// MobileIO Setup //////
@@ -122,6 +128,17 @@ int main(int argc, char* argv[])
   // Flag to indicate when impedance controller is on
   bool controller_on = false;
 
+  for (size_t i = 0; i < num_joints; ++i)
+  {
+    command[i].settings().actuator().positionGains().kP().set(0);
+    command[i].settings().actuator().velocityGains().kP().set(0);
+  }
+  while (!arm->send())
+  {
+    std::cerr << "Couldn't set actuator position gains to zero!" << std::endl;
+  }
+  command.clear();
+
   //////////////////////////
   //// Main Control Loop ///
   //////////////////////////
@@ -160,10 +177,6 @@ int main(int argc, char* argv[])
     {
       arm->cancelGoal();
     }
-
-    // Clear all position and velocity commands
-    command.setPosition(pos_nan);
-    command.setVelocity(vel_nan);
 
     // Send latest commands to the arm
     arm->send();
