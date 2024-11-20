@@ -5,11 +5,15 @@
  * position and orientation of your mobile IO device.
  */
 
+// HEBI C++ API files:
 #include "group_command.hpp"
 #include "group_feedback.hpp"
 #include "robot_model.hpp"
 #include "arm/arm.hpp"
 #include "util/mobile_io.hpp"
+// Local example utils:
+#include "util/vector_utils.h"
+// C++ standard libraries:
 #include <chrono>
 #include <iostream>
 
@@ -83,9 +87,9 @@ int main(int argc, char* argv[])
 
   // Display instructions on screen
   mobile_io->appendText(instructions);
-
-  // Setup state variable for mobile device
-  auto last_mobile_state = mobile_io->update();
+  // Get initial mobile device state (so edge triggers are properly handled
+  // after this)
+  mobile_io->update();
 
   //////////////////////////
   //// Main Control Loop ///
@@ -95,13 +99,16 @@ int main(int argc, char* argv[])
   bool softstart = true;
   bool ar_mode = false;
   
-  // Make sure we softstart the arm first.
-  Eigen::VectorXd home_position(arm -> robotModel().getDoFCount());
-  home_position << 0, M_PI/3, 2*M_PI/3, 5*M_PI/6, -M_PI/2, 0; // Adjust depending on your DoFs
+  // Load user data from config
+  const auto user_data = example_config->getUserData();
+  Eigen::VectorXd home_position = util::stdToEigenXd(user_data.getFloatList("home_position"));
+  double soft_start_time = user_data.getFloat("homing_duration");
+  Eigen::VectorXd xyz_scale = util::stdToEigenXd(user_data.getFloatList("xyz_scale"));
+  double delay_time = user_data.getFloat("delay_time");
 
   // Command the softstart to home position
   arm -> update();
-  arm -> setGoal(arm::Goal::createFromPosition(4, home_position)); // take 4 seconds
+  arm -> setGoal(arm::Goal::createFromPosition(soft_start_time, home_position)); // move to goal over "soft_start_time" seconds
   arm -> send();
 
   // Get the cartesian position and rotation matrix @ home position
@@ -142,7 +149,7 @@ int main(int argc, char* argv[])
       // Button B1 - Return to home position
       if (mobile_io->getButtonDiff(1) == util::MobileIO::ButtonState::ToOn) {
         ar_mode = false;
-        arm -> setGoal(arm::Goal::createFromPosition(4, home_position));
+        arm -> setGoal(arm::Goal::createFromPosition(soft_start_time, home_position));
       }
 
       // Button B3 - Start AR Control
@@ -150,7 +157,6 @@ int main(int argc, char* argv[])
         xyz_phone_init << mobile_io -> getLastFeedback().mobile().arPosition().get().getX(),
                           mobile_io -> getLastFeedback().mobile().arPosition().get().getY(),
                           mobile_io -> getLastFeedback().mobile().arPosition().get().getZ();
-        std::cout << xyz_phone_init << std::endl;
         rot_phone_init = makeRotationMatrix(mobile_io -> getLastFeedback().mobile().arOrientation().get());
         ar_mode = true;
       }
@@ -178,10 +184,8 @@ int main(int argc, char* argv[])
       auto rot_phone = makeRotationMatrix(mobile_io->getLastFeedback().mobile().arOrientation().get());
 
       // Calculate new targets
-      Eigen::Vector3d xyz_scale;
-      xyz_scale << 1, 1, 2;
-      Eigen::Vector3d xyz_target = xyz_home + (0.75 * xyz_scale.array() *
-                                (rot_phone_init.transpose() * (xyz_phone - xyz_phone_init)).array()).matrix();
+      Eigen::Vector3d xyz_target =
+        xyz_home + xyz_scale.cwiseProduct(rot_phone_init.transpose() * (xyz_phone - xyz_phone_init));
       Eigen::Matrix3d rot_target = rot_phone_init.transpose() * rot_phone * rot_home;
 
       // Calculate new arm joint angle targets
@@ -190,7 +194,7 @@ int main(int argc, char* argv[])
                                               rot_target);
 
       // Create and send new goal to the arm
-      arm -> setGoal(arm::Goal::createFromPosition(target_joints));
+      arm -> setGoal(arm::Goal::createFromPosition(delay_time, target_joints));
     }
 
     // Send latest commands to the arm

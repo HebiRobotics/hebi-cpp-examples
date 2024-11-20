@@ -4,11 +4,15 @@
  * to pre-programmed waypoints.
  */
 
+// HEBI C++ API files:
 #include "group_command.hpp"
 #include "group_feedback.hpp"
 #include "robot_model.hpp"
 #include "arm/arm.hpp"
 #include "util/mobile_io.hpp"
+// Local example utils:
+#include "util/vector_utils.h"
+// C++ standard libraries:
 #include <chrono>
 
 using namespace hebi;
@@ -76,10 +80,18 @@ int main(int argc, char* argv[])
   // Control Variables Setup //
   /////////////////////////////
 
-  // Single Waypoint Vectors
+  // Waypoints
   auto num_joints = arm->robotModel().getDoFCount();
-  Eigen::VectorXd positions(num_joints);
-  double single_time = 3;
+  const auto user_data = example_config->getUserData();
+
+  std::vector<Eigen::VectorXd> waypoints {
+    waypoints.push_back(util::stdToEigenXd(user_data.getFloatList("waypoint_1"))),
+    waypoints.push_back(util::stdToEigenXd(user_data.getFloatList("waypoint_2"))),
+    waypoints.push_back(util::stdToEigenXd(user_data.getFloatList("waypoint_3")));
+  };
+
+  // Travel time
+  double travel_time = user_data.getFloat("travel_time");
 
   //////////////////////////
   //// Main Control Loop ///
@@ -97,23 +109,12 @@ int main(int argc, char* argv[])
       // Button Presses
       /////////////////
 
-      // Buttton B1 - Home Position
-      if (mobile_io->getButtonDiff(1) == util::MobileIO::ButtonState::ToOn) {
-        positions << 0, 0, 0, 0, 0, 0;
-        arm -> setGoal(arm::Goal::createFromPosition(single_time, positions));
-      }
-
-      // Button B2 - Waypoint 1
-      if (mobile_io->getButtonDiff(2) == util::MobileIO::ButtonState::ToOn) {
-        positions << M_PI/4, M_PI/3, 2*M_PI/3, M_PI/3, M_PI/4, 0;
-        arm -> setGoal(arm::Goal::createFromPosition(single_time, positions));
-      }
-
-      // Button B3 - Waypoint 2
-      if (mobile_io->getButtonDiff(3) == util::MobileIO::ButtonState::ToOn) {
-        positions << -M_PI/4, M_PI/3, 2*M_PI/3, M_PI/3, 3*M_PI/4, 0;
-        arm -> setGoal(arm::Goal::createFromPosition(single_time, positions));
-
+      // BN - Waypoint N (N = 1, 2, 3)
+      for (int button = 1; button <= 3; button++)
+      {
+        if (mobile_io->getButtonDiff(button) == util::MobileIO::ButtonState::ToOn) {
+          arm -> setGoal(arm::Goal::createFromPosition(travel_time, waypoints.at(button-1)));
+        }
       }
 
       // Button B6 - Grav Comp Mode
