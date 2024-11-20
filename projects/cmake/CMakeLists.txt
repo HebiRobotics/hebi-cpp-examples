@@ -274,12 +274,12 @@ endforeach (EXAMPLE ${ADVANCED_SOURCES})
 # Kit Examples
 SET(ARM_SOURCES
 
-  ${ROOT_DIR}/kits/arm/example_gravity_compensation.cpp
-  ${ROOT_DIR}/kits/arm/example_mobile_io_control.cpp
-  ${ROOT_DIR}/kits/arm/example_teach_repeat.cpp
-  ${ROOT_DIR}/kits/arm/example_AR_kit.cpp
-  ${ROOT_DIR}/kits/arm/example_teach_repeat_with_gripper.cpp
-  ${ROOT_DIR}/kits/arm/example_double_arm_teach_repeat.cpp)
+  ${ROOT_DIR}/kits/arm/ex_gravity_compensation.cpp
+  ${ROOT_DIR}/kits/arm/ex_mobile_io_control.cpp
+  ${ROOT_DIR}/kits/arm/ex_teach_repeat.cpp
+  ${ROOT_DIR}/kits/arm/ex_AR_kit.cpp
+  ${ROOT_DIR}/kits/arm/ex_teach_repeat_with_gripper.cpp
+  ${ROOT_DIR}/kits/arm/ex_double_arm_teach_repeat.cpp)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY kits/arm)
 foreach (EXAMPLE ${ARM_SOURCES})
