@@ -98,20 +98,20 @@ int main(int argc, char* argv[])
   std::cout << "Arm connected." << std::endl;
 
 
-  /////////////////////////
-  //// MobileIO Setup /////
-  /////////////////////////
+  //////////////////////////
+  //// MobileIO Setup //////
+  //////////////////////////
 
   // Create the MobileIO object
-  std::unique_ptr<util::MobileIO> mobile = util::MobileIO::create("Arm", "mobileIO");
-  if (!mobile)
+  std::unique_ptr<util::MobileIO> mobile_io = util::MobileIO::create("Arm", "mobileIO");
+  if (!mobile_io)
   {
     std::cout << "couldn't find mobile IO device!\n";
     return 1;
   }
 
   // Clear any garbage on screen
-  mobile -> clearText(); 
+  mobile_io -> clearText(); 
 
   // Setup instructions for display
   std::string instructions;
@@ -120,10 +120,10 @@ int main(int argc, char* argv[])
                   "B6 - Grav comp mode\nB8 - Quit\n");
 
   // Display instructions on screen
-  mobile->appendText(instructions); 
+  mobile_io->appendText(instructions); 
 
   // Setup state variable for mobile device
-  auto last_mobile_state = mobile->update();
+  auto last_mobile_state = mobile_io->update();
 
 
   //////////////////////////
@@ -137,29 +137,29 @@ int main(int argc, char* argv[])
   while(arm->update())
   {
      // Get latest mobile_state
-    bool updated_mobile = mobile->update(0);
+    bool updated_mobile_io = mobile_io->update(0);
 
-    if (!updated_mobile)
+    if (!updated_mobile_io)
       std::cout << "Failed to get feedback from mobile I/O; check connection!\n";
     else
     {
       // Buttton B1 - Add Stop Waypoint
-      if (mobile->getButtonDiff(1) == util::MobileIO::ButtonState::ToOn) {
+      if (mobile_io->getButtonDiff(1) == util::MobileIO::ButtonState::ToOn) {
         addWaypoint(state, arm -> lastFeedback(), true);
       }
 
       // Button B2 - Clear Waypoints
-      if (mobile->getButtonDiff(2) == util::MobileIO::ButtonState::ToOn) {
+      if (mobile_io->getButtonDiff(2) == util::MobileIO::ButtonState::ToOn) {
         state.waypoints.clear();
       }
 
       // Button B3 - Add Through Waypoint
-      if (mobile->getButtonDiff(3) == util::MobileIO::ButtonState::ToOn) {
+      if (mobile_io->getButtonDiff(3) == util::MobileIO::ButtonState::ToOn) {
         addWaypoint(state, arm -> lastFeedback(), false);
       }
 
       // Button B5 - Playback Waypoints
-      if (mobile->getButtonDiff(5) == util::MobileIO::ButtonState::ToOn) {
+      if (mobile_io->getButtonDiff(5) == util::MobileIO::ButtonState::ToOn) {
         if (state.waypoints.size() <= 1){
           printf("You have not added enough waypoints!\n");
         } 
@@ -170,15 +170,15 @@ int main(int argc, char* argv[])
       }
 
       // Button B6 - Grav Comp Mode
-      if (mobile->getButtonDiff(6) == util::MobileIO::ButtonState::ToOn) {
+      if (mobile_io->getButtonDiff(6) == util::MobileIO::ButtonState::ToOn) {
         // Cancel any goal that is set, returning arm into gravComp mode
         arm->cancelGoal();
       }
 
       // Button B8 - End Demo
-      if (mobile->getButtonDiff(8) == util::MobileIO::ButtonState::ToOn) {
+      if (mobile_io->getButtonDiff(8) == util::MobileIO::ButtonState::ToOn) {
         // Clear MobileIO text
-        mobile->clearText();
+        mobile_io->clearText();
         return 1;
       }
     }
@@ -188,7 +188,7 @@ int main(int argc, char* argv[])
   }
 
   // Clear MobileIO text
-  mobile->clearText();
+  mobile_io->clearText();
 
   return 0;
 }

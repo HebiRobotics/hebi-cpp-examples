@@ -37,15 +37,12 @@ int main(int argc, char* argv[])
     return -1;
   }
 
-  // For this demo, we need just the arm
-  std::unique_ptr<arm::Arm> arm;
-
   //////////////////////////
   ///// Arm Setup //////////
   //////////////////////////
 
   // Create the arm object from the configuration (retry if not found)
-  arm = arm::Arm::create(*example_config);
+  std::unique_ptr<arm::Arm> arm = arm::Arm::create(*example_config);
   while (!arm) {
     std::cerr << "Failed to create arm, retrying..." << std::endl;
     arm = arm::Arm::create(*example_config);

@@ -1,6 +1,6 @@
 /**
  * Mobile IO Control
- * An example for setting up your arm for simple control from a mobile io devoce
+ * An example for setting up your arm for simple control from a mobile io device
  * to pre-programmed waypoints.
  */
 
@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
   //////////////////////////
 
   // Create the arm object from the configuration, and retry if not found
-  auto arm = arm::Arm::create(*example_config);
+  std::unique_ptr<arm::Arm> arm = arm::Arm::create(*example_config);
   while (!arm) {
     std::cerr << "Failed to create arm, retrying..." << std::endl;
     arm = arm::Arm::create(*example_config);
@@ -52,8 +52,8 @@ int main(int argc, char* argv[])
   //////////////////////////
 
   // Create the MobileIO object
-  std::unique_ptr<util::MobileIO> mobile = util::MobileIO::create("Arm", "mobileIO");
-  if (!mobile)
+  std::unique_ptr<util::MobileIO> mobile_io = util::MobileIO::create("Arm", "mobileIO");
+  if (!mobile_io)
   {
     std::cout << "couldn't find mobile IO device!\n";
     return 1;
@@ -64,13 +64,13 @@ int main(int argc, char* argv[])
                   "B3 - Waypoint 3\n"
                   "B6 - Grav comp mode\nB8 - Quit\n");
   // Clear any garbage on screen
-  mobile->clearText(); 
+  mobile_io->clearText();
 
   // Display instructions on screen
-  mobile->appendText(instructions); 
+  mobile_io->appendText(instructions);
 
   // Setup instructions
-  auto last_state = mobile->update();
+  auto last_state = mobile_io->update();
 
   /////////////////////////////
   // Control Variables Setup //
@@ -79,8 +79,7 @@ int main(int argc, char* argv[])
   // Single Waypoint Vectors
   auto num_joints = arm->robotModel().getDoFCount();
   Eigen::VectorXd positions(num_joints);
-  double single_time;
-  single_time = 3;
+  double single_time = 3;
 
   //////////////////////////
   //// Main Control Loop ///
@@ -88,9 +87,9 @@ int main(int argc, char* argv[])
 
   while(arm->update())
   {
-    auto updated_mobile = mobile->update(0);
+    auto updated_mobile_io = mobile_io->update(0);
 
-    if (!updated_mobile)
+    if (!updated_mobile_io)
       std::cout << "Failed to get feedback from mobile I/O; check connection!\n";
     else
     {
@@ -99,34 +98,34 @@ int main(int argc, char* argv[])
       /////////////////
 
       // Buttton B1 - Home Position
-      if (mobile->getButtonDiff(1) == util::MobileIO::ButtonState::ToOn) {
+      if (mobile_io->getButtonDiff(1) == util::MobileIO::ButtonState::ToOn) {
         positions << 0, 0, 0, 0, 0, 0;
         arm -> setGoal(arm::Goal::createFromPosition(single_time, positions));
       }
 
       // Button B2 - Waypoint 1
-      if (mobile->getButtonDiff(2) == util::MobileIO::ButtonState::ToOn) {
+      if (mobile_io->getButtonDiff(2) == util::MobileIO::ButtonState::ToOn) {
         positions << M_PI/4, M_PI/3, 2*M_PI/3, M_PI/3, M_PI/4, 0;
         arm -> setGoal(arm::Goal::createFromPosition(single_time, positions));
       }
 
       // Button B3 - Waypoint 2
-      if (mobile->getButtonDiff(3) == util::MobileIO::ButtonState::ToOn) {
+      if (mobile_io->getButtonDiff(3) == util::MobileIO::ButtonState::ToOn) {
         positions << -M_PI/4, M_PI/3, 2*M_PI/3, M_PI/3, 3*M_PI/4, 0;
         arm -> setGoal(arm::Goal::createFromPosition(single_time, positions));
 
       }
 
       // Button B6 - Grav Comp Mode
-      if (mobile->getButtonDiff(6) == util::MobileIO::ButtonState::ToOn) {
+      if (mobile_io->getButtonDiff(6) == util::MobileIO::ButtonState::ToOn) {
         // cancel any goal that is set, returning arm into gravComp mode
         arm -> cancelGoal();
       }
 
       // Button B8 - End Demo
-      if (mobile->getButtonDiff(8) == util::MobileIO::ButtonState::ToOn) {
+      if (mobile_io->getButtonDiff(8) == util::MobileIO::ButtonState::ToOn) {
         // Clear MobileIO text
-        mobile->resetUI();
+        mobile_io->resetUI();
         return 1;
       }
     }
@@ -136,10 +135,8 @@ int main(int argc, char* argv[])
   }
 
   // Clear MobileIO text
-  mobile->clearText();
+  mobile_io->clearText();
 
   return 0;
 }
-
-
 

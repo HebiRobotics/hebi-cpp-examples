@@ -61,20 +61,20 @@ int main(int argc, char* argv[])
   std::cout << "Arm connected." << std::endl;
 
 
-  /////////////////////////
-  //// MobileIO Setup /////
-  /////////////////////////
+  //////////////////////////
+  //// MobileIO Setup //////
+  //////////////////////////
 
   // Create the MobileIO object
-  std::unique_ptr<util::MobileIO> mobile = util::MobileIO::create("Arm", "mobileIO");
-  if (!mobile)
+  std::unique_ptr<util::MobileIO> mobile_io = util::MobileIO::create("Arm", "mobileIO");
+  if (!mobile_io)
   {
     std::cout << "couldn't find mobile IO device!\n";
     return 1;
   }
 
   // Clear any garbage on screen
-  mobile->resetUI();
+  mobile_io->resetUI();
 
   // Setup instructions for display
   std::string instructions;
@@ -82,10 +82,10 @@ int main(int argc, char* argv[])
                   "B6 - Grav Comp Mode\nB8 - Quit\n");
 
   // Display instructions on screen
-  mobile->appendText(instructions); 
+  mobile_io->appendText(instructions);
 
   // Setup state variable for mobile device
-  auto last_mobile_state = mobile->update();
+  auto last_mobile_state = mobile_io->update();
 
   //////////////////////////
   //// Main Control Loop ///
@@ -121,50 +121,50 @@ int main(int argc, char* argv[])
 
     if (softstart) {
       // End softstart when arm reaches its homePosition
-      if (arm -> atGoal()){
-        mobile->appendText("Softstart Complete!");
+      if (arm -> atGoal()) {
+        mobile_io->appendText("Softstart Complete!");
         softstart = false; 
         continue;
-        }
-        arm -> send();
+      }
+      arm -> send();
 
-        // Stay in softstart, don't do any other behavior
-        continue;
-      } 
+      // Stay in softstart, don't do any other behavior
+      continue;
+    }
 
-      // Get latest mobile_state
-      auto updated_mobile = mobile->update(0);
+    // Get latest mobile_state
+    auto updated_mobile_io = mobile_io->update(0);
       
-      if (!updated_mobile)
-        std::cout << "Failed to get feedback from mobile I/O; check connection!\n";
-      else
-      {
+    if (!updated_mobile_io)
+      std::cout << "Failed to get feedback from mobile I/O; check connection!\n";
+    else
+    {
       // Button B1 - Return to home position
-      if (mobile->getButtonDiff(1) == util::MobileIO::ButtonState::ToOn) {
-          ar_mode = false;
-          arm -> setGoal(arm::Goal::createFromPosition(4, home_position));
+      if (mobile_io->getButtonDiff(1) == util::MobileIO::ButtonState::ToOn) {
+        ar_mode = false;
+        arm -> setGoal(arm::Goal::createFromPosition(4, home_position));
       }
 
       // Button B3 - Start AR Control
-      if (mobile->getButtonDiff(3) == util::MobileIO::ButtonState::ToOn) {
-        xyz_phone_init << mobile -> getLastFeedback().mobile().arPosition().get().getX(),
-                          mobile -> getLastFeedback().mobile().arPosition().get().getY(),
-                          mobile -> getLastFeedback().mobile().arPosition().get().getZ();
+      if (mobile_io->getButtonDiff(3) == util::MobileIO::ButtonState::ToOn) {
+        xyz_phone_init << mobile_io -> getLastFeedback().mobile().arPosition().get().getX(),
+                          mobile_io -> getLastFeedback().mobile().arPosition().get().getY(),
+                          mobile_io -> getLastFeedback().mobile().arPosition().get().getZ();
         std::cout << xyz_phone_init << std::endl;
-        rot_phone_init = makeRotationMatrix(mobile -> getLastFeedback().mobile().arOrientation().get());
+        rot_phone_init = makeRotationMatrix(mobile_io -> getLastFeedback().mobile().arOrientation().get());
         ar_mode = true;
       }
 
       // Button B6 - Grav Comp Mode
-      if (mobile->getButtonDiff(6) == util::MobileIO::ButtonState::ToOn) {
+      if (mobile_io->getButtonDiff(6) == util::MobileIO::ButtonState::ToOn) {
         arm -> cancelGoal();
         ar_mode = false;
       }
 
       // Button B8 - End Demo
-      if (mobile->getButtonDiff(8) == util::MobileIO::ButtonState::ToOn) {
+      if (mobile_io->getButtonDiff(8) == util::MobileIO::ButtonState::ToOn) {
         // Clear MobileIO text
-        mobile->resetUI();
+        mobile_io->resetUI();
         return 1;
       }
     }
@@ -172,10 +172,10 @@ int main(int argc, char* argv[])
     if (ar_mode) {
       // Get the latest mobile position and orientation
       Eigen::Vector3d xyz_phone;
-      xyz_phone << mobile->getLastFeedback().mobile().arPosition().get().getX(),
-                   mobile->getLastFeedback().mobile().arPosition().get().getY(),
-                   mobile->getLastFeedback().mobile().arPosition().get().getZ();
-      auto rot_phone = makeRotationMatrix(mobile->getLastFeedback().mobile().arOrientation().get());
+      xyz_phone << mobile_io->getLastFeedback().mobile().arPosition().get().getX(),
+                   mobile_io->getLastFeedback().mobile().arPosition().get().getY(),
+                   mobile_io->getLastFeedback().mobile().arPosition().get().getZ();
+      auto rot_phone = makeRotationMatrix(mobile_io->getLastFeedback().mobile().arOrientation().get());
 
       // Calculate new targets
       Eigen::Vector3d xyz_scale;
@@ -198,7 +198,7 @@ int main(int argc, char* argv[])
   }
 
   // Clear MobileIO text
-  mobile->resetUI();
+  mobile_io->resetUI();
 
   return 0;
 }
