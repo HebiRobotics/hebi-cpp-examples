@@ -13,7 +13,7 @@
 #include "arm/arm.hpp"
 #include "util/mobile_io.hpp"
 #include <chrono>
-#include <iostream>
+#include "hebi_util.hpp"
 
 using namespace hebi;
 using namespace experimental;
@@ -23,6 +23,7 @@ struct Waypoint
   Eigen::VectorXd positions;
   Eigen::VectorXd vels;
   Eigen::VectorXd accels;
+  double time;
 };
   
 struct State
@@ -31,36 +32,38 @@ struct State
   std::vector<Waypoint> waypoints;
 };
 
-void addWaypoint (State& state, const GroupFeedback& feedback, bool stop) {
+void addWaypoint (State& state, double wp_time, const GroupFeedback& feedback, bool stop) {
   printf("Adding a Waypoint.\n");
   
   if (stop) { // stop waypoint
     state.waypoints.push_back(Waypoint {feedback.getPosition(),
                               VectorXd::Constant(state.num_modules, 0),
-                              VectorXd::Constant(state.num_modules, 0)});
+                              VectorXd::Constant(state.num_modules, 0),
+                              wp_time});
   }
   else { // through waypoint
     state.waypoints.push_back(Waypoint {feedback.getPosition(),
                       VectorXd::Constant(state.num_modules, std::numeric_limits<double>::quiet_NaN()),
-                      VectorXd::Constant(state.num_modules, std::numeric_limits<double>::quiet_NaN())});
+                      VectorXd::Constant(state.num_modules, std::numeric_limits<double>::quiet_NaN()),
+                      wp_time});
   }
 }
 
-arm::Goal playWaypoints (State& state, double wp_time) {
+arm::Goal playWaypoints (State& state) {
 
   // Set up required variables
-  Eigen::VectorXd times(state.waypoints.size());
   Eigen::MatrixXd target_pos(state.num_modules, state.waypoints.size());
   Eigen::MatrixXd target_vels(state.num_modules, state.waypoints.size());
   Eigen::MatrixXd target_accels(state.num_modules, state.waypoints.size());
+  Eigen::VectorXd times(state.waypoints.size());
 
   // Fill up matrices appropriately
   for (int i = 0; i < state.waypoints.size(); i++)
   {
-    times[i] = (i+1) * wp_time;
     target_pos.col(i) << state.waypoints[i].positions;
     target_vels.col(i) << state.waypoints[i].vels;
     target_accels.col(i) << state.waypoints[i].accels;
+    times[i] = state.waypoints[i].time + (i > 0 ? times[i-1] : 0.0);
   }
   return arm::Goal::createFromWaypoints(times, target_pos, target_vels, target_accels);
 }
@@ -85,98 +88,136 @@ int main(int argc, char* argv[])
     return -1;
   }
 
+  // For this demo, we need the arm and mobile_io
+  std::unique_ptr<arm::Arm> arm;
+  std::unique_ptr<hebi::util::MobileIO> mobile_io;
+
   //////////////////////////
   ///// Arm Setup //////////
   //////////////////////////
 
-  // Create the arm object from the configuration, and retry if not found
-  auto arm = arm::Arm::create(*example_config);
+  // Create the arm object from the configuration
+  arm = arm::Arm::create(*example_config);
+
+  // Keep retrying if arm not found
   while (!arm) {
-    std::cerr << "Failed to create arm, retrying..." << std::endl;
-    arm = arm::Arm::create(*example_config);
+      std::cerr << "Failed to create arm, retrying..." << std::endl;
+
+      // Retry
+      arm = arm::Arm::create(*example_config);
   }
   std::cout << "Arm connected." << std::endl;
-
 
   //////////////////////////
   //// MobileIO Setup //////
   //////////////////////////
 
-  // Create the MobileIO object
-  std::unique_ptr<util::MobileIO> mobile_io = util::MobileIO::create("Arm", "mobileIO");
-  if (!mobile_io)
-  {
-    std::cout << "couldn't find mobile IO device!\n";
-    return 1;
+  // Create the mobile_io object from the configuration
+  std::cout << "Waiting for Mobile IO device to come online..." << std::endl;
+  mobile_io = createMobileIOFromConfig(*example_config);
+
+  // Keep retrying if Mobile IO not found
+  while (mobile_io == nullptr) {
+      std::cout << "Couldn't find Mobile IO. Check name, family, or device status..." << std::endl;
+
+      // Retry
+      mobile_io = createMobileIOFromConfig(*example_config);
   }
+  std::cout << "Mobile IO connected." << std::endl;
 
   // Clear any garbage on screen
   mobile_io -> clearText(); 
 
-  // Setup instructions for display
-  std::string instructions;
-  instructions = ("B1 - Add stop WP\nB2 - Clear waypoints\n"
-                  "B3 - Add through WP\nB5 - Playback mode\n"
-                  "B6 - Grav comp mode\nB8 - Quit\n");
+  // Refresh mobile_io
+  auto last_state = mobile_io->update();
 
-  // Display instructions on screen
-  mobile_io->appendText(instructions); 
-
-  // Setup state variable for mobile device
-  auto last_mobile_state = mobile_io->update();
-
-
-  //////////////////////////
-  //// Main Control Loop ///
-  //////////////////////////
+  /////////////////////////////
+  // Control Variables Setup //
+  /////////////////////////////
 
   // Teach Repeat Variables
   State state;
   state.num_modules = arm->robotModel().getDoFCount();
+
+  // Run mode is either "training" or "playback"
+  std::string run_mode = "training";
+
+  // Variable to hold slider value for A3
+  double slider3 = 0.0;
+
+  // Load travel times from config
+  double base_travel_time = example_config->getUserData().getFloat("base_travel_time");
+  double min_travel_time = example_config->getUserData().getFloat("min_travel_time");
+
+  //////////////////////////
+  //// Main Control Loop ///
+  //////////////////////////
 
   while(arm->update())
   {
      // Get latest mobile_state
     bool updated_mobile_io = mobile_io->update(0);
 
-    if (!updated_mobile_io)
-      std::cout << "Failed to get feedback from mobile I/O; check connection!\n";
-    else
+    if (updated_mobile_io)
     {
-      // Buttton B1 - Add Stop Waypoint
-      if (mobile_io->getButtonDiff(1) == util::MobileIO::ButtonState::ToOn) {
-        addWaypoint(state, arm -> lastFeedback(), true);
-      }
+      if (run_mode == "training")
+      {
+        // Axis A3 state
+        slider3 = mobile_io->getAxis(3);
 
-      // Button B2 - Clear Waypoints
-      if (mobile_io->getButtonDiff(2) == util::MobileIO::ButtonState::ToOn) {
-        state.waypoints.clear();
-      }
+        // Buttton B1 - Add Stop Waypoint
+        if (mobile_io->getButtonDiff(1) == hebi::util::MobileIO::ButtonState::ToOn) {
+          addWaypoint(state, 
+                      base_travel_time + slider3 * (base_travel_time - min_travel_time),
+                      arm -> lastFeedback(), 
+                      true);
+        }
 
-      // Button B3 - Add Through Waypoint
-      if (mobile_io->getButtonDiff(3) == util::MobileIO::ButtonState::ToOn) {
-        addWaypoint(state, arm -> lastFeedback(), false);
-      }
+        // Button B2 - Add Through Waypoint
+        if (mobile_io->getButtonDiff(2) == hebi::util::MobileIO::ButtonState::ToOn) {
+          addWaypoint(state, 
+                      base_travel_time + slider3 * (base_travel_time - min_travel_time),
+                      arm -> lastFeedback(), 
+                      false);
+        }
 
-      // Button B5 - Playback Waypoints
-      if (mobile_io->getButtonDiff(5) == util::MobileIO::ButtonState::ToOn) {
-        if (state.waypoints.size() <= 1){
-          printf("You have not added enough waypoints!\n");
-        } 
-        else {
-          const arm::Goal playback = playWaypoints(state, 2.5);
-          arm->setGoal(playback);       
+        // Button B3 - Toggle to Playback Waypoints
+        if (mobile_io->getButtonDiff(3) == hebi::util::MobileIO::ButtonState::ToOn) {
+          if (state.waypoints.size() <= 1){
+            std::cout << "You have not added enough waypoints! You need at least two.\n" << std::endl;
+          } 
+          else {
+            std::cout << "Entering playback mode.\n" << std::endl;
+            const arm::Goal playback = playWaypoints(state);
+            arm->setGoal(playback);  
+            run_mode = "playback"; 
+          }
+        }
+
+        // Button B4 - Clear Waypoints
+        if (mobile_io->getButtonDiff(4) == hebi::util::MobileIO::ButtonState::ToOn) {
+          std::cout << "Discarding waypoints.\n" << std::endl;
+          state.waypoints.clear();
+        }
+      } 
+      else if (run_mode == "playback") 
+      {
+        // Button B3 - Toggle to Training Mode
+        if (mobile_io->getButtonDiff(3) == hebi::util::MobileIO::ButtonState::ToOn) {
+          std::cout << "Entering training mode.\n" << std::endl;
+          arm->cancelGoal();
+          run_mode = "training";
+        }
+
+        // Replay goal
+        if (arm -> atGoal()) {
+          const arm::Goal playback = playWaypoints(state);
+          arm -> setGoal(playback);
         }
       }
 
-      // Button B6 - Grav Comp Mode
-      if (mobile_io->getButtonDiff(6) == util::MobileIO::ButtonState::ToOn) {
-        // Cancel any goal that is set, returning arm into gravComp mode
-        arm->cancelGoal();
-      }
-
       // Button B8 - End Demo
-      if (mobile_io->getButtonDiff(8) == util::MobileIO::ButtonState::ToOn) {
+      if (mobile_io->getButtonDiff(8) == hebi::util::MobileIO::ButtonState::ToOn) {
         // Clear MobileIO text
         mobile_io->clearText();
         return 1;

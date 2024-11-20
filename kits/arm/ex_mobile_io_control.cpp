@@ -4,12 +4,19 @@
  * to pre-programmed waypoints.
  */
 
+/*
+CAUTION: 
+This example uses waypoints containing fixed joint angles, which is a bad idea if your actuators have large wind-up. 
+The correct way to store waypoints is by using se3 coordinates, and converting them to joint positions using our IK functions.
+*/
+
 #include "group_command.hpp"
 #include "group_feedback.hpp"
 #include "robot_model.hpp"
 #include "arm/arm.hpp"
 #include "util/mobile_io.hpp"
 #include <chrono>
+#include "hebi_util.hpp"
 
 using namespace hebi;
 using namespace experimental; 
@@ -23,7 +30,7 @@ int main(int argc, char* argv[])
   // Config file path
   const std::string example_config_file = "config/ex_mobile_io_control.cfg.yaml";
   std::vector<std::string> errors;
-
+  
   // Load the config
   const auto example_config = RobotConfig::loadConfig(example_config_file, errors);
   for (const auto& error : errors) {
@@ -34,13 +41,16 @@ int main(int argc, char* argv[])
     return -1;
   }
 
+  // For this demo, we need the arm and mobile_io
+  std::unique_ptr<arm::Arm> arm;
+  std::unique_ptr<hebi::util::MobileIO> mobile_io;
 
   //////////////////////////
   ///// Arm Setup //////////
   //////////////////////////
 
-  // Create the arm object from the configuration, and retry if not found
-  std::unique_ptr<arm::Arm> arm = arm::Arm::create(*example_config);
+  // Create the arm object from the configuration (retry if not found)
+  arm = arm::Arm::create(*example_config);
   while (!arm) {
     std::cerr << "Failed to create arm, retrying..." << std::endl;
     arm = arm::Arm::create(*example_config);
@@ -51,35 +61,38 @@ int main(int argc, char* argv[])
   //// MobileIO Setup //////
   //////////////////////////
 
-  // Create the MobileIO object
-  std::unique_ptr<util::MobileIO> mobile_io = util::MobileIO::create("Arm", "mobileIO");
-  if (!mobile_io)
-  {
-    std::cout << "couldn't find mobile IO device!\n";
-    return 1;
+  // Create the mobile_io object from the configuration
+  std::cout << "Waiting for Mobile IO device to come online..." << std::endl;
+  mobile_io = createMobileIOFromConfig(*example_config);
+
+  // Keep retrying if Mobile IO not found
+  while (mobile_io == nullptr) {
+    std::cout << "Couldn't find Mobile IO. Check name, family, or device status..." << std::endl;
+
+    // Retry
+    mobile_io = createMobileIOFromConfig(*example_config);
   }
+  std::cout << "Mobile IO connected." << std::endl;
 
-  std::string instructions;
-  instructions = ("B1 - Waypoint 1\nB2 - Waypoint 2\n"
-                  "B3 - Waypoint 3\n"
-                  "B6 - Grav comp mode\nB8 - Quit\n");
   // Clear any garbage on screen
-  mobile_io->clearText();
+  mobile_io->clearText(); 
 
-  // Display instructions on screen
-  mobile_io->appendText(instructions);
-
-  // Setup instructions
+  // Refresh mobile_io
   auto last_state = mobile_io->update();
 
   /////////////////////////////
   // Control Variables Setup //
   /////////////////////////////
 
-  // Single Waypoint Vectors
+  // Waypoints
   auto num_joints = arm->robotModel().getDoFCount();
-  Eigen::VectorXd positions(num_joints);
-  double single_time = 3;
+  std::vector<Eigen::VectorXd> waypoints;
+  waypoints.push_back(Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().getFloatList("waypoint_1").data(), example_config->getUserData().getFloatList("waypoint_1").size()));
+  waypoints.push_back(Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().getFloatList("waypoint_2").data(), example_config->getUserData().getFloatList("waypoint_2").size()));
+  waypoints.push_back(Eigen::Map<const Eigen::VectorXd>(example_config->getUserData().getFloatList("waypoint_3").data(), example_config->getUserData().getFloatList("waypoint_3").size()));
+
+  // Travel time
+  double travel_time = example_config->getUserData().getFloat("travel_time");
 
   //////////////////////////
   //// Main Control Loop ///
@@ -89,41 +102,28 @@ int main(int argc, char* argv[])
   {
     auto updated_mobile_io = mobile_io->update(0);
 
-    if (!updated_mobile_io)
-      std::cout << "Failed to get feedback from mobile I/O; check connection!\n";
-    else
+    if (updated_mobile_io)
     {
       /////////////////
       // Button Presses
       /////////////////
 
-      // Buttton B1 - Home Position
-      if (mobile_io->getButtonDiff(1) == util::MobileIO::ButtonState::ToOn) {
-        positions << 0, 0, 0, 0, 0, 0;
-        arm -> setGoal(arm::Goal::createFromPosition(single_time, positions));
-      }
-
-      // Button B2 - Waypoint 1
-      if (mobile_io->getButtonDiff(2) == util::MobileIO::ButtonState::ToOn) {
-        positions << M_PI/4, M_PI/3, 2*M_PI/3, M_PI/3, M_PI/4, 0;
-        arm -> setGoal(arm::Goal::createFromPosition(single_time, positions));
-      }
-
-      // Button B3 - Waypoint 2
-      if (mobile_io->getButtonDiff(3) == util::MobileIO::ButtonState::ToOn) {
-        positions << -M_PI/4, M_PI/3, 2*M_PI/3, M_PI/3, 3*M_PI/4, 0;
-        arm -> setGoal(arm::Goal::createFromPosition(single_time, positions));
-
+      // BN - Waypoint N (N = 1, 2 , 3)
+      for (int button = 1; button <= 3; button++)
+      {
+        if (mobile_io->getButtonDiff(button) == hebi::util::MobileIO::ButtonState::ToOn) {
+          arm -> setGoal(arm::Goal::createFromPosition(travel_time, waypoints.at(button-1)));
+        }
       }
 
       // Button B6 - Grav Comp Mode
-      if (mobile_io->getButtonDiff(6) == util::MobileIO::ButtonState::ToOn) {
+      if (mobile_io->getButtonDiff(6) == hebi::util::MobileIO::ButtonState::ToOn) {
         // cancel any goal that is set, returning arm into gravComp mode
         arm -> cancelGoal();
       }
 
       // Button B8 - End Demo
-      if (mobile_io->getButtonDiff(8) == util::MobileIO::ButtonState::ToOn) {
+      if (mobile_io->getButtonDiff(8) == hebi::util::MobileIO::ButtonState::ToOn) {
         // Clear MobileIO text
         mobile_io->resetUI();
         return 1;
