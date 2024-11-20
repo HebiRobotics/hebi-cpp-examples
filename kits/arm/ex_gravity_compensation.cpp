@@ -8,8 +8,6 @@
  * demo.
  */
 
-// #include "lookup.hpp"
-// #include "group.hpp"
 #include "group_command.hpp"
 #include "group_feedback.hpp"
 #include "robot_model.hpp"
@@ -22,33 +20,43 @@ using namespace experimental;
 int main(int argc, char* argv[])
 {
   //////////////////////////
+  ///// Config Setup ///////
+  //////////////////////////
+
+  // Config file path
+  const std::string example_config_file = "config/ex_gravity_compensation.cfg.yaml";
+  std::vector<std::string> errors;
+
+  // Load the config
+  const auto example_config = RobotConfig::loadConfig(example_config_file, errors);
+  for (const auto& error : errors) {
+    std::cerr << error << std::endl;
+  }
+  if (!example_config) {
+    std::cerr << "Failed to load configuration from: " << example_config_file << std::endl;
+    return -1;
+  }
+
+  // For this demo, we need just the arm
+  std::unique_ptr<arm::Arm> arm;
+
+  //////////////////////////
   ///// Arm Setup //////////
   //////////////////////////
 
-  arm::Arm::Params params;
-
-  // Setup Module Family and Module Names
-  params.families_ = {"Arm"}; //[change back]
-  params.names_ = {"J1_base", "J2_shoulder", "J3_elbow", "J4_wrist1", "J5_wrist2", "J6_wrist3"};
-
-  // Read HRDF file to seutp a RobotModel object for the 6-DoF Arm
-  params.hrdf_file_ = "kits/arm/hrdf/A-2085-06.hrdf";
-
-  // Create the Arm Object
-  auto arm = arm::Arm::create(params);
+  // Create the arm object from the configuration (retry if not found)
+  arm = arm::Arm::create(*example_config);
   while (!arm) {
-    arm = arm::Arm::create(params);
+    std::cerr << "Failed to create arm, retrying..." << std::endl;
+    arm = arm::Arm::create(*example_config);
   }
-
-  // Load the gains file that is approriate to the arm
-  arm -> loadGains("kits/arm/gains/A-2085-06.xml");
+  std::cout << "Arm connected." << std::endl;
 
   //////////////////////////
   //// Main Control Loop ///
   //////////////////////////
 
-  while(arm->update())
-  {
+  while(arm->update()) {
 
     // When no goal is set, the arm automatically returns to grav-comp mode.
     // Thus, when we have an empty control loop, the arm is in grav-comp
