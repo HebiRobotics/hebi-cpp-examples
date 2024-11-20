@@ -65,39 +65,45 @@ arm::Goal playWaypoints (State& state, double wp_time) {
   return arm::Goal::createFromWaypoints(times, target_pos, target_vels, target_accels);
 }
 
-
 int main(int argc, char* argv[])
 {
+  //////////////////////////
+  ///// Config Setup ///////
+  //////////////////////////
+
+  // Config file path
+  const std::string example_config_file = "config/ex_teach_repeat.cfg.yaml";
+  std::vector<std::string> errors;
+  
+  // Load the config
+  const auto example_config = RobotConfig::loadConfig(example_config_file, errors);
+  for (const auto& error : errors) {
+    std::cerr << error << std::endl;
+  }
+  if (!example_config) {
+    std::cerr << "Failed to load configuration from: " << example_config_file << std::endl;
+    return -1;
+  }
+
   //////////////////////////
   ///// Arm Setup //////////
   //////////////////////////
 
-  arm::Arm::Params params;
-
-  // Setup Module Family and Module Names
-  std::string family = "Arm";
-  params.families_ = {family};
-  params.names_ = {"J1_base", "J2_shoulder", "J3_elbow", "J4_wrist1", "J5_wrist2", "J6_wrist3"};
-  
-  // Read HRDF file to setup a RobotModel object for the 6-DoF Arm
-  // Make sure you are running this from the correct directory!
-  params.hrdf_file_ = "kits/arm/hrdf/A-2085-06.hrdf";  
-
-  // Create the Arm Object
-  auto arm = arm::Arm::create(params);
+  // Create the arm object from the configuration, and retry if not found
+  auto arm = arm::Arm::create(*example_config);
   while (!arm) {
-    arm = arm::Arm::create(params);
+    std::cerr << "Failed to create arm, retrying..." << std::endl;
+    arm = arm::Arm::create(*example_config);
   }
+  std::cout << "Arm connected." << std::endl;
 
-  // Load the gains file that is approriate to the arm
-  arm -> loadGains("kits/arm/gains/A-2085-06.xml");
 
   /////////////////////////
   //// MobileIO Setup /////
   /////////////////////////
 
   // Create the MobileIO object
-  std::unique_ptr<util::MobileIO> mobile = util::MobileIO::create(family, "mobileIO");
+  std::unique_ptr<util::MobileIO> mobile = util::MobileIO::create("Arm", "mobileIO");
   if (!mobile)
   {
     std::cout << "couldn't find mobile IO device!\n";

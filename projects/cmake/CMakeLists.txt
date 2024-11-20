@@ -318,16 +318,4 @@ endforeach (EXAMPLE ${KIT_SOURCES})
 
 
 # Copy the HRDF files for kits into the build directory
-file(COPY ${ROOT_DIR}/kits/arm/hrdf DESTINATION ${CMAKE_BINARY_DIR}/kits/arm)
-file(COPY ${ROOT_DIR}/kits/arm/gains DESTINATION ${CMAKE_BINARY_DIR}/kits/arm)
-
-
-
-
-
-
-
-
-
-
-
+file(COPY ${ROOT_DIR}/kits/arm/config DESTINATION ${CMAKE_BINARY_DIR}/kits/arm)
