@@ -101,8 +101,8 @@ int main() {
     //times.push_back(fbk.getTime());
     //std::cout << times.back() << " " << pos.back() << "\n";
   }
-  FxRuntime::setTheme("PrimerDark");
-  auto chart = Chart::create();
+  plotting::FxRuntime::setTheme("Dracula");
+  auto chart = plotting::Chart::create();
   chart->setTitle("03a_command_position");
   chart->show(); // ???
   // TODO: pull from name above?
@@ -115,7 +115,7 @@ int main() {
   //}
   //plt::show();
 
-  FxRuntime::waitUntilStagesClosed();
+  plotting::FxRuntime::waitUntilStagesClosed();
 
   return 0;
 }

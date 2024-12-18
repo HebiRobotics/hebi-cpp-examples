@@ -97,7 +97,7 @@ foreach (EXAMPLE ${X_SERIES_SOURCES})
       $<TARGET_FILE_DIR:${EX_NAME}>)
     add_custom_command(TARGET ${EX_NAME} POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
-      "${PLOT_DIR}/libhebi_java.dll"
+      "${PLOT_DIR}/hebi_plotting.dll"
       $<TARGET_FILE_DIR:${EX_NAME}>)
   elseif(UNIX)
     target_link_libraries(${EX_NAME} hebi hebic++ m pthread)
@@ -154,7 +154,7 @@ foreach (EXAMPLE ${MOBILE_IO_SOURCES})
       $<TARGET_FILE_DIR:${EX_NAME}>)
     add_custom_command(TARGET ${EX_NAME} POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
-      "${PLOT_DIR}/libhebi_java.dll"
+      "${PLOT_DIR}/hebi_plotting.dll"
       $<TARGET_FILE_DIR:${EX_NAME}>)
   elseif(UNIX)
     target_link_libraries(${EX_NAME} hebi hebic++ m pthread)
@@ -206,7 +206,7 @@ foreach (EXAMPLE ${IO_BOARD_SOURCES})
       $<TARGET_FILE_DIR:${EX_NAME}>)
     add_custom_command(TARGET ${EX_NAME} POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
-      "${PLOT_DIR}/libhebi_java.dll"
+      "${PLOT_DIR}/hebi_plotting.dll"
       $<TARGET_FILE_DIR:${EX_NAME}>)
   elseif(UNIX)
     target_link_libraries(${EX_NAME} hebi hebic++ m pthread)
@@ -259,7 +259,7 @@ foreach (EXAMPLE ${ADVANCED_SOURCES})
       $<TARGET_FILE_DIR:${EX_NAME}>)
     add_custom_command(TARGET ${EX_NAME} POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
-      "${PLOT_DIR}/libhebi_java.dll"
+      "${PLOT_DIR}/hebi_plotting.dll"
       $<TARGET_FILE_DIR:${EX_NAME}>)
   elseif(UNIX)
     target_link_libraries(${EX_NAME} hebi hebic++ m pthread)
@@ -308,7 +308,7 @@ foreach (EXAMPLE ${ARM_SOURCES})
       $<TARGET_FILE_DIR:${EX_NAME}>)
     add_custom_command(TARGET ${EX_NAME} POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
-      "${PLOT_DIR}/libhebi_java.dll"
+      "${PLOT_DIR}/hebi_plotting.dll"
       $<TARGET_FILE_DIR:${EX_NAME}>)
   elseif(UNIX)
     target_link_libraries(${EX_NAME} hebi hebic++ m pthread)
