@@ -9,6 +9,7 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "")
 endif()
 
 set(ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../..)
+set(PLOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../plotting)
 get_filename_component(ROOT_DIR "${ROOT_DIR}" REALPATH)
 
 # `HEBI_CPP_DIR` can be used to point to an already downloaded C++ API.
@@ -26,12 +27,6 @@ string(TOLOWER ${hebi_cpp_build_dir} hebi_cpp_build_dir)
 get_filename_component(hebi_cpp_build_dir "${CMAKE_CURRENT_BINARY_DIR}/${hebi_cpp_build_dir}" REALPATH)
 
 add_subdirectory(${HEBI_DIR} ${hebi_cpp_build_dir})
-
-find_package(Python 3.6 COMPONENTS Interpreter Development.Module Development.Embed NumPy)
-
-# Due to an issue in Windows and mac with some versions of numpy/distutils/etc, need
-# to manually add this here:
-set(NUMPY_INCLUDE_DIR ${Python_SITELIB}/numpy/core/include)
 
 # Make one metatarget for all examples
 add_custom_target(examples)
@@ -87,9 +82,6 @@ foreach (EXAMPLE ${X_SERIES_SOURCES})
   endif()
   add_dependencies(examples ${EX_NAME})
   target_include_directories(${EX_NAME} PRIVATE ${ROOT_DIR})
-
-  target_include_directories(${EX_NAME} PRIVATE ${Python_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIR})
-  target_link_libraries(${EX_NAME} ${Python_LIBRARIES})
   if(WIN32)
     target_link_libraries(${EX_NAME} hebi kernel32)
     target_include_directories(${EX_NAME} PRIVATE ${HEBI_DIR}/src ${HEBI_DIR}/include ${HEBI_DIR}/Eigen)
@@ -102,6 +94,10 @@ foreach (EXAMPLE ${X_SERIES_SOURCES})
     add_custom_command(TARGET ${EX_NAME} POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
       "${HEBI_CPP_LIB_DIRECTORY}/hebi.dll"
+      $<TARGET_FILE_DIR:${EX_NAME}>)
+    add_custom_command(TARGET ${EX_NAME} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "${PLOT_DIR}/libhebi_java.dll"
       $<TARGET_FILE_DIR:${EX_NAME}>)
   elseif(UNIX)
     target_link_libraries(${EX_NAME} hebi hebic++ m pthread)
@@ -143,9 +139,6 @@ foreach (EXAMPLE ${MOBILE_IO_SOURCES})
   endif()
   add_dependencies(examples ${EX_NAME})
   target_include_directories(${EX_NAME} PRIVATE ${ROOT_DIR})
-
-  target_include_directories(${EX_NAME} PRIVATE ${Python_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIR})
-  target_link_libraries(${EX_NAME} ${Python_LIBRARIES})
   if(WIN32)
     target_link_libraries(${EX_NAME} hebi kernel32)
     target_include_directories(${EX_NAME} PRIVATE ${HEBI_DIR}/src ${HEBI_DIR}/include ${HEBI_DIR}/Eigen)
@@ -158,6 +151,10 @@ foreach (EXAMPLE ${MOBILE_IO_SOURCES})
     add_custom_command(TARGET ${EX_NAME} POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
       "${HEBI_CPP_LIB_DIRECTORY}/hebi.dll"
+      $<TARGET_FILE_DIR:${EX_NAME}>)
+    add_custom_command(TARGET ${EX_NAME} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "${PLOT_DIR}/libhebi_java.dll"
       $<TARGET_FILE_DIR:${EX_NAME}>)
   elseif(UNIX)
     target_link_libraries(${EX_NAME} hebi hebic++ m pthread)
@@ -194,9 +191,6 @@ foreach (EXAMPLE ${IO_BOARD_SOURCES})
   endif()
   add_dependencies(examples ${EX_NAME})
   target_include_directories(${EX_NAME} PRIVATE ${ROOT_DIR})
-
-  target_include_directories(${EX_NAME} PRIVATE ${Python_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIR})
-  target_link_libraries(${EX_NAME} ${Python_LIBRARIES})
   if(WIN32)
     target_link_libraries(${EX_NAME} hebi kernel32)
     target_include_directories(${EX_NAME} PRIVATE ${HEBI_DIR}/src ${HEBI_DIR}/include ${HEBI_DIR}/Eigen)
@@ -209,6 +203,10 @@ foreach (EXAMPLE ${IO_BOARD_SOURCES})
     add_custom_command(TARGET ${EX_NAME} POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
       "${HEBI_CPP_LIB_DIRECTORY}/hebi.dll"
+      $<TARGET_FILE_DIR:${EX_NAME}>)
+    add_custom_command(TARGET ${EX_NAME} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "${PLOT_DIR}/libhebi_java.dll"
       $<TARGET_FILE_DIR:${EX_NAME}>)
   elseif(UNIX)
     target_link_libraries(${EX_NAME} hebi hebic++ m pthread)
@@ -246,9 +244,6 @@ foreach (EXAMPLE ${ADVANCED_SOURCES})
   endif()
   add_dependencies(examples ${EX_NAME})
   target_include_directories(${EX_NAME} PRIVATE ${ROOT_DIR})
-
-  target_include_directories(${EX_NAME} PRIVATE ${Python_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIR})
-  target_link_libraries(${EX_NAME} ${Python_LIBRARIES})
   if(WIN32)
     target_link_libraries(${EX_NAME} hebi kernel32)
     target_include_directories(${EX_NAME} PRIVATE ${HEBI_DIR}/src ${HEBI_DIR}/include ${HEBI_DIR}/Eigen)
@@ -261,6 +256,10 @@ foreach (EXAMPLE ${ADVANCED_SOURCES})
     add_custom_command(TARGET ${EX_NAME} POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
       "${HEBI_CPP_LIB_DIRECTORY}/hebi.dll"
+      $<TARGET_FILE_DIR:${EX_NAME}>)
+    add_custom_command(TARGET ${EX_NAME} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "${PLOT_DIR}/libhebi_java.dll"
       $<TARGET_FILE_DIR:${EX_NAME}>)
   elseif(UNIX)
     target_link_libraries(${EX_NAME} hebi hebic++ m pthread)
@@ -294,9 +293,6 @@ foreach (EXAMPLE ${ARM_SOURCES})
   endif()
   add_dependencies(examples ${EX_NAME})
   target_include_directories(${EX_NAME} PRIVATE ${ROOT_DIR})
-
-  target_include_directories(${EX_NAME} PRIVATE ${Python_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIR})
-  target_link_libraries(${EX_NAME} ${Python_LIBRARIES})
   if(WIN32)
     target_link_libraries(${EX_NAME} hebi kernel32)
     target_include_directories(${EX_NAME} PRIVATE ${HEBI_DIR}/src ${HEBI_DIR}/include ${HEBI_DIR}/Eigen)
@@ -309,6 +305,10 @@ foreach (EXAMPLE ${ARM_SOURCES})
     add_custom_command(TARGET ${EX_NAME} POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
       "${HEBI_CPP_LIB_DIRECTORY}/hebi.dll"
+      $<TARGET_FILE_DIR:${EX_NAME}>)
+    add_custom_command(TARGET ${EX_NAME} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "${PLOT_DIR}/libhebi_java.dll"
       $<TARGET_FILE_DIR:${EX_NAME}>)
   elseif(UNIX)
     target_link_libraries(${EX_NAME} hebi hebic++ m pthread)

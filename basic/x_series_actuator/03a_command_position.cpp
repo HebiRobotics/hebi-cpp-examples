@@ -18,9 +18,7 @@
 #include "log_file.hpp"
 #include "util/plot_functions.h"
 
-namespace plt = matplotlibcpp;
 using namespace hebi;
-
 
 int main() {
   // Get group
@@ -47,7 +45,7 @@ int main() {
   GroupFeedback group_feedback(group->size());
   
   // Start logging in the background
-  std::string log_path = group->startLog("./logs");
+  std::string log_path = group->startLog("logs");
 
   if (log_path.empty()) {
     std::cout << "~~ERROR~~\n"
@@ -62,10 +60,13 @@ int main() {
   double freq = freq_hz * 2.0 * M_PI; // [rad / sec]
   double amp = M_PI / 4.0;            // [rad] (45 degrees)
 
-  double duration = 10;               // [sec]
+  double duration = 2;               // [sec]
   auto start = std::chrono::system_clock::now();
 
+  std::vector<double> pos;
+  std::vector<double> times;
   std::chrono::duration<double> t(std::chrono::system_clock::now() - start);
+  double t0{};
   while (t.count() < duration) {
     // Even though we don't use the feedback, getting feedback conveniently
     // limits the loop rate to the feedback frequency
@@ -76,23 +77,45 @@ int main() {
     positions[0] = amp * std::sin(freq * t.count());
     group_command.setPosition(positions);
     group->sendCommand(group_command);
+    pos.push_back(group_feedback.getPosition()[0]);
+    if (t0 == 0)
+      t0 = group_feedback.getTime();
+    times.push_back(group_feedback.getTime() - t0);
   }
 
   // Stop logging
   auto log_file = group->stopLog();
 
   //plot the logged position data
-  std::vector<std::vector<double>> pos;
-  pos.resize(group->size());
+  //std::vector<std::vector<double>> pos;
+  //std::vector<double> pos;
+  //std::vector<double> times;
+  //pos.resize(group->size());
   GroupFeedback fbk(group->size());
   while(log_file->getNextFeedback(fbk)) {
-    for(size_t i = 0; i < group->size(); i++){
-      pos[i].push_back(fbk.getPosition()[i]);
-    }
+    //for(size_t i = 0; i < group->size(); i++){
+      //pos.push_back(fbk.getPosition()[i]);
+    //}
+    // TODO: assert size == 1?
+    //pos.push_back(fbk.getPosition()[0]);
+    //times.push_back(fbk.getTime());
+    //std::cout << times.back() << " " << pos.back() << "\n";
   }
-  for(size_t i = 0; i < group->size(); i++){
-    plt::plot(pos[i]);
-  }
-  plt::show();
+  FxRuntime::setTheme("PrimerDark");
+  auto chart = Chart::create();
+  chart->setTitle("03a_command_position");
+  chart->show(); // ???
+  // TODO: pull from name above?
+  auto dataset = chart->addLine("Test Actuator", nullptr, nullptr, 0);
+  dataset->addStyleClass("trace-solid");
+  dataset->addStyleClass("color-magenta");
+  dataset->setData(times.data(), pos.data(), pos.size());
+  //for(size_t i = 0; i < group->size(); i++){
+    //plt::plot(pos[i]);
+  //}
+  //plt::show();
+
+  FxRuntime::waitUntilStagesClosed();
+
   return 0;
 }
