@@ -36,8 +36,8 @@ void getTrajectoryCommand(std::shared_ptr<hebi::trajectory::Trajectory> traj,Gro
 
 int main() {
   const std::unique_ptr<robot_model::RobotModel> arm_model = robot_model::RobotModel::loadHRDF("hrdf/6-dof_arm_w_gripper.hrdf");
-  const std::vector<std::string> arm_module_names = {"Base","Shoulder", "Elbow", "Wrist1", "Wrist2", "Wrist3"};
-  const std::vector<std::string> arm_gripper_module_name = {"Spool"};
+  const std::vector<std::string> arm_module_names = {"J1_base","J2_shoulder", "J3_elbow", "J4_wrist1", "J5_wrist2", "J6_wrist3"};
+  const std::vector<std::string> arm_gripper_module_name = {"gripperSpool"};
   const double arm_shoulder_joint_comp = 0;
   const Eigen::VectorXd arm_effort_offset = (Eigen::VectorXd(6) << 0, arm_shoulder_joint_comp, 0,0,0,0).finished();
   const double arm_gripper_open_effort = 1;
@@ -52,7 +52,7 @@ int main() {
   const Eigen::Matrix4d base_chassis_com = (Eigen::Matrix4d() << 1,0,0,0, 0,1,0,0, 0,0,1, base_wheel_radius +.005, 0,0,0,1).finished();
   const double base_chassis_mass = 12.0;
   const double base_chassis_inertia_zz = .5*base_chassis_mass*base_wheel_base*base_wheel_base*.25;
-  const std::vector<std::string> base_wheel_module_names = {"_Wheel1","_Wheel2","_Wheel3"};
+  const std::vector<std::string> base_wheel_module_names = {"W1","W2","W3"};
   const uint32_t base_num_wheels  = 3;
   const std::vector<Eigen::Matrix4d> base_wheel_base_frames = 
             {(Eigen::Matrix4d() << 
@@ -184,7 +184,7 @@ int main() {
   //    %%%%%%%%%%%%%%%%%%%%%%%%%%
 
   std::vector<std::string> phone_family = {"HEBI"};
-  std::vector<std::string> phone_name = {"Mobile IO"};
+  std::vector<std::string> phone_name = {"mobileIO"};
 
   std::printf("Searching for phone Controller...\n");
   std::shared_ptr<Group> phone_group;
