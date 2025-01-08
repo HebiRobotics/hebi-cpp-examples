@@ -126,6 +126,11 @@ int main() {
   std::vector<uint32_t> gripper_dof = {9};
 
   auto robot_group = lookup.getGroupFromNames(robot_family, robot_names);
+  if (!robot_group)
+  {
+    std::cout << "Could not find arm modules on network!\n";
+    return 1;
+  }
 
   robot_group->setFeedbackFrequencyHz(100);    
   //    
@@ -135,6 +140,12 @@ int main() {
   //    %%%%%%%%%%%%%%%%%
      
   auto wheel_group = lookup.getGroupFromNames(robot_family, base_wheel_module_names);
+  if (!wheel_group)
+  {
+    std::cout << "Could not find wheel modules on network!\n";
+    return 1;
+  }
+
   GroupCommand base_gains_command(wheel_group->size());
   if (!base_gains_command.readGains("gains/omni-drive-wheel-gains.xml")) {
     printf("Could not read omni base gains");
@@ -178,7 +189,8 @@ int main() {
   std::printf("Searching for phone Controller...\n");
   std::shared_ptr<Group> phone_group;
   while(true) {
-    if(phone_group = lookup.getGroupFromNames(phone_family, phone_name)) {
+    phone_group = lookup.getGroupFromNames(phone_family, phone_name);
+    if (phone_group) {
       break;
     }
     std::printf("Searching for phone Controller...\n");
