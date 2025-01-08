@@ -33,6 +33,55 @@ find_package(Python 3.6 COMPONENTS Interpreter Development.Module Development.Em
 # to manually add this here:
 set(NUMPY_INCLUDE_DIR ${Python_SITELIB}/numpy/core/include)
 
+# Helper function for adding target with HEBI library/dependency references
+function(hebi_add_target TARGET_NAME TARGET_SOURCES)
+
+  if(WIN32)
+    add_executable(${TARGET_NAME} ${TARGET_SOURCES} $<TARGET_OBJECTS:_hebic++-obj>)
+  else()
+    add_executable(${TARGET_NAME} ${TARGET_SOURCES})
+  endif()
+
+  ## Add to the "examples" metatarget
+  add_dependencies(examples ${TARGET_NAME})
+
+  ## Add include paths, Link and copy libraries
+  target_include_directories(${TARGET_NAME} PRIVATE ${ROOT_DIR})
+
+  target_include_directories(${TARGET_NAME} PRIVATE ${Python_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIR})
+  target_link_libraries(${TARGET_NAME} ${Python_LIBRARIES})
+  if(WIN32)
+    target_link_libraries(${TARGET_NAME} hebi kernel32)
+    target_include_directories(${TARGET_NAME} PRIVATE ${HEBI_DIR}/src ${HEBI_DIR}/include ${HEBI_DIR}/Eigen)
+    # For Windows, we copy the .dll file into the binary directory so that we
+    # don't have to set the PATH variable.
+
+    set(LIBHEBI_LOCATION "lib/win_${LIBHEBI_TARGET_ARCHITECTURE}")
+    set(HEBI_CPP_LIB_DIRECTORY ${HEBI_DIR}/hebi/${LIBHEBI_LOCATION}/)
+
+    add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "${HEBI_CPP_LIB_DIRECTORY}/hebi.dll"
+      $<TARGET_FILE_DIR:${TARGET_NAME}>)
+  elseif(UNIX)
+    target_link_libraries(${TARGET_NAME} hebi hebic++ m pthread)
+  endif()
+endfunction()
+
+function(hebi_copy_target_resources TARGET_NAME SOURCE_DIR DEST_DIR)
+  # Copy over resource files potentially used by the examples
+  add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+                     COMMAND ${CMAKE_COMMAND} -E copy_directory
+                     ${ROOT_DIR}/${SOURCE_DIR} $<TARGET_FILE_DIR:${EX_NAME}>/${DEST_DIR})
+endfunction()
+
+function(hebi_make_target_log_directory TARGET_NAME DIR_NAME)
+  # Create logs directory in case the example logs data.
+  add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+                     COMMAND ${CMAKE_COMMAND} -E make_directory
+                         $<TARGET_FILE_DIR:${TARGET_NAME}>/${DIR_NAME})
+endfunction()
+
 # Make one metatarget for all examples
 add_custom_target(examples)
 
@@ -61,55 +110,17 @@ SET(X_SERIES_SOURCES
 
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY basic/x_series_actuator)
-foreach (EXAMPLE ${X_SERIES_SOURCES})
+foreach(EXAMPLE ${X_SERIES_SOURCES})
 
   # The target for the individual example is based on the filename
   get_filename_component(EX_NAME ${EXAMPLE} NAME_WE)
   
-  if(WIN32)
-    add_executable(${EX_NAME} ${EXAMPLE} $<TARGET_OBJECTS:_hebic++-obj>)
-  else()
-    add_executable(${EX_NAME} ${EXAMPLE})
+  hebi_add_target(${EX_NAME} ${EXAMPLE})
+  hebi_copy_target_resources(${EX_NAME} "basic/hrdf" "hrdf")
+  hebi_copy_target_resources(${EX_NAME} "basic/gains" "gains")
+  hebi_make_target_log_directory(${EX_NAME} "logs")
 
-  # Copy over resource files potentially used by the examples
-  add_custom_command(TARGET ${EX_NAME} POST_BUILD
-                     COMMAND ${CMAKE_COMMAND} -E copy_directory
-                         ${ROOT_DIR}/basic/hrdf $<TARGET_FILE_DIR:${EX_NAME}>/hrdf)
-  add_custom_command(TARGET ${EX_NAME} POST_BUILD
-                     COMMAND ${CMAKE_COMMAND} -E copy_directory
-                         ${ROOT_DIR}/basic/gains $<TARGET_FILE_DIR:${EX_NAME}>/gains)
-
-  # Create logs directory in case the example logs data.
-  add_custom_command(TARGET ${EX_NAME} POST_BUILD
-                     COMMAND ${CMAKE_COMMAND} -E make_directory
-                         $<TARGET_FILE_DIR:${EX_NAME}>/logs)
-
-  endif()
-  add_dependencies(examples ${EX_NAME})
-  target_include_directories(${EX_NAME} PRIVATE ${ROOT_DIR})
-
-  target_include_directories(${EX_NAME} PRIVATE ${Python_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIR})
-  target_link_libraries(${EX_NAME} ${Python_LIBRARIES})
-  if(WIN32)
-    target_link_libraries(${EX_NAME} hebi kernel32)
-    target_include_directories(${EX_NAME} PRIVATE ${HEBI_DIR}/src ${HEBI_DIR}/include ${HEBI_DIR}/Eigen)
-    # For Windows, we copy the .dll file into the binary directory so that we
-    # don't have to set the PATH variable.
-
-    set(LIBHEBI_LOCATION "lib/win_${LIBHEBI_TARGET_ARCHITECTURE}")
-    set(HEBI_CPP_LIB_DIRECTORY ${HEBI_DIR}/hebi/${LIBHEBI_LOCATION}/)
-
-    add_custom_command(TARGET ${EX_NAME} POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-      "${HEBI_CPP_LIB_DIRECTORY}/hebi.dll"
-      $<TARGET_FILE_DIR:${EX_NAME}>)
-  elseif(UNIX)
-    target_link_libraries(${EX_NAME} hebi hebic++ m pthread)
-  endif()
-
-endforeach (EXAMPLE ${X_SERIES_SOURCES})
-
-
+endforeach()
 
 
 # Mobile IO Examples
@@ -126,46 +137,15 @@ SET(MOBILE_IO_SOURCES
   ${ROOT_DIR}/basic/mobile_io/03a_feedback_io_and_mobile.cpp)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY basic/mobile_io)
-foreach (EXAMPLE ${MOBILE_IO_SOURCES})
+foreach(EXAMPLE ${MOBILE_IO_SOURCES})
 
   # The target for the individual example is based on the filename
   get_filename_component(EX_NAME ${EXAMPLE} NAME_WE)
-  
-  if(WIN32)
-    add_executable(${EX_NAME} ${EXAMPLE} $<TARGET_OBJECTS:_hebic++-obj>)
-  else()
-    add_executable(${EX_NAME} ${EXAMPLE})
 
-  # Create logs directory in case the example logs data.
-  add_custom_command(TARGET ${EX_NAME} POST_BUILD
-                     COMMAND ${CMAKE_COMMAND} -E make_directory
-                         $<TARGET_FILE_DIR:${EX_NAME}>/logs)
-  endif()
-  add_dependencies(examples ${EX_NAME})
-  target_include_directories(${EX_NAME} PRIVATE ${ROOT_DIR})
+  hebi_add_target(${EX_NAME} ${EXAMPLE})
+  hebi_make_target_log_directory(${EX_NAME} "logs")
 
-  target_include_directories(${EX_NAME} PRIVATE ${Python_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIR})
-  target_link_libraries(${EX_NAME} ${Python_LIBRARIES})
-  if(WIN32)
-    target_link_libraries(${EX_NAME} hebi kernel32)
-    target_include_directories(${EX_NAME} PRIVATE ${HEBI_DIR}/src ${HEBI_DIR}/include ${HEBI_DIR}/Eigen)
-    # For Windows, we copy the .dll file into the binary directory so that we
-    # don't have to set the PATH variable.
-
-    set(LIBHEBI_LOCATION "lib/win_${LIBHEBI_TARGET_ARCHITECTURE}")
-    set(HEBI_CPP_LIB_DIRECTORY ${HEBI_DIR}/hebi/${LIBHEBI_LOCATION}/)
-
-    add_custom_command(TARGET ${EX_NAME} POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-      "${HEBI_CPP_LIB_DIRECTORY}/hebi.dll"
-      $<TARGET_FILE_DIR:${EX_NAME}>)
-  elseif(UNIX)
-    target_link_libraries(${EX_NAME} hebi hebic++ m pthread)
-  endif()
-
-endforeach (EXAMPLE ${MOBILE_IO_SOURCES})
-
-
+endforeach()
 
 
 # IO Board Examples
@@ -177,47 +157,15 @@ SET(IO_BOARD_SOURCES
   ${ROOT_DIR}/basic/io_board/02b_io_feedback_io_board.cpp)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY basic/io_board)
-foreach (EXAMPLE ${IO_BOARD_SOURCES})
+foreach(EXAMPLE ${IO_BOARD_SOURCES})
 
   # The target for the individual example is based on the filename
   get_filename_component(EX_NAME ${EXAMPLE} NAME_WE)
-  
-  if(WIN32)
-    add_executable(${EX_NAME} ${EXAMPLE} $<TARGET_OBJECTS:_hebic++-obj>)
-  else()
-    add_executable(${EX_NAME} ${EXAMPLE})
 
-  # Create logs directory in case the example logs data.
-  add_custom_command(TARGET ${EX_NAME} POST_BUILD
-                     COMMAND ${CMAKE_COMMAND} -E make_directory
-                         $<TARGET_FILE_DIR:${EX_NAME}>/logs)
-  endif()
-  add_dependencies(examples ${EX_NAME})
-  target_include_directories(${EX_NAME} PRIVATE ${ROOT_DIR})
+  hebi_add_target(${EX_NAME} ${EXAMPLE})
+  hebi_make_target_log_directory(${EX_NAME} "logs")
 
-  target_include_directories(${EX_NAME} PRIVATE ${Python_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIR})
-  target_link_libraries(${EX_NAME} ${Python_LIBRARIES})
-  if(WIN32)
-    target_link_libraries(${EX_NAME} hebi kernel32)
-    target_include_directories(${EX_NAME} PRIVATE ${HEBI_DIR}/src ${HEBI_DIR}/include ${HEBI_DIR}/Eigen)
-    # For Windows, we copy the .dll file into the binary directory so that we
-    # don't have to set the PATH variable.
-
-    set(LIBHEBI_LOCATION "lib/win_${LIBHEBI_TARGET_ARCHITECTURE}")
-    set(HEBI_CPP_LIB_DIRECTORY ${HEBI_DIR}/hebi/${LIBHEBI_LOCATION}/)
-
-    add_custom_command(TARGET ${EX_NAME} POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-      "${HEBI_CPP_LIB_DIRECTORY}/hebi.dll"
-      $<TARGET_FILE_DIR:${EX_NAME}>)
-  elseif(UNIX)
-    target_link_libraries(${EX_NAME} hebi hebic++ m pthread)
-  endif()
-
-endforeach (EXAMPLE ${IO_BOARD_SOURCES})
-
-
-
+endforeach()
 
 # Advanced Examples
 SET(ADVANCED_SOURCES
@@ -234,46 +182,18 @@ SET(ADVANCED_SOURCES
 
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY advanced)
-foreach (EXAMPLE ${ADVANCED_SOURCES})
+foreach(EXAMPLE ${ADVANCED_SOURCES})
 
   # The target for the individual example is based on the filename
   get_filename_component(EX_NAME ${EXAMPLE} NAME_WE)
   
-  if(WIN32)
-    add_executable(${EX_NAME} ${EXAMPLE} $<TARGET_OBJECTS:_hebic++-obj>)
-  else()
-    add_executable(${EX_NAME} ${EXAMPLE})
-  endif()
-  add_dependencies(examples ${EX_NAME})
-  target_include_directories(${EX_NAME} PRIVATE ${ROOT_DIR})
+  hebi_add_target(${EX_NAME} ${EXAMPLE})
 
-  target_include_directories(${EX_NAME} PRIVATE ${Python_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIR})
-  target_link_libraries(${EX_NAME} ${Python_LIBRARIES})
-  if(WIN32)
-    target_link_libraries(${EX_NAME} hebi kernel32)
-    target_include_directories(${EX_NAME} PRIVATE ${HEBI_DIR}/src ${HEBI_DIR}/include ${HEBI_DIR}/Eigen)
-    # For Windows, we copy the .dll file into the binary directory so that we
-    # don't have to set the PATH variable.
-
-    set(LIBHEBI_LOCATION "lib/win_${LIBHEBI_TARGET_ARCHITECTURE}")
-    set(HEBI_CPP_LIB_DIRECTORY ${HEBI_DIR}/hebi/${LIBHEBI_LOCATION}/)
-
-    add_custom_command(TARGET ${EX_NAME} POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-      "${HEBI_CPP_LIB_DIRECTORY}/hebi.dll"
-      $<TARGET_FILE_DIR:${EX_NAME}>)
-  elseif(UNIX)
-    target_link_libraries(${EX_NAME} hebi hebic++ m pthread)
-  endif()
-
-endforeach (EXAMPLE ${ADVANCED_SOURCES})
+endforeach()
 
 
-
-
-# Kit Examples
+# Arm kit Examples
 SET(ARM_SOURCES
-
   ${ROOT_DIR}/kits/arm/ex_gravity_compensation.cpp
   ${ROOT_DIR}/kits/arm/ex_mobile_io_control.cpp
   ${ROOT_DIR}/kits/arm/ex_teach_repeat.cpp
@@ -282,40 +202,30 @@ SET(ARM_SOURCES
   ${ROOT_DIR}/kits/arm/ex_double_arm_teach_repeat.cpp)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY kits/arm)
-foreach (EXAMPLE ${ARM_SOURCES})
+foreach(EXAMPLE ${ARM_SOURCES})
 
   # The target for the individual example is based on the filename
   get_filename_component(EX_NAME ${EXAMPLE} NAME_WE)
   
-  if(WIN32)
-    add_executable(${EX_NAME} ${EXAMPLE} $<TARGET_OBJECTS:_hebic++-obj>)
-  else()
-    add_executable(${EX_NAME} ${EXAMPLE})
-  endif()
-  add_dependencies(examples ${EX_NAME})
-  target_include_directories(${EX_NAME} PRIVATE ${ROOT_DIR})
+  hebi_add_target(${EX_NAME} ${EXAMPLE})
 
-  target_include_directories(${EX_NAME} PRIVATE ${Python_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIR})
-  target_link_libraries(${EX_NAME} ${Python_LIBRARIES})
-  if(WIN32)
-    target_link_libraries(${EX_NAME} hebi kernel32)
-    target_include_directories(${EX_NAME} PRIVATE ${HEBI_DIR}/src ${HEBI_DIR}/include ${HEBI_DIR}/Eigen)
-    # For Windows, we copy the .dll file into the binary directory so that we
-    # don't have to set the PATH variable.
+  # Copy the HRDF files for kits into the build directory
+  file(COPY ${ROOT_DIR}/kits/arm/config DESTINATION ${CMAKE_BINARY_DIR}/kits/arm)
 
-    set(LIBHEBI_LOCATION "lib/win_${LIBHEBI_TARGET_ARCHITECTURE}")
-    set(HEBI_CPP_LIB_DIRECTORY ${HEBI_DIR}/hebi/${LIBHEBI_LOCATION}/)
+endforeach()
 
-    add_custom_command(TARGET ${EX_NAME} POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-      "${HEBI_CPP_LIB_DIRECTORY}/hebi.dll"
-      $<TARGET_FILE_DIR:${EX_NAME}>)
-  elseif(UNIX)
-    target_link_libraries(${EX_NAME} hebi hebic++ m pthread)
-  endif()
+# Rosie kit example
+SET(ROSIE_SOURCES
+  ${ROOT_DIR}/kits/rosie/rosie_demo.cpp)
 
-endforeach (EXAMPLE ${KIT_SOURCES})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY kits/rosie)
+foreach(EXAMPLE ${ROSIE_SOURCES})
 
+  # The target for the individual example is based on the filename
+  get_filename_component(EX_NAME ${EXAMPLE} NAME_WE)
+  
+  hebi_add_target(${EX_NAME} ${EXAMPLE})
+  hebi_copy_target_resources(${EX_NAME} "kits/rosie/hrdf" "hrdf")
+  hebi_copy_target_resources(${EX_NAME} "kits/rosie/gains" "gains")
 
-# Copy the HRDF files for kits into the build directory
-file(COPY ${ROOT_DIR}/kits/arm/config DESTINATION ${CMAKE_BINARY_DIR}/kits/arm)
+endforeach()
