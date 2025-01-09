@@ -198,10 +198,12 @@ int main() {
   //////////////////////////
 
   const auto user_data = example_config->getUserData();
-  Eigen::VectorXd ik_seed_position = util::stdToEigenXd(user_data.getFloatList("ik_seed_pos"));
-  double soft_start_time = user_data.getFloat("homing_duration");
-  Eigen::VectorXd xyz_scale = util::stdToEigenXd(user_data.getFloatList("xyz_scale"));
-  double delay_time = user_data.getFloat("delay_time");
+  const Eigen::VectorXd ik_seed_position = util::stdToEigenXd(user_data.getFloatList("ik_seed_pos"));
+  const double soft_start_time = user_data.getFloat("homing_duration");
+  const Eigen::VectorXd xyz_scale = util::stdToEigenXd(user_data.getFloatList("xyz_scale"));
+  const double delay_time = user_data.getFloat("delay_time");
+  const double gripper_open_effort = user_data.getFloat("gripper_open_effort");
+  const double gripper_close_effort = user_data.getFloat("gripper_close_effort");
 
   // Different modes it can be in (when in none, then automatic grav_comp)
   //bool softstart = true;
@@ -236,8 +238,6 @@ int main() {
   if (!base.setGains())
     return 1;
 
-  const double gripper_open_effort = 1;
-  const double gripper_close_effort = -5;
   auto gripper = hebi::arm::Gripper::create(robot_family, "gripperSpool", gripper_close_effort, gripper_open_effort); 
   if (!gripper || !gripper->loadGains("gains/gripper_gains.xml"))
   {
@@ -283,9 +283,6 @@ int main() {
   double x_vel{}; 
   double y_vel{};
   double rot_vel{};
-
-  // Parameter to limit XYZ Translation
-  double phone_control_scale = 0.375;
 
   int num_mobile_io_drops = 0;
 
@@ -338,10 +335,8 @@ int main() {
       }
 
       // Gripper Control
-      if (mobile_io->getAxis(6) > 0)
-        gripper->close();
-      else
-        gripper->open();
+      // (for states, 0 is open, 1 is closed)
+      gripper->setState((mobile_io->getAxis(6) + 1.0 ) / 2.0);
 
       // Omnibase
       x_vel = mobile_io->getAxis(8);
@@ -359,7 +354,7 @@ int main() {
 
       // Calculate new targets
       Eigen::Vector3d xyz_target =
-        xyz_home + phone_control_scale * xyz_scale.cwiseProduct(rot_phone_init.transpose() * (xyz_phone - xyz_phone_init));
+        xyz_home + xyz_scale.cwiseProduct(rot_phone_init.transpose() * (xyz_phone - xyz_phone_init));
       Eigen::Matrix3d rot_target = rot_phone_init.transpose() * rot_phone * rot_home;
 
       // Force elbow up config

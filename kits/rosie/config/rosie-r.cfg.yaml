@@ -27,7 +27,7 @@ user_data:
 
   # Displacements of the mobile device are scaled by these value to give  
   # displacement of the end-effector
-  xyz_scale: [ 1.0, 1.0, 2.0 ]   # [ x, y, z ]
+  xyz_scale: [ 0.375, 0.375, 0.75 ]   # [ x, y, z ]
 
 plugins:
   - type: GravityCompensationEffort
