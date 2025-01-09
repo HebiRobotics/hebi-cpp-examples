@@ -182,11 +182,22 @@ int main() {
 
   // Setup instructions for display
   std::string instructions;
-  instructions = ("B1 - Reset\nB2 - Grav Comp Mode\n"
-                  "A3 - Translation Scale\nA6 - Gripper\nB8 - Quit\n");
+  instructions = ("B1: Home  B2: Track\n"
+                  "A6: Grip  B8: Quit\n"
+                  "A3: XYZ   B3: Compliant\n");
 
   // Display instructions on screen
   mobile_io->appendText(instructions);
+
+  mobile_io->setButtonLabel(1, "Home");
+  mobile_io->setButtonLabel(2, "Track");
+  mobile_io->setButtonLabel(8, "Quit");
+  mobile_io->setAxisLabel(2, "Base Turn");
+  mobile_io->setAxisLabel(3, "Arm Translate");
+  mobile_io->setAxisLabel(6, "Grip");
+  mobile_io->setAxisLabel(7, "Base X");
+  mobile_io->setAxisLabel(8, "Base Y");
+
   // Get initial mobile device state (so edge triggers are properly handled
   // after this)
   mobile_io->update();
@@ -286,6 +297,12 @@ int main() {
 
   int num_mobile_io_drops = 0;
 
+  // Only allow rotation from AR
+  bool rot_only{false};
+  Eigen::Vector3d last_xyz_phone;
+
+  Eigen::Vector3d xyz_target;
+
   while(true) {
     arm->update();
 
@@ -321,7 +338,11 @@ int main() {
                             mobile_io->getLastFeedback().mobile().arPosition().get().getZ();
           rot_phone_init = makeRotationMatrix(mobile_io->getLastFeedback().mobile().arOrientation().get());
           ar_mode = true;
-        } else { // -> grav comp
+        }
+      }
+      // -> grav comp
+      if (mobile_io->getButtonDiff(3) == util::MobileIO::ButtonState::ToOn) {
+        if (ar_mode) {
           arm->cancelGoal();
           ar_mode = false;
         }
@@ -334,9 +355,29 @@ int main() {
         return 1;
       }
 
+      if (mobile_io->getAxis(3) < 0) {
+        if (!rot_only)
+        {
+          rot_only = true;
+          last_xyz_phone << mobile_io->getLastFeedback().mobile().arPosition().get().getX(),
+                            mobile_io->getLastFeedback().mobile().arPosition().get().getY(),
+                            mobile_io->getLastFeedback().mobile().arPosition().get().getZ();
+        }
+      } else {
+        if (rot_only) // transition out
+        {
+          rot_only = false;
+          Eigen::Vector3d xyz_phone;
+          xyz_phone << mobile_io->getLastFeedback().mobile().arPosition().get().getX(),
+                       mobile_io->getLastFeedback().mobile().arPosition().get().getY(),
+                       mobile_io->getLastFeedback().mobile().arPosition().get().getZ();
+          xyz_phone_init += xyz_phone - last_xyz_phone;
+        }
+      }
+
       // Gripper Control
       // (for states, 0 is open, 1 is closed)
-      gripper->setState((mobile_io->getAxis(6) + 1.0 ) / 2.0);
+      gripper->setState((mobile_io->getAxis(6) + 1.0 ) / 2.0); 
 
       // Omnibase
       x_vel = mobile_io->getAxis(8);
@@ -353,8 +394,11 @@ int main() {
       auto rot_phone = makeRotationMatrix(mobile_io->getLastFeedback().mobile().arOrientation().get());
 
       // Calculate new targets
-      Eigen::Vector3d xyz_target =
-        xyz_home + xyz_scale.cwiseProduct(rot_phone_init.transpose() * (xyz_phone - xyz_phone_init));
+      if (!rot_only)
+      {
+        xyz_target =
+          xyz_home + xyz_scale.cwiseProduct(rot_phone_init.transpose() * (xyz_phone - xyz_phone_init));
+      }
       Eigen::Matrix3d rot_target = rot_phone_init.transpose() * rot_phone * rot_home;
 
       // Force elbow up config
