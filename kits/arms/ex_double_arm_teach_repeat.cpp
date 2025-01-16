@@ -84,8 +84,8 @@ int main(int argc, char* argv[])
   
   // Read HRDF file to setup a RobotModel object for the 6-DoF Arm
   // Make sure you are running this from the correct directory!
-  l_params.hrdf_file_ = "kits/arm/config/hrdf/A-2085-06G.hrdf";
-  r_params.hrdf_file_ = "kits/arm/config/hrdf/A-2085-06G.hrdf";
+  l_params.hrdf_file_ = "kits/arms/config/hrdf/A-2085-06G.hrdf";
+  r_params.hrdf_file_ = "kits/arms/config/hrdf/A-2085-06G.hrdf";
 
   // Add the gripper
   std::shared_ptr<hebi::experimental::arm::EndEffectorBase> l_gripper_shared, r_gripper_shared;
@@ -102,12 +102,12 @@ int main(int argc, char* argv[])
       std::cout << "Waiting for right gripper!\n";
       r_gripper = hebi::experimental::arm::EffortEndEffector<1>::create({r_family}, {"gripperSpool"});
     }
-    if (!tryLoadGains(l_gripper, "kits/arm/config/gains/gripper_spool_gains.xml"))
+    if (!tryLoadGains(l_gripper, "kits/arms/config/gains/gripper_spool_gains.xml"))
     {
       std::cerr << "Could not load gains for left gripper!\n";
       return 1;
     }
-    if (!tryLoadGains(r_gripper, "kits/arm/config/gains/gripper_spool_gains.xml"))
+    if (!tryLoadGains(r_gripper, "kits/arms/config/gains/gripper_spool_gains.xml"))
     {
       std::cerr << "Could not load gains for right gripper!\n";
       return 1;
@@ -131,12 +131,12 @@ int main(int argc, char* argv[])
   }
 
   // Load the gains file that is approriate to the arm
-  if (!tryLoadGains(l_arm, "kits/arm/config/gains/A-2085-06.xml"))
+  if (!tryLoadGains(l_arm, "kits/arms/config/gains/A-2085-06.xml"))
   {
     std::cerr << "Could not load gains for left arm!\n";
     return 1;
   }
-  if (!tryLoadGains(r_arm, "kits/arm/config/gains/A-2085-06.xml"))
+  if (!tryLoadGains(r_arm, "kits/arms/config/gains/A-2085-06.xml"))
   {
     std::cerr << "Could not load gains for left arm!\n";
     return 1;
