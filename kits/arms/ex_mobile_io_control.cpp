@@ -85,9 +85,9 @@ int main(int argc, char* argv[])
   const auto user_data = example_config->getUserData();
 
   std::vector<Eigen::VectorXd> waypoints {
-    waypoints.push_back(util::stdToEigenXd(user_data.getFloatList("waypoint_1"))),
-    waypoints.push_back(util::stdToEigenXd(user_data.getFloatList("waypoint_2"))),
-    waypoints.push_back(util::stdToEigenXd(user_data.getFloatList("waypoint_3")));
+    util::stdToEigenXd(user_data.getFloatList("waypoint_1")),
+    util::stdToEigenXd(user_data.getFloatList("waypoint_2")),
+    util::stdToEigenXd(user_data.getFloatList("waypoint_3"))
   };
 
   // Travel time

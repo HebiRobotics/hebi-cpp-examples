@@ -194,14 +194,14 @@ endforeach()
 
 # Arm kit Examples
 SET(ARM_SOURCES
-  ${ROOT_DIR}/kits/arm/ex_gravity_compensation.cpp
-  ${ROOT_DIR}/kits/arm/ex_mobile_io_control.cpp
-  ${ROOT_DIR}/kits/arm/ex_teach_repeat.cpp
-  ${ROOT_DIR}/kits/arm/ex_AR_kit.cpp
-  ${ROOT_DIR}/kits/arm/ex_teach_repeat_with_gripper.cpp
-  ${ROOT_DIR}/kits/arm/ex_double_arm_teach_repeat.cpp)
+  ${ROOT_DIR}/kits/arms/ex_gravity_compensation.cpp
+  ${ROOT_DIR}/kits/arms/ex_mobile_io_control.cpp
+  ${ROOT_DIR}/kits/arms/ex_teach_repeat.cpp
+  ${ROOT_DIR}/kits/arms/ex_AR_kit.cpp
+  ${ROOT_DIR}/kits/arms/ex_teach_repeat_with_gripper.cpp
+  ${ROOT_DIR}/kits/arms/ex_double_arm_teach_repeat.cpp)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY kits/arm)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY kits/arms)
 foreach(EXAMPLE ${ARM_SOURCES})
 
   # The target for the individual example is based on the filename
@@ -210,7 +210,7 @@ foreach(EXAMPLE ${ARM_SOURCES})
   hebi_add_target(${EX_NAME} ${EXAMPLE})
 
   # Copy the HRDF files for kits into the build directory
-  file(COPY ${ROOT_DIR}/kits/arm/config DESTINATION ${CMAKE_BINARY_DIR}/kits/arm)
+  file(COPY ${ROOT_DIR}/kits/arms/config DESTINATION ${CMAKE_BINARY_DIR}/kits/arms)
 
 endforeach()
 

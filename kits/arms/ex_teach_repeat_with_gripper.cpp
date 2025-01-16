@@ -189,7 +189,7 @@ int main(int argc, char* argv[])
   
   // Read HRDF file to setup a RobotModel object for the 6-DoF Arm
   // Make sure you are running this from the correct directory!
-  params.hrdf_file_ = "kits/arm/config/hrdf/A-2085-06G.hrdf";
+  params.hrdf_file_ = "kits/arms/config/hrdf/A-2085-06G.hrdf";
 
   // Add the gripper
   std::shared_ptr<hebi::experimental::arm::EndEffectorBase> gripper_shared;
@@ -213,7 +213,7 @@ int main(int argc, char* argv[])
   }
 
   // Load the gains file that is approriate to the arm
-  arm->loadGains("kits/arm/config/gains/A-2085-06.xml");
+  arm->loadGains("kits/arms/config/gains/A-2085-06.xml");
 
 
   /////////////////////////
