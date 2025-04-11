@@ -10,6 +10,8 @@
 namespace hebi {
 namespace examples {
 
+constexpr double gripperEffort(arm::Gripper::State gs);
+
 // Simple helper class for sending mobile IO state
 struct MobileIoState {
 public:

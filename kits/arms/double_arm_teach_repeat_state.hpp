@@ -12,31 +12,25 @@
 
 #include "arm/arm.hpp"
 
-namespace arm = hebi::experimental::arm;
-
 namespace hebi {
 namespace examples {
-
-enum class GripperState {
-  Open, Close
-};
 
 struct Waypoint {
   Eigen::VectorXd positions;
   Eigen::VectorXd vels;
   Eigen::VectorXd accels;
-  GripperState gripper_state;
+  arm::Gripper::State gripper_state;
   double time_from_prev;
 };
 
-static constexpr double gripperEffort(GripperState gs) {
-  return gs == GripperState::Open ? 1 : -5;
+constexpr double gripperEffort(arm::Gripper::State gs) {
+  return gs == arm::Gripper::State::Open ? 1 : -5;
 }
 
-// Estimation for reversing the above function
-static constexpr GripperState gripperState(float effort) {
+// Estimation for reversing the gripperEffort function
+static constexpr arm::Gripper::State gripperState(float effort) {
   // Choose whatever this is closest to:
-  return (std::abs(gripperEffort(GripperState::Open) - effort) < std::abs(gripperEffort(GripperState::Close) - effort)) ? GripperState::Open : GripperState::Close;
+  return (std::abs(gripperEffort(arm::Gripper::State::Open) - effort) < std::abs(gripperEffort(arm::Gripper::State::Close) - effort)) ? arm::Gripper::State::Open : arm::Gripper::State::Close;
 }
 
 enum class LeftRight {
@@ -45,45 +39,35 @@ enum class LeftRight {
 
 // Keeps track of the current waypoints and gripper state for a single arm.
 struct ArmState {
-  ArmState(int num_modules, hebi::experimental::arm::EndEffectorBase& ee) : num_modules_(num_modules), gripper_(ee),
-    prev_gripper_state_(GripperState::Open),
-    current_gripper_state_(GripperState::Open)
+  ArmState(int num_modules, arm::Gripper& gripper) : num_modules_(num_modules), gripper_(gripper),
+    prev_gripper_state_(arm::Gripper::State::Open),
+    current_gripper_state_(arm::Gripper::State::Open)
   {
-    Eigen::VectorXd tmp(1);
-    tmp << gripperEffort(current_gripper_state_);
-    gripper_.update(tmp);
-    // Should check the result here...
-    gripper_.send();
+    gripper_.setState(current_gripper_state_);
   }
   int num_modules_{};
-  hebi::experimental::arm::EndEffectorBase& gripper_;
-  GripperState prev_gripper_state_{GripperState::Open};
-  GripperState current_gripper_state_{GripperState::Open};
+  arm::Gripper& gripper_;
+  arm::Gripper::State prev_gripper_state_{arm::Gripper::State::Open};
+  arm::Gripper::State current_gripper_state_{arm::Gripper::State::Open};
   std::vector<Waypoint> waypoints_{};
   void toggleGripper() {
     current_gripper_state_ =
-      current_gripper_state_ == GripperState::Close ? GripperState::Open : GripperState::Close;
-    Eigen::VectorXd tmp(1);
-    tmp << gripperEffort(current_gripper_state_);
-    // Should check the result here...
-    gripper_.update(tmp);
+      current_gripper_state_ == arm::Gripper::State::Close ? arm::Gripper::State::Open : arm::Gripper::State::Close;
+    gripper_.setState(current_gripper_state_);
   }
   void reset()
   {
     waypoints_.clear();
-    current_gripper_state_ = GripperState::Open;
-    prev_gripper_state_ = GripperState::Open;
-    Eigen::VectorXd tmp(1);
-    tmp << gripperEffort(current_gripper_state_);
-    // Should check the result here...
-    gripper_.update(tmp);
+    current_gripper_state_ = arm::Gripper::State::Open;
+    prev_gripper_state_ = arm::Gripper::State::Open;
+    gripper_.setState(current_gripper_state_);
   }
 };
 
 // Keeps track of the current waypoints and gripper state for both arms in the demo.
 struct DemoState {
-  DemoState(hebi::experimental::arm::Arm& l_arm, hebi::experimental::arm::EndEffectorBase& left_ee,
-    hebi::experimental::arm::Arm& r_arm, hebi::experimental::arm::EndEffectorBase& right_ee) :
+  DemoState(arm::Arm& l_arm, arm::Gripper& left_ee,
+    arm::Arm& r_arm, arm::Gripper& right_ee) :
     l_arm_(l_arm), r_arm_(r_arm),
     left_(l_arm.robotModel().getDoFCount(), left_ee), right_(r_arm.robotModel().getDoFCount(), right_ee)
   {
@@ -198,7 +182,7 @@ struct DemoState {
     return true;
   } 
 
-  static void stopArm(experimental::arm::Arm& arm, GripperState gripper_state) {
+  static void stopArm(arm::Arm& arm, arm::Gripper::State gripper_state) {
     auto current_pos = arm.lastFeedback().getPosition();
     auto current_vel = arm.lastFeedback().getVelocity();
 

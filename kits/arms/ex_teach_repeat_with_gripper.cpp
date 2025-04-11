@@ -15,54 +15,39 @@
 #include "util/mobile_io.hpp"
 
 using namespace hebi;
-namespace arm = hebi::experimental::arm;
-
-enum class GripperState {
-  Open, Close
-};
 
 struct Waypoint {
   Eigen::VectorXd positions;
   Eigen::VectorXd vels;
   Eigen::VectorXd accels;
-  GripperState gripper_state;
+  arm::Gripper::State gripper_state;
   double time_from_prev;
 };
 
-static constexpr double gripperEffort(GripperState gs) {
-  return gs == GripperState::Open ? 1 : -5;
+static constexpr double gripperEffort(arm::Gripper::State gs) {
+  return gs == arm::Gripper::State::Open ? 1 : -5;
 }
 
 struct State {
-  State(int num_modules, hebi::experimental::arm::EndEffectorBase& ee) : num_modules_(num_modules), gripper_(ee),
-    current_gripper_state_(GripperState::Open)
+  State(int num_modules, arm::Gripper& gripper) : num_modules_(num_modules), gripper_(gripper),
+    current_gripper_state_(arm::Gripper::State::Open)
   {
-    Eigen::VectorXd tmp(1);
-    tmp << gripperEffort(current_gripper_state_);
-    gripper_.update(tmp);
-    // Should check the result here...
-    gripper_.send();
+    gripper_.setState(current_gripper_state_);
   }
   int num_modules_{};
-  hebi::experimental::arm::EndEffectorBase& gripper_;
-  GripperState current_gripper_state_{GripperState::Open};
+  arm::Gripper& gripper_;
+  arm::Gripper::State current_gripper_state_{arm::Gripper::State::Open};
   std::vector<Waypoint> waypoints_{};
   void toggleGripper() {
     current_gripper_state_ =
-      current_gripper_state_ == GripperState::Close ? GripperState::Open : GripperState::Close;
-    Eigen::VectorXd tmp(1);
-    tmp << gripperEffort(current_gripper_state_);
-    // Should check the result here...
-    gripper_.update(tmp);
+      current_gripper_state_ == arm::Gripper::State::Close ? arm::Gripper::State::Open : arm::Gripper::State::Close;
+    gripper_.setState(current_gripper_state_);
   }
   void reset()
   {
     waypoints_.clear();
-    current_gripper_state_ = GripperState::Open;
-    Eigen::VectorXd tmp(1);
-    tmp << gripperEffort(current_gripper_state_);
-    // Should check the result here...
-    gripper_.update(tmp);
+    current_gripper_state_ = arm::Gripper::State::Open;
+    gripper_.setState(current_gripper_state_);
   }
 };
 
@@ -109,7 +94,7 @@ arm::Goal playWaypoints (State& state) {
     target_pos.col(i) << wp.positions;
     target_vels.col(i) << wp.vels;
     target_accels.col(i) << wp.accels;
-    aux(0, i) = gripperEffort(wp.gripper_state);
+    aux(0, i) = arm::Gripper::StateToDouble(wp.gripper_state);
   }
   if (extra_wps != 0)
   {
@@ -118,7 +103,7 @@ arm::Goal playWaypoints (State& state) {
     target_pos.col(wp_count) << wp.positions;
     target_vels.col(wp_count) << wp.vels;
     target_accels.col(wp_count) << wp.accels;
-    aux(0, wp_count) = gripperEffort(state.waypoints_[0].gripper_state);
+    aux(0, wp_count) = arm::Gripper::StateToDouble(state.waypoints_[0].gripper_state);
   }
   return arm::Goal::createFromWaypointsWithAux(times, target_pos, target_vels, target_accels, aux);
 }
@@ -192,9 +177,13 @@ int main(int argc, char* argv[])
   params.hrdf_file_ = "kits/arms/config/hrdf/A-2085-06G.hrdf";
 
   // Add the gripper
-  std::shared_ptr<hebi::experimental::arm::EndEffectorBase> gripper_shared;
+  std::shared_ptr<arm::Gripper> gripper_shared;
   {
-    auto gripper = hebi::experimental::arm::EffortEndEffector<1>::create({family}, {"gripperSpool"});
+    auto gripper = arm::Gripper::create(
+      family,
+      "gripperSpool",
+      gripperEffort(arm::Gripper::State::Close),
+      gripperEffort(arm::Gripper::State::Open));
     if (!gripper)
     {
       std::cout << "couldn't find gripper!\n";
@@ -212,7 +201,7 @@ int main(int argc, char* argv[])
     arm = arm::Arm::create(params);
   }
 
-  // Load the gains file that is approriate to the arm
+  // Load the gains file that is appropriate to the arm
   arm->loadGains("kits/arms/config/gains/A-2085-06.xml");
 
 
