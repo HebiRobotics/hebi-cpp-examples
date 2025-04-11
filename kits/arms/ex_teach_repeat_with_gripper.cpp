@@ -24,10 +24,6 @@ struct Waypoint {
   double time_from_prev;
 };
 
-static constexpr double gripperEffort(arm::Gripper::State gs) {
-  return gs == arm::Gripper::State::Open ? 1 : -5;
-}
-
 struct State {
   State(int num_modules, arm::Gripper& gripper) : num_modules_(num_modules), gripper_(gripper),
     current_gripper_state_(arm::Gripper::State::Open)
@@ -161,56 +157,62 @@ void setPlaybackDisplay(util::MobileIO& mobile)
 int main(int argc, char* argv[])
 {
   //////////////////////////
+  ///// Config Setup ///////
+  //////////////////////////
+
+  // Config file path
+  const std::string example_config_file = "config/ex_teach_repeat_w_gripper.cfg.yaml";
+  std::vector<std::string> errors;
+  
+  // Load the config
+  const auto example_config = RobotConfig::loadConfig(example_config_file, errors);
+  for (const auto& error : errors) {
+    std::cerr << error << std::endl;
+  }
+  if (!example_config) {
+    std::cerr << "Failed to load configuration from: " << example_config_file << std::endl;
+    return -1;
+  }
+
+  //////////////////////////
   ///// Arm Setup //////////
   //////////////////////////
 
-  const std::string family = "Arm";
-
-  arm::Arm::Params params;
-
-  // Setup Module Family and Module Names
-  params.families_ = {family};
-  params.names_ = {"J1_base", "J2_shoulder", "J3_elbow", "J4_wrist1", "J5_wrist2", "J6_wrist3"};
-  
-  // Read HRDF file to setup a RobotModel object for the 6-DoF Arm
-  // Make sure you are running this from the correct directory!
-  params.hrdf_file_ = "kits/arms/config/hrdf/A-2085-06G.hrdf";
-
-  // Add the gripper
-  std::shared_ptr<arm::Gripper> gripper_shared;
-  {
-    auto gripper = arm::Gripper::create(
-      family,
-      "gripperSpool",
-      gripperEffort(arm::Gripper::State::Close),
-      gripperEffort(arm::Gripper::State::Open));
-    if (!gripper)
-    {
-      std::cout << "couldn't find gripper!\n";
-      return 1;
-    }
-    gripper->loadGains("config/gains/gripper_spool_gains.xml");
-    gripper_shared.reset(gripper.release());
-    params.end_effector_ = gripper_shared;
-  }
-
-  // Create the Arm Object
-  auto arm = arm::Arm::create(params);
+  // Create the arm object from the configuration, and retry if not found
+  auto arm = arm::Arm::create(*example_config);
   while (!arm) {
-    std::cout << "waiting for arm...\n";
-    arm = arm::Arm::create(params);
+    std::cerr << "Failed to create arm, retrying..." << std::endl;
+    arm = arm::Arm::create(*example_config);
+  }
+  // Add the gripper
+  arm::Gripper* gripper_raw{}; // CAUTION: This memory will be managed by the arm, but we store a typed reference first for use with our state variable below
+  {
+    auto& user_data = example_config->getUserData();
+    auto family = user_data.getString("gripper_family");
+    auto name = user_data.getString("gripper_name");
+    auto gains_file = user_data.getString("gripper_gains");
+    auto close_effort = user_data.getFloat("gripper_close_effort");
+    auto open_effort = user_data.getFloat("gripper_open_effort");
+    auto gripper = arm::Gripper::create(family, name, close_effort, open_effort);
+    while (!gripper) {
+      std::cerr << "Failed to create gripper, retrying...\n";
+      gripper = arm::Gripper::create(family, name, close_effort, open_effort);
+    }
+    if (!gripper->loadGains("config/" + gains_file)) {
+      std::cerr << "Could not set default gripper gains.\n";
+    }
+    gripper_raw = gripper.get();
+    arm->setEndEffector(std::shared_ptr<arm::EndEffectorBase>(gripper.release()));
   }
 
-  // Load the gains file that is appropriate to the arm
-  arm->loadGains("kits/arms/config/gains/A-2085-06.xml");
-
+  std::cout << "Arm connected." << std::endl;
 
   /////////////////////////
   //// MobileIO Setup /////
   /////////////////////////
 
   // Create the MobileIO object
-  auto mobile = util::MobileIO::create(family, "mobileIO");
+  auto mobile = util::MobileIO::create("Arm", "mobileIO");
   if (!mobile)
   {
     std::cout << "couldn't find mobile IO device!\n";
@@ -239,7 +241,7 @@ int main(int argc, char* argv[])
   // Teach Repeat Variables
   State state(
     arm->robotModel().getDoFCount(),
-    *gripper_shared);
+    *gripper_raw);
 
   while (!abort_flag)
   {
