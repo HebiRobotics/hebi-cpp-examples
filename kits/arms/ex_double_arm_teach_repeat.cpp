@@ -19,8 +19,6 @@
 #include "arm/arm.hpp"
 #include "util/mobile_io.hpp"
 
-namespace arm = hebi::experimental::arm;
-
 namespace hebi {
 namespace examples {
 
@@ -88,19 +86,35 @@ int main(int argc, char* argv[])
   r_params.hrdf_file_ = "kits/arms/config/hrdf/A-2085-06G.hrdf";
 
   // Add the gripper
-  std::shared_ptr<hebi::experimental::arm::EndEffectorBase> l_gripper_shared, r_gripper_shared;
+  std::shared_ptr<arm::Gripper> l_gripper_shared, r_gripper_shared;
   {
-    auto l_gripper = hebi::experimental::arm::EffortEndEffector<1>::create({l_family}, {"gripperSpool"});
-    auto r_gripper = hebi::experimental::arm::EffortEndEffector<1>::create({r_family}, {"gripperSpool"});
+    auto l_gripper = arm::Gripper::create(
+      l_family,
+      "gripperSpool",
+      gripperEffort(arm::Gripper::State::Close),
+      gripperEffort(arm::Gripper::State::Open));
+    auto r_gripper = arm::Gripper::create(
+      r_family,
+      "gripperSpool",
+      gripperEffort(arm::Gripper::State::Close),
+      gripperEffort(arm::Gripper::State::Open));
     while (!l_gripper)
     {
       std::cout << "Waiting for left gripper!\n";
-      l_gripper = hebi::experimental::arm::EffortEndEffector<1>::create({l_family}, {"gripperSpool"});
+      l_gripper = arm::Gripper::create(
+        l_family,
+        "gripperSpool",
+        gripperEffort(arm::Gripper::State::Close),
+        gripperEffort(arm::Gripper::State::Open));
     }
     while (!r_gripper)
     {
       std::cout << "Waiting for right gripper!\n";
-      r_gripper = hebi::experimental::arm::EffortEndEffector<1>::create({r_family}, {"gripperSpool"});
+      r_gripper = arm::Gripper::create(
+        r_family,
+        "gripperSpool",
+        gripperEffort(arm::Gripper::State::Close),
+        gripperEffort(arm::Gripper::State::Open));
     }
     if (!tryLoadGains(l_gripper, "kits/arms/config/gains/gripper_spool_gains.xml"))
     {
