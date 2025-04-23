@@ -1,5 +1,6 @@
 #pragma once
 #include "matplotlibcpp.h"
+#include <Eigen/Dense>  // Add Eigen header for Matrix4d
 
 namespace plt = matplotlibcpp;
 
@@ -89,6 +90,5 @@ void plot_3dtriad(Eigen::Matrix4d transform, std::vector<std::vector<T>>* lines_
   plt::plot_3dline((*lines_x)[index],(*lines_y)[index],(*lines_z)[index],rgb?"r":"k");
   plt::plot_3dline((*lines_x)[index+1],(*lines_y)[index+1],(*lines_z)[index+1],rgb?"g":"k");
   plt::plot_3dline((*lines_x)[index+2],(*lines_y)[index+2],(*lines_z)[index+2],rgb?"b":"k");
-  
 }
 

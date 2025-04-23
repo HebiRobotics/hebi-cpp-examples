@@ -5,4 +5,4 @@ projects/**/x64
 projects/**/*.user
 build
 hebi-cpp
-
+eigen_checks
