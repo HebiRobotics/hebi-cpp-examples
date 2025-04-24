@@ -37,7 +37,8 @@ Eigen::IOFormat matlab_format(Eigen::FullPrecision, 0, ", ", ";\n", "", "", "[",
                               "]");
 const int N = 10;
 
-struct OptimizationParams {
+struct OptimizationParams
+{
   int D;
   int max_derivative;
   int num_segments;
@@ -47,7 +48,8 @@ struct OptimizationParams {
   double a_max;
 };
 
-std::ostream& operator<<(std::ostream& stream, const OptimizationParams& val) {
+std::ostream &operator<<(std::ostream &stream, const OptimizationParams &val)
+{
   stream << "D: " << val.D << " max_deriv: " << val.max_derivative
          << " num_seg: " << val.num_segments << " seed: " << val.seed
          << " pos_bounds: " << val.pos_bounds << " v_max: " << val.v_max
@@ -57,9 +59,11 @@ std::ostream& operator<<(std::ostream& stream, const OptimizationParams& val) {
 
 // Parameters to test: N, max_derivative, num_segments, seed
 class PolynomialOptimizationTests
-    : public ::testing::TestWithParam<OptimizationParams> {
- public:
-  void SetUp() override {
+    : public ::testing::TestWithParam<OptimizationParams>
+{
+public:
+  void SetUp() override
+  {
     params_ = GetParam();
 
     // Unpack params.
@@ -78,27 +82,28 @@ class PolynomialOptimizationTests
   }
 
   // Helper checking functions.
-  void checkPath(const Vertex::Vector& vertices,
-                 const std::vector<Segment>& segments) const;
-  bool checkCost(double cost_to_check, const Trajectory& trajectory,
+  void checkPath(const Vertex::Vector &vertices,
+                 const std::vector<Segment> &segments) const;
+  bool checkCost(double cost_to_check, const Trajectory &trajectory,
                  size_t derivative, double relative_tolerance) const;
-  void getMaxVelocityAndAccelerationAnalytical(const Trajectory& trajectory,
-                                               double* v_max,
-                                               double* a_max) const;
-  void getMaxVelocityAndAccelerationNumerical(const Trajectory& trajectory,
-                                              double* v_max,
-                                              double* a_max) const;
-  bool checkExtrema(const std::vector<double>& testee,
-                    const std::vector<double>& reference,
+  void getMaxVelocityAndAccelerationAnalytical(const Trajectory &trajectory,
+                                               double *v_max,
+                                               double *a_max) const;
+  void getMaxVelocityAndAccelerationNumerical(const Trajectory &trajectory,
+                                              double *v_max,
+                                              double *a_max) const;
+  bool checkExtrema(const std::vector<double> &testee,
+                    const std::vector<double> &reference,
                     double tol = 0.01) const;
 
-  std::string getSuffix() const {
+  std::string getSuffix() const
+  {
     std::ostringstream sstream;
     sstream << "_" << D << "D_" << params_.num_segments << "s";
     return sstream.str();
   }
 
- protected:
+protected:
   OptimizationParams params_;
 
   // Unfold params to be a bit simpler.
@@ -111,21 +116,24 @@ class PolynomialOptimizationTests
 };
 
 void PolynomialOptimizationTests::checkPath(
-    const Vertex::Vector& vertices,
-    const std::vector<Segment>& segments) const {
+    const Vertex::Vector &vertices,
+    const std::vector<Segment> &segments) const
+{
   const double tol = 1e-6;
   size_t n_vertices = vertices.size();
   size_t n_segments = segments.size();
   EXPECT_EQ(n_segments, n_vertices - 1);
 
-  for (size_t i = 0; i < n_segments; ++i) {
-    const Vertex& v_begin = vertices[i];
-    const Vertex& v_end = vertices[i + 1];
-    const Segment& segment = segments[i];
+  for (size_t i = 0; i < n_segments; ++i)
+  {
+    const Vertex &v_begin = vertices[i];
+    const Vertex &v_end = vertices[i + 1];
+    const Segment &segment = segments[i];
 
     // check if fixed constraints are met.
     for (Vertex::Constraints::const_iterator it = v_begin.cBegin();
-         it != v_begin.cEnd(); ++it) {
+         it != v_begin.cEnd(); ++it)
+    {
       const int derivative = it->first;
       const Vertex::ConstraintValue desired = it->second;
       const Vertex::ConstraintValue actual = segment.evaluate(0, derivative);
@@ -139,7 +147,8 @@ void PolynomialOptimizationTests::checkPath(
           << segment << segment_derivative.str();
     }
     for (Vertex::Constraints::const_iterator it = v_end.cBegin();
-         it != v_end.cEnd(); ++it) {
+         it != v_end.cEnd(); ++it)
+    {
       const int derivative = it->first;
       const Vertex::ConstraintValue desired = it->second;
       const Vertex::ConstraintValue actual =
@@ -154,9 +163,11 @@ void PolynomialOptimizationTests::checkPath(
     }
 
     // Check if values at vertices are continuous.
-    if (i > 0) {
-      const Segment& last_segment = segments[i - 1];
-      for (size_t derivative = 0; derivative < N / 2; ++derivative) {
+    if (i > 0)
+    {
+      const Segment &last_segment = segments[i - 1];
+      for (size_t derivative = 0; derivative < N / 2; ++derivative)
+      {
         const Vertex::ConstraintValue last_segment_value =
             last_segment.evaluate(last_segment.getTime(), derivative);
         const Vertex::ConstraintValue current_segment_value =
@@ -174,9 +185,10 @@ void PolynomialOptimizationTests::checkPath(
 }
 
 bool PolynomialOptimizationTests::checkCost(double cost_to_check,
-                                            const Trajectory& trajectory,
+                                            const Trajectory &trajectory,
                                             size_t derivative,
-                                            double relative_tolerance) const {
+                                            double relative_tolerance) const
+{
   CHECK_GE(derivative, size_t(0));
   CHECK(relative_tolerance >= 0.0 && relative_tolerance <= 1.0);
   const double sampling_interval = 0.001;
@@ -184,7 +196,8 @@ bool PolynomialOptimizationTests::checkCost(double cost_to_check,
       computeCostNumeric(trajectory, derivative, sampling_interval);
 
   if (std::abs(cost_numeric - cost_to_check) >
-      cost_numeric * relative_tolerance) {
+      cost_numeric * relative_tolerance)
+  {
     std::cout << "[FAIL]: tested cost is" << cost_to_check
               << " but real cost is " << cost_numeric
               << ". Difference vs. allowed difference: "
@@ -197,8 +210,9 @@ bool PolynomialOptimizationTests::checkCost(double cost_to_check,
 }
 
 void PolynomialOptimizationTests::getMaxVelocityAndAccelerationAnalytical(
-    const Trajectory& trajectory, double* v_max, double* a_max) const {
-  std::vector<int> dimensions(D);  // Evaluate in whatever dimensions we have.
+    const Trajectory &trajectory, double *v_max, double *a_max) const
+{
+  std::vector<int> dimensions(D); // Evaluate in whatever dimensions we have.
   std::iota(dimensions.begin(), dimensions.end(), 0);
 
   mav_trajectory_generation::Extremum v_min_traj, v_max_traj, a_min_traj,
@@ -216,7 +230,8 @@ void PolynomialOptimizationTests::getMaxVelocityAndAccelerationAnalytical(
 }
 
 void PolynomialOptimizationTests::getMaxVelocityAndAccelerationNumerical(
-    const Trajectory& trajectory, double* v_max, double* a_max) const {
+    const Trajectory &trajectory, double *v_max, double *a_max) const
+{
   *v_max = getMaximumMagnitude(
       trajectory, mav_trajectory_generation::derivative_order::VELOCITY);
   *a_max = getMaximumMagnitude(
@@ -224,20 +239,26 @@ void PolynomialOptimizationTests::getMaxVelocityAndAccelerationNumerical(
 }
 
 bool PolynomialOptimizationTests::checkExtrema(
-    const std::vector<double>& testee, const std::vector<double>& reference,
-    double tol) const {
-  for (double t : testee) {
+    const std::vector<double> &testee, const std::vector<double> &reference,
+    double tol) const
+{
+  for (double t : testee)
+  {
     bool found_match = false;
-    for (double r : reference) {
-      if (std::abs(t - r) < tol) {
+    for (double r : reference)
+    {
+      if (std::abs(t - r) < tol)
+      {
         found_match = true;
         break;
       }
     }
-    if (!found_match) {
+    if (!found_match)
+    {
       std::cout << "[ERROR]: did not find matching extremum for " << t
                 << " in ";
-      for (double r : reference) {
+      for (double r : reference)
+      {
         std::cout << r << " ";
       }
       std::cout << std::endl;
@@ -247,7 +268,8 @@ bool PolynomialOptimizationTests::checkExtrema(
   return true;
 }
 
-TEST_P(PolynomialOptimizationTests, VertexGeneration) {
+TEST_P(PolynomialOptimizationTests, VertexGeneration)
+{
   Eigen::VectorXd pos_min(D), pos_max(D);
   pos_min.setConstant(-params_.pos_bounds);
   pos_max.setConstant(params_.pos_bounds);
@@ -257,18 +279,21 @@ TEST_P(PolynomialOptimizationTests, VertexGeneration) {
   EXPECT_EQ(vertices_.back().getNumberOfConstraints(),
             getHighestDerivativeFromN(N) + 1);
 
-  for (const Vertex& v : vertices_) {
+  for (const Vertex &v : vertices_)
+  {
     EXPECT_TRUE(v.hasConstraint(derivative_order::POSITION));
     Eigen::VectorXd c;
     v.getConstraint(derivative_order::POSITION, &c);
-    for (int i = 0; i < D; ++i) {
+    for (int i = 0; i < D; ++i)
+    {
       EXPECT_LE(c[i], pos_max[i]);
       EXPECT_GE(c[i], pos_min[i]);
     }
   }
 }
 
-TEST_P(PolynomialOptimizationTests, UnconstrainedLinearEstimateSegmentTimes) {
+TEST_P(PolynomialOptimizationTests, UnconstrainedLinearEstimateSegmentTimes)
+{
   std::vector<double> segment_times =
       estimateSegmentTimes(vertices_, v_max, a_max);
 
@@ -305,7 +330,8 @@ TEST_P(PolynomialOptimizationTests, UnconstrainedLinearEstimateSegmentTimes) {
   EXPECT_TRUE(checkCost(opt.computeCost(), trajectory, max_derivative, 0.1));
 }
 
-TEST_P(PolynomialOptimizationTests, ExtremaOfMagnitude) {
+TEST_P(PolynomialOptimizationTests, ExtremaOfMagnitude)
+{
   std::vector<double> segment_times =
       estimateSegmentTimes(vertices_, v_max, a_max);
   constexpr int kDerivative = derivative_order::VELOCITY;
@@ -326,7 +352,8 @@ TEST_P(PolynomialOptimizationTests, ExtremaOfMagnitude) {
   timing::Timer time_analytic("time_extrema_analytic" + getSuffix(), false);
   timing::Timer time_sampling("time_extrema_sampling" + getSuffix(), false);
   int segment_idx = 0;
-  for (const Segment& s : segments) {
+  for (const Segment &s : segments)
+  {
     std::vector<double> res;
     time_analytic.Start();
     EXPECT_TRUE(opt.computeSegmentMaximumMagnitudeCandidates(
@@ -342,23 +369,27 @@ TEST_P(PolynomialOptimizationTests, ExtremaOfMagnitude) {
 
     const double check_tolerance = 2 * dt; // Nyquist resolution
     bool success = checkExtrema(res_sampling, res, check_tolerance);
-    if (!success) {
+    if (!success)
+    {
       std::cout << "############CHECK XTREMA FAILED: \n";
       std::cout << "segment idx: " << segment_idx << "/" << segments.size()
                 << " time: " << s.getTime() << std::endl
                 << "segment: " << s << std::endl;
 
       std::cout << "analytically found: ";
-      for (const double& t : res) {
+      for (const double &t : res)
+      {
         std::cout << t << " ";
       }
       std::cout << std::endl;
       std::cout << "sampling: ";
-      for (const double& t : res_sampling) {
+      for (const double &t : res_sampling)
+      {
         std::cout << t << " ";
       }
       std::cout << std::endl;
-      for (int i = 0; i < D; i++) {
+      for (int i = 0; i < D; i++)
+      {
         std::cout
             << "vx" << i << " = "
             << s[i].getCoefficients(kDerivative).reverse().format(matlab_format)
@@ -399,7 +430,8 @@ TEST_P(PolynomialOptimizationTests, ExtremaOfMagnitude) {
   EXPECT_NEAR(a_max_ref, a_max_traj.value, 0.01);
 }
 
-TEST_P(PolynomialOptimizationTests, UnconstrainedNonlinear) {
+TEST_P(PolynomialOptimizationTests, UnconstrainedNonlinear)
+{
   std::vector<double> segment_times =
       estimateSegmentTimes(vertices_, v_max, a_max);
 
@@ -502,7 +534,8 @@ TEST_P(PolynomialOptimizationTests, UnconstrainedNonlinear) {
 }
 
 // Test unpacking and repacking constraints between [d_f; d_p] and p.
-TEST_P(PolynomialOptimizationTests, ConstraintPacking) {
+TEST_P(PolynomialOptimizationTests, ConstraintPacking)
+{
   const int kMaxDerivative = max_derivative;
   const size_t kNumSegments = params_.num_segments;
   Eigen::VectorXd min_pos, max_pos;
@@ -511,7 +544,8 @@ TEST_P(PolynomialOptimizationTests, ConstraintPacking) {
   const int kSeed = 12345;
   const size_t kNumSetups = 5;
 
-  for (size_t i = 0; i < kNumSetups; i++) {
+  for (size_t i = 0; i < kNumSetups; i++)
+  {
     Vertex::Vector vertices;
     vertices = createRandomVertices(kMaxDerivative, kNumSegments, min_pos,
                                     max_pos, kSeed + i);
@@ -545,7 +579,8 @@ TEST_P(PolynomialOptimizationTests, ConstraintPacking) {
     ASSERT_EQ(free_constraints.size(), D);
 
     // For each dimension... We can test that [df;dp] -> p -> [df;dp].
-    for (int i = 0; i < D; ++i) {
+    for (int i = 0; i < D; ++i)
+    {
       Eigen::VectorXd d_all_ordered(fixed_constraints[i].size() +
                                     free_constraints[i].size());
       d_all_ordered << fixed_constraints[i], free_constraints[i];
@@ -555,7 +590,8 @@ TEST_P(PolynomialOptimizationTests, ConstraintPacking) {
       EXPECT_TRUE(EIGEN_MATRIX_NEAR(d_all_ordered, d_reordered, 1e-6));
 
       // Now also check for each segment.
-      for (size_t j = 0; j < segments.size(); ++j) {
+      for (size_t j = 0; j < segments.size(); ++j)
+      {
         Eigen::VectorXd p_seg = segments[j][i].getCoefficients(0);
         EXPECT_TRUE(EIGEN_MATRIX_NEAR(p_seg, p.segment<N>(j * N), 1e-6));
       }
@@ -563,7 +599,8 @@ TEST_P(PolynomialOptimizationTests, ConstraintPacking) {
   }
 }
 
-TEST_P(PolynomialOptimizationTests, TimeAllocation) {
+TEST_P(PolynomialOptimizationTests, TimeAllocation)
+{
   std::vector<double> segment_times_ramp, segment_times_nfabian;
   double time_factor = 1.0;
   segment_times_ramp =
@@ -573,7 +610,8 @@ TEST_P(PolynomialOptimizationTests, TimeAllocation) {
   EXPECT_EQ(segment_times_ramp.size(), segment_times_nfabian.size());
   EXPECT_EQ(params_.num_segments, segment_times_nfabian.size());
 
-  for (size_t i = 0; i < params_.num_segments; i++) {
+  for (size_t i = 0; i < params_.num_segments; i++)
+  {
     EXPECT_LT(0.0, segment_times_ramp[i]);
     EXPECT_LT(0.0, segment_times_nfabian[i]);
     EXPECT_GT(1e5, segment_times_ramp[i]);
@@ -605,7 +643,8 @@ TEST_P(PolynomialOptimizationTests, TimeAllocation) {
   EXPECT_LT(a_max_nfabian, a_max * 2.5);
 }
 
-TEST_P(PolynomialOptimizationTests, TimeScaling) {
+TEST_P(PolynomialOptimizationTests, TimeScaling)
+{
   std::vector<double> segment_times;
   double time_factor = 1.0;
   constexpr double kTolerance = 1e-3;
@@ -685,7 +724,8 @@ TEST_P(PolynomialOptimizationTests, TimeScaling) {
   EXPECT_LE(mellinger_cost, scaled_cost);
 }
 
-TEST_P(PolynomialOptimizationTests, TimeScalingInTrajectory) {
+TEST_P(PolynomialOptimizationTests, TimeScalingInTrajectory)
+{
   constexpr double kTolerance = 1e-3;
 
   std::vector<double> segment_times =
@@ -728,9 +768,11 @@ TEST_P(PolynomialOptimizationTests, TimeScalingInTrajectory) {
   EXPECT_LE(a_max_traj, a_max + kTolerance);
 }
 
-TEST_P(PolynomialOptimizationTests, AMatrixInversion) {
+TEST_P(PolynomialOptimizationTests, AMatrixInversion)
+{
   const double max_time = 60;
-  for (double t = 1; t <= max_time; t += 1) {
+  for (double t = 1; t <= max_time; t += 1)
+  {
     Eigen::Matrix<double, N, N> A, Ai, Ai_eigen;
     PolynomialOptimization<N>::setupMappingMatrix(t, &A);
     PolynomialOptimization<N>::invertMappingMatrix(A, &Ai);
@@ -740,7 +782,8 @@ TEST_P(PolynomialOptimizationTests, AMatrixInversion) {
   }
 }
 
-TEST_P(PolynomialOptimizationTests, TwoVerticesSetup) {
+TEST_P(PolynomialOptimizationTests, TwoVerticesSetup)
+{
   const int kDim = 1;
   // Create a known 1D spline.
   Vertex start_vertex(kDim);
@@ -878,7 +921,8 @@ INSTANTIATE_TEST_CASE_P(Derivatives, PolynomialOptimizationTests,
                         ::testing::Values(deriv_accel_1, deriv_accel_3_1,
                                           deriv_accel, deriv_jerk));
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv)
+{
   ::testing::InitGoogleTest(&argc, argv);
 
   int result = RUN_ALL_TESTS();

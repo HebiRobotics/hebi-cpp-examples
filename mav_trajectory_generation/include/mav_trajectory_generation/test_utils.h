@@ -26,43 +26,51 @@
 
 #include "mav_trajectory_generation/trajectory.h"
 
-namespace mav_trajectory_generation {
+namespace mav_trajectory_generation
+{
 
-inline double createRandomDouble(double min, double max) {
-  return (max - min) * (static_cast<double>(std::rand()) /
-                        static_cast<double>(RAND_MAX)) +
-         min;
-}
+  inline double createRandomDouble(double min, double max)
+  {
+    return (max - min) * (static_cast<double>(std::rand()) /
+                          static_cast<double>(RAND_MAX)) +
+           min;
+  }
 
-template <class T1, class T2>
-bool checkMatrices(const Eigen::MatrixBase<T1>& m1,
-                   const Eigen::MatrixBase<T2>& m2, double tol) {
-  return (m1 - m2).cwiseAbs().maxCoeff() < tol;
-}
+  template <class T1, class T2>
+  bool checkMatrices(const Eigen::MatrixBase<T1> &m1,
+                     const Eigen::MatrixBase<T2> &m2, double tol)
+  {
+    return (m1 - m2).cwiseAbs().maxCoeff() < tol;
+  }
 
-double getMaximumMagnitude(const Trajectory& trajectory, size_t derivative,
-                           double dt = 0.01) {
-  double maximum = -1e9;
+  double getMaximumMagnitude(const Trajectory &trajectory, size_t derivative,
+                             double dt = 0.01)
+  {
+    double maximum = -1e9;
 
-  for (double ts = 0; ts < trajectory.getMaxTime(); ts += dt) {
-    double current_value = trajectory.evaluate(ts, derivative).norm();
-    if (current_value > maximum) {
-      maximum = current_value;
+    for (double ts = 0; ts < trajectory.getMaxTime(); ts += dt)
+    {
+      double current_value = trajectory.evaluate(ts, derivative).norm();
+      if (current_value > maximum)
+      {
+        maximum = current_value;
+      }
     }
+    return maximum;
   }
-  return maximum;
-}
 
-double computeCostNumeric(const Trajectory& trajectory, size_t derivative,
-                          double dt = 0.001) {
-  double cost = 0;
+  double computeCostNumeric(const Trajectory &trajectory, size_t derivative,
+                            double dt = 0.001)
+  {
+    double cost = 0;
 
-  for (double ts = 0; ts < trajectory.getMaxTime(); ts += dt) {
-    cost += trajectory.evaluate(ts, derivative).squaredNorm() * dt;
+    for (double ts = 0; ts < trajectory.getMaxTime(); ts += dt)
+    {
+      cost += trajectory.evaluate(ts, derivative).squaredNorm() * dt;
+    }
+    return cost;
   }
-  return cost;
-}
 
-}  // namespace mav_trajectory_generation
+} // namespace mav_trajectory_generation
 
-#endif  // MAV_TRAJECTORY_GENERATION_TEST_UTILS_H_
+#endif // MAV_TRAJECTORY_GENERATION_TEST_UTILS_H_

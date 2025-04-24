@@ -33,20 +33,22 @@ const size_t derivative_to_optimize =
 
 mav_trajectory_generation::Vertex::Vector createRandomVerticesPath(
     int dimension, size_t n_segments, double average_distance,
-    int maximum_derivative, size_t seed) {
+    int maximum_derivative, size_t seed)
+{
   CHECK_GE(static_cast<int>(n_segments), 1);
 
   CHECK_GT(maximum_derivative, 0);
 
   mav_trajectory_generation::Vertex::Vector vertices;
   std::mt19937 generator(seed);
-  std::vector<std::uniform_real_distribution<double> > distribution;
+  std::vector<std::uniform_real_distribution<double>> distribution;
   std::uniform_real_distribution<double> random_distance(0,
                                                          2 * average_distance);
 
   distribution.resize(dimension);
 
-  for (int i = 0; i < dimension; ++i) {
+  for (int i = 0; i < dimension; ++i)
+  {
     distribution[i] = std::uniform_real_distribution<double>(-1, 1);
   }
 
@@ -54,7 +56,8 @@ mav_trajectory_generation::Vertex::Vector createRandomVerticesPath(
   const int n_vertices = n_segments + 1;
 
   Eigen::VectorXd last_position(dimension);
-  for (int i = 0; i < dimension; ++i) {
+  for (int i = 0; i < dimension; ++i)
+  {
     last_position[i] = distribution[i](generator);
   }
 
@@ -65,14 +68,18 @@ mav_trajectory_generation::Vertex::Vector createRandomVerticesPath(
 
   double distance_accumulated = 0;
 
-  for (int i = 1; i < n_vertices; ++i) {
+  for (int i = 1; i < n_vertices; ++i)
+  {
     Eigen::VectorXd position_sample(dimension);
 
-    while (true) {
-      for (int d = 0; d < dimension; ++d) {
+    while (true)
+    {
+      for (int d = 0; d < dimension; ++d)
+      {
         position_sample[d] = distribution[d](generator);
       }
-      if (position_sample.norm() > min_distance) break;
+      if (position_sample.norm() > min_distance)
+        break;
     }
 
     position_sample = position_sample.normalized() * random_distance(generator);
@@ -90,7 +97,8 @@ mav_trajectory_generation::Vertex::Vector createRandomVerticesPath(
   return vertices;
 }
 
-bool timeEval(int n_segments, double average_distance, size_t seed) {
+bool timeEval(int n_segments, double average_distance, size_t seed)
+{
   mav_trajectory_generation::Vertex::Vector vertices;
   vertices = createRandomVerticesPath(3, n_segments, average_distance,
                                       max_derivative, seed);
@@ -111,15 +119,18 @@ bool timeEval(int n_segments, double average_distance, size_t seed) {
   return true;
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv)
+{
   google::InitGoogleLogging(argv[0]);
 
   int n_segments_to_test[4] = {2, 10, 50, 100};
   double average_distance = 5;
   unsigned long seed = 1;
 
-  for (int j = 0; j < 4; ++j) {
-    for (int i = 0; i < 1000; ++i) {
+  for (int j = 0; j < 4; ++j)
+  {
+    for (int i = 0; i < 1000; ++i)
+    {
       int n_segments = n_segments_to_test[j];
       timeEval(n_segments, average_distance, seed);
     }

@@ -37,22 +37,26 @@ const double kSamplingInterval = 1.0e-3;
 const double kEqualityResolution = 1.0e-2;
 const int kDerivative = derivative_order::POSITION;
 
-void findMinMaxBySampling(const Polynomial& polynomial, int derivative,
+void findMinMaxBySampling(const Polynomial &polynomial, int derivative,
                           double t_start, double t_end,
-                          std::pair<double, double>* min,
-                          std::pair<double, double>* max) {
+                          std::pair<double, double> *min,
+                          std::pair<double, double> *max)
+{
   min->first = t_start;
   min->second = std::numeric_limits<double>::max();
   max->first = t_start;
   max->second = std::numeric_limits<double>::lowest();
   double t = t_start;
-  while (t <= t_end) {
+  while (t <= t_end)
+  {
     const double value = polynomial.evaluate(t, derivative);
-    if (value < min->second) {
+    if (value < min->second)
+    {
       min->first = t;
       min->second = value;
     }
-    if (value > max->second) {
+    if (value > max->second)
+    {
       max->first = t;
       max->second = value;
     }
@@ -60,12 +64,14 @@ void findMinMaxBySampling(const Polynomial& polynomial, int derivative,
   }
 }
 
-bool approxEqual(double x_1, double x_2) {
+bool approxEqual(double x_1, double x_2)
+{
   double dist = std::abs(x_1 - x_2);
   return dist < kEqualityResolution;
 }
 
-TEST(PolynomialTest, Convolution) {
+TEST(PolynomialTest, Convolution)
+{
   Eigen::VectorXd coeffs_1(2), coeffs_2(2);
   coeffs_1 << 1.0, 2.0;
   coeffs_2 << -1.0, 3.0;
@@ -78,7 +84,8 @@ TEST(PolynomialTest, Convolution) {
   CHECK_EIGEN_MATRIX_EQUAL(expected_convolution, convolution.getCoefficients());
 }
 
-TEST(PolynomialTest, FindMinMax) {
+TEST(PolynomialTest, FindMinMax)
+{
   const double kTMin = -100.0;
   const double kTMax = 100.0;
   const double kCoeffMin = -100.0;
@@ -90,12 +97,15 @@ TEST(PolynomialTest, FindMinMax) {
   std::vector<int> derivatives_to_test = {derivative_order::POSITION,
                                           derivative_order::VELOCITY,
                                           derivative_order::ACCELERATION};
-  for (int derivative : derivatives_to_test) {
-    for (size_t i = 0; i < kNumPolynomials; i++) {
+  for (int derivative : derivatives_to_test)
+  {
+    for (size_t i = 0; i < kNumPolynomials; i++)
+    {
       // Create random polynomial.
       int num_coeffs = std::rand() % (Polynomial::kMaxN - 1) + 1 + derivative;
       Eigen::VectorXd coeffs(num_coeffs);
-      for (size_t i = 0; i < num_coeffs; i++) {
+      for (size_t i = 0; i < num_coeffs; i++)
+      {
         coeffs[i] = createRandomDouble(kCoeffMin, kCoeffMax);
       }
       Polynomial p(coeffs);
@@ -113,7 +123,8 @@ TEST(PolynomialTest, FindMinMax) {
       bool success = p.computeMinMax(t_start, t_end, derivative, &min_computing,
                                      &max_computing);
       timer_analytic.Stop();
-      if (!success) {
+      if (!success)
+      {
         std::cout << "Failed to compute roots of derivative of polynomial: "
                   << coeffs.transpose() << std::endl;
         num_failures++;
@@ -136,7 +147,8 @@ TEST(PolynomialTest, FindMinMax) {
             << kNumPolynomials << " polynomials." << std::endl;
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv)
+{
   testing::InitGoogleTest(&argc, argv);
 
   int result = RUN_ALL_TESTS();
