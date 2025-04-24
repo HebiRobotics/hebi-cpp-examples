@@ -18,24 +18,11 @@ if(COVERAGE)
 endif()
 
 set(CATKIN_DEPENDENCIES
-  cmake_modules
-  roscpp
-  rospy
-  nodelet
-  dynamic_reconfigure
-  std_msgs
-  mrs_msgs
-  mrs_lib
   nlopt
-  mrs_uav_testing
   )
 
 find_package(catkin REQUIRED COMPONENTS
   ${CATKIN_DEPENDENCIES}
-  )
-
-generate_dynamic_reconfigure_options(
-  config/drs.cfg
   )
 
 find_package(Eigen3 REQUIRED)
@@ -107,22 +94,4 @@ install(TARGETS ${LIBRARIES}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
-  )
-
-install(DIRECTORY launch config
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-  )
-
-install(DIRECTORY scripts/
-  USE_SOURCE_PERMISSIONS
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-  )
-
-install(DIRECTORY scripts
-  USE_SOURCE_PERMISSIONS
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-  )
-
-install(FILES nodelets.xml
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
   )
