@@ -18,18 +18,16 @@
  * limitations under the License.
  */
 
-#include "mav_trajectory_generation/motion_defines.h"
+#include <mav_trajectory_generation/motion_defines.h>
 
 namespace mav_trajectory_generation
 {
 
   std::string positionDerivativeToString(int derivative)
   {
-    if (derivative >= derivative_order::POSITION &&
-        derivative <= derivative_order::SNAP)
+    if (derivative >= derivative_order::POSITION && derivative <= derivative_order::SNAP)
     {
-      static constexpr const char *text[] = {"position", "velocity",
-                                             "acceleration", "jerk", "snap"};
+      static constexpr const char *text[] = {"position", "velocity", "acceleration", "jerk", "snap"};
       return std::string(text[derivative]);
     }
     else
@@ -69,11 +67,9 @@ namespace mav_trajectory_generation
 
   std::string orintationDerivativeToString(int derivative)
   {
-    if (derivative >= derivative_order::ORIENTATION &&
-        derivative <= derivative_order::ANGULAR_ACCELERATION)
+    if (derivative >= derivative_order::ORIENTATION && derivative <= derivative_order::ANGULAR_ACCELERATION)
     {
-      static constexpr const char *text[] = {"orientation", "angular_velocity",
-                                             "angular_acceleration"};
+      static constexpr const char *text[] = {"orientation", "angular_velocity", "angular_acceleration"};
       return std::string(text[derivative]);
     }
     else

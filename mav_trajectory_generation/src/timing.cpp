@@ -27,7 +27,7 @@
 #include <sstream>
 #include <string>
 
-#include "mav_trajectory_generation/timing.h"
+#include <mav_trajectory_generation/timing.h>
 
 namespace mav_trajectory_generation
 {
@@ -57,8 +57,7 @@ namespace mav_trajectory_generation
         Instance().timers_.push_back(TimerMapValue());
         // Track the maximum tag length to help printing a table of timing values
         // later.
-        Instance().max_tag_length_ =
-            std::max(Instance().max_tag_length_, tag.size());
+        Instance().max_tag_length_ = std::max(Instance().max_tag_length_, tag.size());
         return handle;
       }
       else
@@ -83,15 +82,13 @@ namespace mav_trajectory_generation
     }
 
     // Class functions used for timing.
-    Timer::Timer(size_t handle, bool constructStopped)
-        : timing_(false), handle_(handle)
+    Timer::Timer(size_t handle, bool constructStopped) : timing_(false), handle_(handle)
     {
       if (!constructStopped)
         Start();
     }
 
-    Timer::Timer(std::string const &tag, bool constructStopped)
-        : timing_(false), handle_(Timing::GetHandle(tag))
+    Timer::Timer(std::string const &tag, bool constructStopped) : timing_(false), handle_(Timing::GetHandle(tag))
     {
       if (!constructStopped)
         Start();
@@ -111,8 +108,7 @@ namespace mav_trajectory_generation
 
     void Timer::Stop()
     {
-      std::chrono::time_point<std::chrono::system_clock> now =
-          std::chrono::system_clock::now();
+      std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
       double dt = std::chrono::duration<double>(now - time_).count();
 
       Timing::Instance().AddTime(handle_, dt);
@@ -222,8 +218,7 @@ namespace mav_trajectory_generation
           double maxsec = GetMaxSeconds(i);
 
           // The min or max are out of bounds.
-          out << "[" << SecondsToTimeString(minsec) << ","
-              << SecondsToTimeString(maxsec) << "]";
+          out << "[" << SecondsToTimeString(minsec) << "," << SecondsToTimeString(maxsec) << "]";
         }
         out << std::endl;
       }

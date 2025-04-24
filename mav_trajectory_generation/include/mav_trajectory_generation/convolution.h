@@ -34,13 +34,10 @@ namespace mav_trajectory_generation
   };
 
   template <int DataDimension_, int KernelDimension_>
-  Eigen::Matrix<double,
-                ConvolutionDimension<DataDimension_, KernelDimension_>::length, 1>
-  convolve(const Eigen::Matrix<double, DataDimension_, 1> &data,
-           const Eigen::Matrix<double, KernelDimension_, 1> &kernel)
+  Eigen::Matrix<double, ConvolutionDimension<DataDimension_, KernelDimension_>::length, 1> convolve(const Eigen::Matrix<double, DataDimension_, 1> &data,
+                                                                                                    const Eigen::Matrix<double, KernelDimension_, 1> &kernel)
   {
-    const int convolution_dimension =
-        ConvolutionDimension<DataDimension_, KernelDimension_>::length;
+    const int convolution_dimension = ConvolutionDimension<DataDimension_, KernelDimension_>::length;
     Eigen::Matrix<double, convolution_dimension, 1> convolved;
     convolved.setZero();
     Eigen::Matrix<double, KernelDimension_, 1> kernel_reverse(kernel.reverse());
@@ -54,8 +51,7 @@ namespace mav_trajectory_generation
 
       for (int kernel_idx = lower_bound; kernel_idx < upper_bound; ++kernel_idx)
       {
-        convolved[output_idx] +=
-            kernel_reverse[kernel_idx] * data[data_idx + kernel_idx];
+        convolved[output_idx] += kernel_reverse[kernel_idx] * data[data_idx + kernel_idx];
       }
     }
 

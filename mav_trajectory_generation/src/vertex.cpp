@@ -20,15 +20,18 @@
 
 #include <random>
 
-#include "mav_trajectory_generation/vertex.h"
+#include <mav_trajectory_generation/vertex.h>
 
 namespace mav_trajectory_generation
 {
+  // Helper function to calculate minimum angular distance between two angles in radians
+  double angularDistance(double from, double to)
+  {
+    double diff = fmod(to - from + M_PI, 2 * M_PI) - M_PI;
+    return diff < -M_PI ? diff + 2 * M_PI : diff;
+  }
 
-  Vertex::Vector createRandomVertices(int maximum_derivative, size_t n_segments,
-                                      const Eigen::VectorXd &pos_min,
-                                      const Eigen::VectorXd &pos_max,
-                                      size_t seed)
+  Vertex::Vector createRandomVertices(int maximum_derivative, size_t n_segments, const Eigen::VectorXd &pos_min, const Eigen::VectorXd &pos_max, size_t seed)
   {
     CHECK_GE(static_cast<int>(n_segments), 1);
     CHECK_EQ(pos_min.size(), pos_max.size());
@@ -45,8 +48,7 @@ namespace mav_trajectory_generation
 
     for (size_t i = 0; i < dimension; ++i)
     {
-      distribution[i] =
-          std::uniform_real_distribution<double>(pos_min[i], pos_max[i]);
+      distribution[i] = std::uniform_real_distribution<double>(pos_min[i], pos_max[i]);
     }
 
     const double min_distance = 0.2;
@@ -89,27 +91,21 @@ namespace mav_trajectory_generation
     return vertices;
   }
 
-  Vertex::Vector createSquareVertices(int maximum_derivative,
-                                      const Eigen::Vector3d &center,
-                                      double side_length, int rounds)
+  Vertex::Vector createSquareVertices(int maximum_derivative, const Eigen::Vector3d &center, double side_length, int rounds)
   {
     Vertex::Vector vertices;
     const size_t dimension = center.size();
 
-    Eigen::Vector3d pos1(center[0] - side_length / 2.0,
-                         center[1] - side_length / 2.0, center[2]);
+    Eigen::Vector3d pos1(center[0] - side_length / 2.0, center[1] - side_length / 2.0, center[2]);
     Vertex v1(dimension);
     v1.addConstraint(derivative_order::POSITION, pos1);
-    Eigen::Vector3d pos2(center[0] - side_length / 2.0,
-                         center[1] + side_length / 2.0, center[2]);
+    Eigen::Vector3d pos2(center[0] - side_length / 2.0, center[1] + side_length / 2.0, center[2]);
     Vertex v2(dimension);
     v2.addConstraint(derivative_order::POSITION, pos2);
-    Eigen::Vector3d pos3(center[0] + side_length / 2.0,
-                         center[1] + side_length / 2.0, center[2]);
+    Eigen::Vector3d pos3(center[0] + side_length / 2.0, center[1] + side_length / 2.0, center[2]);
     Vertex v3(dimension);
     v3.addConstraint(derivative_order::POSITION, pos3);
-    Eigen::Vector3d pos4(center[0] + side_length / 2.0,
-                         center[1] - side_length / 2.0, center[2]);
+    Eigen::Vector3d pos4(center[0] + side_length / 2.0, center[1] - side_length / 2.0, center[2]);
     Vertex v4(dimension);
     v4.addConstraint(derivative_order::POSITION, pos4);
 
@@ -129,17 +125,12 @@ namespace mav_trajectory_generation
     return vertices;
   }
 
-  Vertex::Vector createRandomVertices1D(int maximum_derivative, size_t n_segments,
-                                        double pos_min, double pos_max,
-                                        size_t seed)
+  Vertex::Vector createRandomVertices1D(int maximum_derivative, size_t n_segments, double pos_min, double pos_max, size_t seed)
   {
-    return createRandomVertices(maximum_derivative, n_segments,
-                                Eigen::VectorXd::Constant(1, pos_min),
-                                Eigen::VectorXd::Constant(1, pos_max), seed);
+    return createRandomVertices(maximum_derivative, n_segments, Eigen::VectorXd::Constant(1, pos_min), Eigen::VectorXd::Constant(1, pos_max), seed);
   }
 
-  void Vertex::addConstraint(int derivative_order,
-                             const Eigen::VectorXd &constraint)
+  void Vertex::addConstraint(int derivative_order, const Eigen::VectorXd &constraint)
   {
     CHECK_EQ(constraint.rows(), static_cast<long>(D_));
     constraints_[derivative_order] = constraint;
@@ -160,8 +151,7 @@ namespace mav_trajectory_generation
     }
   }
 
-  void Vertex::makeStartOrEnd(const Eigen::VectorXd &constraint,
-                              int up_to_derivative)
+  void Vertex::makeStartOrEnd(const Eigen::VectorXd &constraint, int up_to_derivative)
   {
     addConstraint(derivative_order::POSITION, constraint);
     for (int i = 1; i <= up_to_derivative; ++i)
@@ -197,8 +187,7 @@ namespace mav_trajectory_generation
     for (typename Constraints::const_iterator it = cBegin(); it != cEnd(); ++it)
     {
       // look for matching key
-      typename Constraints::const_iterator rhs_it =
-          rhs.constraints_.find(it->first);
+      typename Constraints::const_iterator rhs_it = rhs.constraints_.find(it->first);
       if (rhs_it == rhs.constraints_.end())
         return false;
       // check value
@@ -208,9 +197,7 @@ namespace mav_trajectory_generation
     return true;
   }
 
-  bool Vertex::getSubdimension(const std::vector<size_t> &subdimensions,
-                               int max_derivative_order,
-                               Vertex *subvertex) const
+  bool Vertex::getSubdimension(const std::vector<size_t> &subdimensions, int max_derivative_order, Vertex *subvertex) const
   {
     CHECK_NOTNULL(subvertex);
     *subvertex = Vertex(subdimensions.size());
@@ -221,8 +208,7 @@ namespace mav_trajectory_generation
         return false;
 
     // Copy constraints up to maximum derivative order.
-    for (Constraints::const_iterator it = constraints_.begin();
-         it != constraints_.end(); ++it)
+    for (Constraints::const_iterator it = constraints_.begin(); it != constraints_.end(); ++it)
     {
       int derivative_order = it->first;
       if (derivative_order > max_derivative_order)
@@ -242,8 +228,7 @@ namespace mav_trajectory_generation
   {
     stream << "constraints: " << std::endl;
     Eigen::IOFormat format(4, 0, ", ", "\n", "[", "]");
-    for (typename Vertex::Constraints::const_iterator it = v.cBegin();
-         it != v.cEnd(); ++it)
+    for (typename Vertex::Constraints::const_iterator it = v.cBegin(); it != v.cEnd(); ++it)
     {
       stream << "  type: " << positionDerivativeToString(it->first);
       stream << "  value: " << it->second.transpose().format(format) << std::endl;
@@ -251,8 +236,7 @@ namespace mav_trajectory_generation
     return stream;
   }
 
-  std::ostream &operator<<(std::ostream &stream,
-                           const std::vector<Vertex> &vertices)
+  std::ostream &operator<<(std::ostream &stream, const std::vector<Vertex> &vertices)
   {
     for (const Vertex &v : vertices)
     {
@@ -267,9 +251,7 @@ namespace mav_trajectory_generation
     return estimateSegmentTimesNfabian(vertices, v_max, a_max);
   }
 
-  std::vector<double> estimateSegmentTimesVelocityRamp(
-      const Vertex::Vector &vertices, double v_max, double a_max,
-      double time_factor)
+  std::vector<double> estimateSegmentTimesVelocityRamp(const Vertex::Vector &vertices, double v_max, double a_max, double time_factor)
   {
     CHECK_GE(vertices.size(), 2);
     std::vector<double> segment_times;
@@ -291,9 +273,7 @@ namespace mav_trajectory_generation
     return segment_times;
   }
 
-  std::vector<double> estimateSegmentTimesNfabian(const Vertex::Vector &vertices,
-                                                  double v_max, double a_max,
-                                                  double magic_fabian_constant)
+  std::vector<double> estimateSegmentTimesNfabian(const Vertex::Vector &vertices, double v_max, double a_max, double magic_fabian_constant)
   {
     CHECK_GE(vertices.size(), 2);
     std::vector<double> segment_times;
@@ -312,9 +292,7 @@ namespace mav_trajectory_generation
     return segment_times;
   }
 
-  double computeTimeVelocityRamp(const Eigen::VectorXd &start,
-                                 const Eigen::VectorXd &goal, double v_max,
-                                 double a_max)
+  double computeTimeVelocityRamp(const Eigen::VectorXd &start, const Eigen::VectorXd &goal, double v_max, double a_max)
   {
     const double distance = (start - goal).norm();
     // Time to accelerate or decelerate to or from maximum velocity:

@@ -44,7 +44,7 @@
 #include <cmath>
 #include <cfloat>
 
-#include "mav_trajectory_generation/rpoly/rpoly_ak1.h"
+#include <mav_trajectory_generation/rpoly/rpoly_ak1.h>
 
 namespace mav_trajectory_generation
 {
@@ -52,8 +52,7 @@ namespace mav_trajectory_generation
   constexpr int kRpolyMaxDegree = 100;
 
   // Wraps the call to rpoly_ak1.
-  void rpolyWrapper(double *coefficients_decreasing, int *degree,
-                    double *roots_real, double *roots_imag);
+  void rpolyWrapper(double *coefficients_decreasing, int *degree, double *roots_real, double *roots_imag);
 
   int findLastNonZeroCoeff(const Eigen::VectorXd &coefficients)
   {
@@ -71,12 +70,10 @@ namespace mav_trajectory_generation
     return last_non_zero_coefficient;
   }
 
-  bool findRootsJenkinsTraub(const Eigen::VectorXd &coefficients_increasing,
-                             Eigen::VectorXcd *roots)
+  bool findRootsJenkinsTraub(const Eigen::VectorXd &coefficients_increasing, Eigen::VectorXcd *roots)
   {
     // Remove trailing zeros.
-    const int last_non_zero_coefficient =
-        findLastNonZeroCoeff(coefficients_increasing);
+    const int last_non_zero_coefficient = findLastNonZeroCoeff(coefficients_increasing);
     if (last_non_zero_coefficient == -1)
     {
       // The polynomial has all zero coefficients and has no roots.
@@ -85,8 +82,7 @@ namespace mav_trajectory_generation
     }
 
     // Reverse coefficients in descending order.
-    Eigen::VectorXd coefficients_decreasing =
-        coefficients_increasing.head(last_non_zero_coefficient + 1).reverse();
+    Eigen::VectorXd coefficients_decreasing = coefficients_increasing.head(last_non_zero_coefficient + 1).reverse();
 
     const int n_coefficients = coefficients_decreasing.size();
     if (n_coefficients < 2)
@@ -137,35 +133,21 @@ namespace mav_trajectory_generation
 #define MAXDEGREE 100
 #define MDP1 MAXDEGREE + 1
 
-    void rpoly_ak1(double op[MDP1], int *Degree, double zeror[MAXDEGREE],
-                   double zeroi[MAXDEGREE]);
-    void Fxshfr_ak1(int L2, int *NZ, double sr, double bnd, double K[MDP1], int N,
-                    double p[MDP1], int NN, double qp[MDP1], double *lzi,
-                    double *lzr, double *szi, double *szr);
-    void QuadSD_ak1(int NN, double u, double v, double p[MDP1], double q[MDP1],
-                    double *a, double *b);
-    int calcSC_ak1(int N, double a, double b, double *a1, double *a3, double *a7,
-                   double *c, double *d, double *e, double *f, double *g, double *h,
-                   double K[MDP1], double u, double v, double qk[MDP1]);
-    void nextK_ak1(int N, int tFlag, double a, double b, double a1, double *a3,
-                   double *a7, double K[MDP1], double qk[MDP1], double qp[MDP1]);
-    void newest_ak1(int tFlag, double *uu, double *vv, double a, double a1,
-                    double a3, double a7, double b, double c, double d, double f,
-                    double g, double h, double u, double v, double K[MDP1], int N,
-                    double p[MDP1]);
-    void QuadIT_ak1(int N, int *NZ, double uu, double vv, double *szr, double *szi,
-                    double *lzr, double *lzi, double qp[MDP1], int NN, double *a,
-                    double *b, double p[MDP1], double qk[MDP1], double *a1,
-                    double *a3, double *a7, double *d, double *e, double *f,
-                    double *g, double *h, double K[MDP1]);
-    void RealIT_ak1(int *iFlag, int *NZ, double *sss, int N, double p[MDP1], int NN,
-                    double qp[MDP1], double *szr, double *szi, double K[MDP1],
-                    double qk[MDP1]);
-    void Quad_ak1(double a, double b1, double c, double *sr, double *si, double *lr,
-                  double *li);
+    void rpoly_ak1(double op[MDP1], int *Degree, double zeror[MAXDEGREE], double zeroi[MAXDEGREE]);
+    void Fxshfr_ak1(int L2, int *NZ, double sr, double bnd, double K[MDP1], int N, double p[MDP1], int NN, double qp[MDP1], double *lzi, double *lzr, double *szi,
+                    double *szr);
+    void QuadSD_ak1(int NN, double u, double v, double p[MDP1], double q[MDP1], double *a, double *b);
+    int calcSC_ak1(int N, double a, double b, double *a1, double *a3, double *a7, double *c, double *d, double *e, double *f, double *g, double *h, double K[MDP1],
+                   double u, double v, double qk[MDP1]);
+    void nextK_ak1(int N, int tFlag, double a, double b, double a1, double *a3, double *a7, double K[MDP1], double qk[MDP1], double qp[MDP1]);
+    void newest_ak1(int tFlag, double *uu, double *vv, double a, double a1, double a3, double a7, double b, double c, double d, double f, double g, double h,
+                    double u, double v, double K[MDP1], int N, double p[MDP1]);
+    void QuadIT_ak1(int N, int *NZ, double uu, double vv, double *szr, double *szi, double *lzr, double *lzi, double qp[MDP1], int NN, double *a, double *b,
+                    double p[MDP1], double qk[MDP1], double *a1, double *a3, double *a7, double *d, double *e, double *f, double *g, double *h, double K[MDP1]);
+    void RealIT_ak1(int *iFlag, int *NZ, double *sss, int N, double p[MDP1], int NN, double qp[MDP1], double *szr, double *szi, double K[MDP1], double qk[MDP1]);
+    void Quad_ak1(double a, double b1, double c, double *sr, double *si, double *lr, double *li);
 
-    void rpoly_ak1(double op[MDP1], int *Degree, double zeror[MAXDEGREE],
-                   double zeroi[MAXDEGREE])
+    void rpoly_ak1(double op[MDP1], int *Degree, double zeror[MAXDEGREE], double zeroi[MAXDEGREE])
     {
       int i, j, jj, l, N, NM1, NN, NZ, zerok;
 
@@ -173,10 +155,8 @@ namespace mav_trajectory_generation
       double bnd, df, dx, factor, ff, moduli_max, moduli_min, sc, x, xm;
       double aa, bb, cc, lzi, lzr, sr, szi, szr, t, xx, xxx, yy;
 
-      const double RADFAC = 3.14159265358979323846 /
-                            180; // Degrees-to-radians conversion factor = pi/180
-      const double lb2 = log(
-          2.0); // Dummy variable to avoid re-calculating this value in loop below
+      const double RADFAC = 3.14159265358979323846 / 180; // Degrees-to-radians conversion factor = pi/180
+      const double lb2 = log(2.0);                        // Dummy variable to avoid re-calculating this value in loop below
       const double lo = FLT_MIN / DBL_EPSILON;
       const double cosr = cos(94.0 * RADFAC); // = -0.069756474
       const double sinr = sin(94.0 * RADFAC); // = 0.99756405
@@ -224,9 +204,7 @@ namespace mav_trajectory_generation
             } // End if (N < 2)
             else
             { // else N == 2
-              Quad_ak1(p[0], p[1], p[2], &zeror[(*Degree) - 2],
-                       &zeroi[(*Degree) - 2], &zeror[(*Degree) - 1],
-                       &zeroi[(*Degree) - 1]);
+              Quad_ak1(p[0], p[1], p[2], &zeror[(*Degree) - 2], &zeroi[(*Degree) - 2], &zeror[(*Degree) - 1], &zeroi[(*Degree) - 1]);
             } // End else N == 2
             break;
           } // End if (N <= 2)
@@ -255,8 +233,7 @@ namespace mav_trajectory_generation
 
           sc = lo / moduli_min;
 
-          if (((sc <= 1.0) && (moduli_max >= 10)) ||
-              ((sc > 1.0) && (FLT_MAX / sc >= moduli_max)))
+          if (((sc <= 1.0) && (moduli_max >= 10)) || ((sc > 1.0) && (FLT_MAX / sc >= moduli_max)))
           {
             sc = ((sc == 0) ? FLT_MIN : sc);
             l = (int)(log(sc) / lb2 + 0.5);
@@ -379,8 +356,7 @@ namespace mav_trajectory_generation
 
             // Second stage calculation, fixed quadratic
 
-            Fxshfr_ak1(20 * jj, &NZ, sr, bnd, K, N, p, NN, qp, &lzi, &lzr, &szi,
-                       &szr);
+            Fxshfr_ak1(20 * jj, &NZ, sr, bnd, K, N, p, NN, qp, &lzi, &lzr, &szi, &szr);
 
             if (NZ != 0)
             {
@@ -438,9 +414,8 @@ namespace mav_trajectory_generation
       return;
     } // End rpoly_ak1
 
-    void Fxshfr_ak1(int L2, int *NZ, double sr, double bnd, double K[MDP1], int N,
-                    double p[MDP1], int NN, double qp[MDP1], double *lzi,
-                    double *lzr, double *szi, double *szr)
+    void Fxshfr_ak1(int L2, int *NZ, double sr, double bnd, double K[MDP1], int N, double p[MDP1], int NN, double qp[MDP1], double *lzi, double *lzr, double *szi,
+                    double *szr)
     {
       // Computes up to L2 fixed shift K-polynomials, testing for convergence in the
       // linear or
@@ -452,8 +427,7 @@ namespace mav_trajectory_generation
       // NZ number of zeros found
 
       int fflag, i, iFlag, j, spass, stry, tFlag, vpass, vtry;
-      double a, a1, a3, a7, b, betas, betav, c, d, e, f, g, h, oss, ots, otv, ovv,
-          s, ss, ts, tss, tv, tvv, u, ui, v, vi, vv;
+      double a, a1, a3, a7, b, betas, betav, c, d, e, f, g, h, oss, ots, otv, ovv, s, ss, ts, tss, tv, tvv, u, ui, v, vi, vv;
       double qk[MDP1], svk[MDP1];
 
       *NZ = 0;
@@ -465,15 +439,13 @@ namespace mav_trajectory_generation
       // Evaluate polynomial by synthetic division
       QuadSD_ak1(NN, u, v, p, qp, &a, &b);
 
-      tFlag =
-          calcSC_ak1(N, a, b, &a1, &a3, &a7, &c, &d, &e, &f, &g, &h, K, u, v, qk);
+      tFlag = calcSC_ak1(N, a, b, &a1, &a3, &a7, &c, &d, &e, &f, &g, &h, K, u, v, qk);
 
       for (j = 0; j < L2; j++)
       {
         // Calculate next K polynomial and estimate v
         nextK_ak1(N, tFlag, a, b, a1, &a3, &a7, K, qk, qp);
-        tFlag =
-            calcSC_ak1(N, a, b, &a1, &a3, &a7, &c, &d, &e, &f, &g, &h, K, u, v, qk);
+        tFlag = calcSC_ak1(N, a, b, &a1, &a3, &a7, &c, &d, &e, &f, &g, &h, K, u, v, qk);
         newest_ak1(tFlag, &ui, &vi, a, a1, a3, a7, b, c, d, f, g, h, u, v, K, N, p);
 
         vv = vi;
@@ -521,16 +493,14 @@ namespace mav_trajectory_generation
               iFlag = 1; // Begin each loop by assuming RealIT will be called
                          // UNLESS iFlag changed below
 
-              if ((fflag && ((fflag = 0) == 0)) &&
-                  ((spass) && (!vpass || (tss < tvv))))
+              if ((fflag && ((fflag = 0) == 0)) && ((spass) && (!vpass || (tss < tvv))))
               {
                 ; // Do nothing. Provides a quick "short circuit".
               } // End if (fflag)
 
               else
               { // else !fflag
-                QuadIT_ak1(N, NZ, ui, vi, szr, szi, lzr, lzi, qp, NN, &a, &b, p, qk,
-                           &a1, &a3, &a7, &d, &e, &f, &g, &h, K);
+                QuadIT_ak1(N, NZ, ui, vi, szr, szi, lzr, lzi, qp, NN, &a, &b, p, qk, &a1, &a3, &a7, &d, &e, &f, &g, &h, K);
 
                 if ((*NZ) > 0)
                   return;
@@ -594,8 +564,7 @@ namespace mav_trajectory_generation
             // Re-compute qp and scalar values to continue the second stage
 
             QuadSD_ak1(NN, u, v, p, qp, &a, &b);
-            tFlag = calcSC_ak1(N, a, b, &a1, &a3, &a7, &c, &d, &e, &f, &g, &h, K, u,
-                               v, qk);
+            tFlag = calcSC_ak1(N, a, b, &a1, &a3, &a7, &c, &d, &e, &f, &g, &h, K, u, v, qk);
 
           } // End if ((spass) || (vpass))
 
@@ -610,8 +579,7 @@ namespace mav_trajectory_generation
       return;
     } // End Fxshfr_ak1
 
-    void QuadSD_ak1(int NN, double u, double v, double p[MDP1], double q[MDP1],
-                    double *a, double *b)
+    void QuadSD_ak1(int NN, double u, double v, double p[MDP1], double q[MDP1], double *a, double *b)
     {
       // Divides p by the quadratic 1, u, v placing the quotient in q and the
       // remainder in a, b
@@ -631,9 +599,8 @@ namespace mav_trajectory_generation
       return;
     } // End QuadSD_ak1
 
-    int calcSC_ak1(int N, double a, double b, double *a1, double *a3, double *a7,
-                   double *c, double *d, double *e, double *f, double *g, double *h,
-                   double K[MDP1], double u, double v, double qk[MDP1])
+    int calcSC_ak1(int N, double a, double b, double *a1, double *a3, double *a7, double *c, double *d, double *e, double *f, double *g, double *h, double K[MDP1],
+                   double u, double v, double qk[MDP1])
     {
       // This routine calculates scalar quantities used to compute the next K
       // polynomial and
@@ -679,8 +646,7 @@ namespace mav_trajectory_generation
       return dumFlag;
     } // End calcSC_ak1
 
-    void nextK_ak1(int N, int tFlag, double a, double b, double a1, double *a3,
-                   double *a7, double K[MDP1], double qk[MDP1], double qp[MDP1])
+    void nextK_ak1(int N, int tFlag, double a, double b, double a1, double *a3, double *a7, double K[MDP1], double qk[MDP1], double qp[MDP1])
     {
       // Computes the next K polynomials using the scalars computed in calcSC_ak1
 
@@ -727,10 +693,8 @@ namespace mav_trajectory_generation
 
     } // End nextK_ak1
 
-    void newest_ak1(int tFlag, double *uu, double *vv, double a, double a1,
-                    double a3, double a7, double b, double c, double d, double f,
-                    double g, double h, double u, double v, double K[MDP1], int N,
-                    double p[MDP1])
+    void newest_ak1(int tFlag, double *uu, double *vv, double a, double a1, double a3, double a7, double b, double c, double d, double f, double g, double h,
+                    double u, double v, double K[MDP1], int N, double p[MDP1])
     {
       // Compute new estimates of the quadratic coefficients using the scalars
       // computed in calcSC_ak1
@@ -772,11 +736,8 @@ namespace mav_trajectory_generation
       return;
     } // End newest_ak1
 
-    void QuadIT_ak1(int N, int *NZ, double uu, double vv, double *szr, double *szi,
-                    double *lzr, double *lzi, double qp[MDP1], int NN, double *a,
-                    double *b, double p[MDP1], double qk[MDP1], double *a1,
-                    double *a3, double *a7, double *d, double *e, double *f,
-                    double *g, double *h, double K[MDP1])
+    void QuadIT_ak1(int N, int *NZ, double uu, double vv, double *szr, double *szi, double *lzr, double *lzi, double qp[MDP1], int NN, double *a, double *b,
+                    double p[MDP1], double qk[MDP1], double *a1, double *a3, double *a7, double *d, double *e, double *f, double *g, double *h, double K[MDP1])
     {
       // Variable-shift K-polynomial iteration for a quadratic factor converges only
       // if the
@@ -816,8 +777,7 @@ namespace mav_trajectory_generation
           ee = ee * zm + fabs(qp[i]);
 
         ee = ee * zm + fabs((*a) + t);
-        ee = (9.0 * ee + 2.0 * fabs(t) - 7.0 * (fabs((*a) + t) + zm * fabs((*b)))) *
-             DBL_EPSILON;
+        ee = (9.0 * ee + 2.0 * fabs(t) - 7.0 * (fabs((*a) + t) + zm * fabs((*b)))) * DBL_EPSILON;
 
         // Iteration has converged sufficiently if the polynomial value is less than
         // 20 times this bound
@@ -850,8 +810,7 @@ namespace mav_trajectory_generation
 
             for (i = 0; i < 5; i++)
             {
-              tFlag =
-                  calcSC_ak1(N, *a, *b, a1, a3, a7, &c, d, e, f, g, h, K, u, v, qk);
+              tFlag = calcSC_ak1(N, *a, *b, a1, a3, a7, &c, d, e, f, g, h, K, u, v, qk);
               nextK_ak1(N, tFlag, *a, *b, *a1, a3, a7, K, qk, qp);
             } // End for i
 
@@ -869,8 +828,7 @@ namespace mav_trajectory_generation
         tFlag = calcSC_ak1(N, *a, *b, a1, a3, a7, &c, d, e, f, g, h, K, u, v, qk);
         nextK_ak1(N, tFlag, *a, *b, *a1, a3, a7, K, qk, qp);
         tFlag = calcSC_ak1(N, *a, *b, a1, a3, a7, &c, d, e, f, g, h, K, u, v, qk);
-        newest_ak1(tFlag, &ui, &vi, *a, *a1, *a3, *a7, *b, c, *d, *f, *g, *h, u, v,
-                   K, N, p);
+        newest_ak1(tFlag, &ui, &vi, *a, *a1, *a3, *a7, *b, c, *d, *f, *g, *h, u, v, K, N, p);
 
         // If vi is zero, the iteration is not converging
         if (vi != 0)
@@ -885,9 +843,7 @@ namespace mav_trajectory_generation
 
     } // End QuadIT_ak1
 
-    void RealIT_ak1(int *iFlag, int *NZ, double *sss, int N, double p[MDP1], int NN,
-                    double qp[MDP1], double *szr, double *szi, double K[MDP1],
-                    double qk[MDP1])
+    void RealIT_ak1(int *iFlag, int *NZ, double *sss, int N, double p[MDP1], int NN, double qp[MDP1], double *szr, double *szi, double K[MDP1], double qk[MDP1])
     {
       // Variable-shift H-polynomial iteration for a real zero
 
@@ -990,8 +946,7 @@ namespace mav_trajectory_generation
 
     } // End RealIT_ak1
 
-    void Quad_ak1(double a, double b1, double c, double *sr, double *si, double *lr,
-                  double *li)
+    void Quad_ak1(double a, double b1, double c, double *sr, double *si, double *lr, double *li)
     {
       // Calculates the zeros of the quadratic a*Z^2 + b1*Z + c
       // The quadratic formula, modified to avoid overflow, is used to find the
@@ -1051,13 +1006,11 @@ namespace mav_trajectory_generation
       return;
     } // End Quad_ak1
 
-  } // namespace rpoly_impl;
+  } // namespace rpoly_impl
 
-  void rpolyWrapper(double *coefficients_decreasing, int *degree,
-                    double *roots_real, double *roots_imag)
+  void rpolyWrapper(double *coefficients_decreasing, int *degree, double *roots_real, double *roots_imag)
   {
-    rpoly_impl::rpoly_ak1(coefficients_decreasing, degree, roots_real,
-                          roots_imag);
+    rpoly_impl::rpoly_ak1(coefficients_decreasing, degree, roots_real, roots_imag);
   }
 
 } // namespace mav_trajectory_generation

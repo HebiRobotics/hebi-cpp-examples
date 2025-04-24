@@ -21,16 +21,16 @@
 #ifndef MAV_TRAJECTORY_GENERATION_POLYNOMIAL_OPTIMIZATION_LINEAR_H_
 #define MAV_TRAJECTORY_GENERATION_POLYNOMIAL_OPTIMIZATION_LINEAR_H_
 
-#include <glog/logging.h>
 #include <Eigen/Sparse>
 #include <tuple>
 
-#include "mav_trajectory_generation/extremum.h"
-#include "mav_trajectory_generation/motion_defines.h"
-#include "mav_trajectory_generation/polynomial.h"
-#include "mav_trajectory_generation/segment.h"
-#include "mav_trajectory_generation/trajectory.h"
-#include "mav_trajectory_generation/vertex.h"
+#include <mav_trajectory_generation/misc.h>
+#include <mav_trajectory_generation/extremum.h>
+#include <mav_trajectory_generation/motion_defines.h>
+#include <mav_trajectory_generation/polynomial.h>
+#include <mav_trajectory_generation/segment.h>
+#include <mav_trajectory_generation/trajectory.h>
+#include <mav_trajectory_generation/vertex.h>
 
 namespace mav_trajectory_generation
 {
@@ -55,8 +55,7 @@ namespace mav_trajectory_generation
     };
     static constexpr int kHighestDerivativeToOptimize = N / 2;
     typedef Eigen::Matrix<double, N, N> SquareMatrix;
-    typedef std::vector<SquareMatrix, Eigen::aligned_allocator<SquareMatrix>>
-        SquareMatrixVector;
+    typedef std::vector<SquareMatrix, Eigen::aligned_allocator<SquareMatrix>> SquareMatrixVector;
 
     // Sets up the optimization problem for the specified dimension.
     PolynomialOptimization(size_t dimension);
@@ -69,9 +68,7 @@ namespace mav_trajectory_generation
     // Thus, its size is size(vertices) - 1.
     // Input: derivative_to_optimize = Specifies the derivative of which the
     // cost is optimized.
-    bool setupFromVertices(
-        const Vertex::Vector &vertices, const std::vector<double> &segment_times,
-        int derivative_to_optimize = kHighestDerivativeToOptimize);
+    bool setupFromVertices(const Vertex::Vector &vertices, const std::vector<double> &segment_times, int derivative_to_optimize = kHighestDerivativeToOptimize);
 
     // Sets up the optimization problem from a vector of positions and a
     // vector of times between the via points.
@@ -81,15 +78,13 @@ namespace mav_trajectory_generation
     // positions and the final position.
     // Input: times = Vector containing the time between two positions. Thus,
     // its size is size(positions) - 1.
-    bool setupFromPositions(const std::vector<double> &positions,
-                            const std::vector<double> &times);
+    bool setupFromPositions(const std::vector<double> &positions, const std::vector<double> &times);
 
     // Wrapper that inverts the mapping matrix (A in [1]) to take advantage
     // of its structure.
     // Input: A matrix
     // Output: Ai inverse of the A matrix
-    static void invertMappingMatrix(const SquareMatrix &mapping_matrix,
-                                    SquareMatrix *inverse_mapping_matrix);
+    static void invertMappingMatrix(const SquareMatrix &mapping_matrix, SquareMatrix *inverse_mapping_matrix);
 
     static void setupMappingMatrix(double segment_time, SquareMatrix *A);
 
@@ -142,14 +137,10 @@ namespace mav_trajectory_generation
     // Returns whether the computation succeeded -- false means no candidates
     // were found by Jenkins-Traub.
     template <int Derivative>
-    static bool computeSegmentMaximumMagnitudeCandidates(
-        const Segment &segment, double t_start, double t_stop,
-        std::vector<double> *candidates);
+    static bool computeSegmentMaximumMagnitudeCandidates(const Segment &segment, double t_start, double t_stop, std::vector<double> *candidates);
 
     // Template-free version of above:
-    static bool computeSegmentMaximumMagnitudeCandidates(int derivative,
-                                                         const Segment &segment, double t_start, double t_stop,
-                                                         std::vector<double> *candidates);
+    static bool computeSegmentMaximumMagnitudeCandidates(int derivative, const Segment &segment, double t_start, double t_stop, std::vector<double> *candidates);
 
     // Computes the candidates for the maximum magnitude of a single
     // segment in the specified derivative.
@@ -161,9 +152,8 @@ namespace mav_trajectory_generation
     // Input: sampling_interval = Time between two sampling points.
     // Output: candidates = Vector containing the candidate times for a maximum.
     template <int Derivative>
-    static void computeSegmentMaximumMagnitudeCandidatesBySampling(
-        const Segment &segment, double t_start, double t_stop,
-        double sampling_interval, std::vector<double> *candidates);
+    static void computeSegmentMaximumMagnitudeCandidatesBySampling(const Segment &segment, double t_start, double t_stop, double sampling_interval,
+                                                                   std::vector<double> *candidates);
 
     // Computes the global maximum of the magnitude of the path in the
     // specified derivative.
@@ -178,8 +168,7 @@ namespace mav_trajectory_generation
     Extremum computeMaximumOfMagnitude(std::vector<Extremum> *candidates) const;
 
     // Template-free version of above.
-    Extremum computeMaximumOfMagnitude(int derivative,
-                                       std::vector<Extremum> *candidates) const;
+    Extremum computeMaximumOfMagnitude(int derivative, std::vector<Extremum> *candidates) const;
 
     void getVertices(Vertex::Vector *vertices) const
     {
@@ -200,8 +189,7 @@ namespace mav_trajectory_generation
       *segment_times = segment_times_;
     }
 
-    void getFreeConstraints(
-        std::vector<Eigen::VectorXd> *free_constraints) const
+    void getFreeConstraints(std::vector<Eigen::VectorXd> *free_constraints) const
     {
       CHECK(free_constraints != nullptr);
       *free_constraints = free_constraints_compact_;
@@ -209,8 +197,7 @@ namespace mav_trajectory_generation
 
     void setFreeConstraints(const std::vector<Eigen::VectorXd> &free_constraints);
 
-    void getFixedConstraints(
-        std::vector<Eigen::VectorXd> *fixed_constraints) const
+    void getFixedConstraints(std::vector<Eigen::VectorXd> *fixed_constraints) const
     {
       CHECK(fixed_constraints != nullptr);
       *fixed_constraints = fixed_constraints_compact_;
@@ -221,8 +208,7 @@ namespace mav_trajectory_generation
     // If C is dynamic, the correct size has to be set.
     // Input: t = time of evaluation
     // Input: derivative used to compute the cost
-    static void computeQuadraticCostJacobian(int derivative, double t,
-                                             SquareMatrix *cost_jacobian);
+    static void computeQuadraticCostJacobian(int derivative, double t, SquareMatrix *cost_jacobian);
 
     size_t getDimension() const { return dimension_; }
     size_t getNumberSegments() const { return n_segments_; }

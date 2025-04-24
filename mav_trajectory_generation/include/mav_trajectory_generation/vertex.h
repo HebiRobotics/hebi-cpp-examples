@@ -21,14 +21,13 @@
 #ifndef MAV_TRAJECTORY_GENERATION_VERTEX_H_
 #define MAV_TRAJECTORY_GENERATION_VERTEX_H_
 
-#include <glog/logging.h>
 #include <Eigen/Core>
 #include <chrono>
 #include <map>
 #include <vector>
-
-#include "mav_trajectory_generation/motion_defines.h"
-#include "mav_trajectory_generation/polynomial.h"
+#include <mav_trajectory_generation/misc.h>
+#include <mav_trajectory_generation/motion_defines.h>
+#include <mav_trajectory_generation/polynomial.h>
 
 namespace mav_trajectory_generation
 {
@@ -103,14 +102,16 @@ namespace mav_trajectory_generation
     }
 
     // Returns the number of constraints.
-    size_t getNumberOfConstraints() const { return constraints_.size(); }
+    size_t getNumberOfConstraints() const
+    {
+      return constraints_.size();
+    }
 
     // Checks if both lhs and rhs are equal up to tol in case of double values.
     bool isEqualTol(const Vertex &rhs, double tol) const;
 
     // Get subdimension vertex.
-    bool getSubdimension(const std::vector<size_t> &subdimensions,
-                         int max_derivative_order, Vertex *subvertex) const;
+    bool getSubdimension(const std::vector<size_t> &subdimensions, int max_derivative_order, Vertex *subvertex) const;
 
   private:
     int D_;
@@ -119,8 +120,7 @@ namespace mav_trajectory_generation
 
   std::ostream &operator<<(std::ostream &stream, const Vertex &v);
 
-  std::ostream &operator<<(std::ostream &stream,
-                           const std::vector<Vertex> &vertices);
+  std::ostream &operator<<(std::ostream &stream, const std::vector<Vertex> &vertices);
 
   // Makes a rough estimate based on v_max and a_max about the time
   // required to get from one vertex to the next. Uses the current preferred
@@ -133,22 +133,16 @@ namespace mav_trajectory_generation
   // The time_factor \in [1..Inf] increases the allocated time making the segments
   // slower and thus feasibility more likely. This method does not take into
   // account the start and goal velocity and acceleration.
-  std::vector<double> estimateSegmentTimesVelocityRamp(
-      const Vertex::Vector &vertices, double v_max, double a_max,
-      double time_factor = 1.0);
+  std::vector<double> estimateSegmentTimesVelocityRamp(const Vertex::Vector &vertices, double v_max, double a_max, double time_factor = 1.0);
 
   // Makes a rough estimate based on v_max and a_max about the time
   // required to get from one vertex to the next.
   // t_est = 2 * distance/v_max * (1 + magic_fabian_constant * v_max/a_max * exp(-
   // distance/v_max * 2);
   // magic_fabian_constant was determined to 6.5 in a student project ...
-  std::vector<double> estimateSegmentTimesNfabian(
-      const Vertex::Vector &vertices, double v_max, double a_max,
-      double magic_fabian_constant = 6.5);
+  std::vector<double> estimateSegmentTimesNfabian(const Vertex::Vector &vertices, double v_max, double a_max, double magic_fabian_constant = 6.5);
 
-  double computeTimeVelocityRamp(const Eigen::VectorXd &start,
-                                 const Eigen::VectorXd &goal, double v_max,
-                                 double a_max);
+  double computeTimeVelocityRamp(const Eigen::VectorXd &start, const Eigen::VectorXd &goal, double v_max, double a_max);
 
   inline int getHighestDerivativeFromN(int N) { return N / 2 - 1; }
 
@@ -165,19 +159,13 @@ namespace mav_trajectory_generation
   // Input: maximum_position = Maximum position of the space to sample.
   // Input: seed = Initial seed for random number generation.
   // Output: return = Vector containing n_segments + 1 vertices.
-  Vertex::Vector createRandomVertices(int maximum_derivative, size_t n_segments,
-                                      const Eigen::VectorXd &minimum_position,
-                                      const Eigen::VectorXd &maximum_position,
+  Vertex::Vector createRandomVertices(int maximum_derivative, size_t n_segments, const Eigen::VectorXd &minimum_position, const Eigen::VectorXd &maximum_position,
                                       size_t seed = 0);
 
-  Vertex::Vector createSquareVertices(int maximum_derivative,
-                                      const Eigen::Vector3d &center,
-                                      double side_length, int rounds);
+  Vertex::Vector createSquareVertices(int maximum_derivative, const Eigen::Vector3d &center, double side_length, int rounds);
 
   // Conveninence function to create 1D vertices.
-  Vertex::Vector createRandomVertices1D(int maximum_derivative, size_t n_segments,
-                                        double minimum_position,
-                                        double maximum_position, size_t seed = 0);
+  Vertex::Vector createRandomVertices1D(int maximum_derivative, size_t n_segments, double minimum_position, double maximum_position, size_t seed = 0);
 } // namespace mav_trajectory_generation
 
 #endif // MAV_TRAJECTORY_GENERATION_VERTEX_H_

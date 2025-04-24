@@ -24,7 +24,7 @@
 #include <memory>
 #include <nlopt.hpp>
 
-#include "mav_trajectory_generation/polynomial_optimization_linear.h"
+#include <mav_trajectory_generation/polynomial_optimization_linear.h>
 
 namespace mav_trajectory_generation
 {
@@ -89,12 +89,12 @@ namespace mav_trajectory_generation
 
     enum TimeAllocMethod
     {
-      kSquaredTime,
-      kRichterTime,
-      kMellingerOuterLoop,
-      kSquaredTimeAndConstraints,
-      kRichterTimeAndConstraints,
-      kUnknown
+      kSquaredTime = 0,
+      kRichterTime = 1,
+      kMellingerOuterLoop = 2,
+      kSquaredTimeAndConstraints = 3,
+      kRichterTimeAndConstraints = 4,
+      kUnknown = 5,
     } time_alloc_method = kSquaredTimeAndConstraints;
 
     bool print_debug_info = false;
@@ -142,8 +142,7 @@ namespace mav_trajectory_generation
     // If false, both segment times and free derivatives become optimization
     // variables. The latter case is theoretically correct, but may result in
     // more iterations.
-    PolynomialOptimizationNonLinear(
-        size_t dimension, const NonlinearOptimizationParameters &parameters);
+    PolynomialOptimizationNonLinear(size_t dimension, const NonlinearOptimizationParameters &parameters);
 
     // Sets up the optimization problem from a vector of Vertex objects and
     // a vector of times between the vertices.
@@ -153,18 +152,15 @@ namespace mav_trajectory_generation
     // between two vertices. Thus, its size is size(vertices) - 1.
     // Input: derivative_to_optimize = Specifies the derivative of which the
     // cost is optimized.
-    bool setupFromVertices(
-        const Vertex::Vector &vertices, const std::vector<double> &segment_times,
-        int derivative_to_optimize =
-            PolynomialOptimization<N>::kHighestDerivativeToOptimize);
+    bool setupFromVertices(const Vertex::Vector &vertices, const std::vector<double> &segment_times,
+                           int derivative_to_optimize = PolynomialOptimization<N>::kHighestDerivativeToOptimize);
 
     // Adds a constraint for the maximum of magnitude to the optimization
     // problem.
     // Input: derivative_order = Order of the derivative, for which the
     // constraint should be checked. Usually velocity (=1) or acceleration (=2).
     // maximum_value = Maximum magnitude of the specified derivative.
-    bool addMaximumMagnitudeConstraint(int derivative_order,
-                                       double maximum_value);
+    bool addMaximumMagnitudeConstraint(int derivative_order, double maximum_value);
 
     // Solves the linear optimization problem according to [1].
     // The solver is re-used for every dimension, which means:
@@ -199,7 +195,10 @@ namespace mav_trajectory_generation
       return poly_opt_;
     }
 
-    OptimizationInfo getOptimizationInfo() const { return optimization_info_; }
+    OptimizationInfo getOptimizationInfo() const
+    {
+      return optimization_info_;
+    }
 
     // Functions for optimization, but may be useful for diagnostics outside.
     // Gets the trajectory cost (same as the cost in the linear problem).
@@ -229,9 +228,7 @@ namespace mav_trajectory_generation
     // Thus, only gradient-free optimization methods are possible.
     // Input: Custom data pointer = In our case, it's an ConstraintData object.
     // Output: Cost = based on the parameters passed in.
-    static double objectiveFunctionTime(const std::vector<double> &segment_times,
-                                        std::vector<double> &gradient,
-                                        void *data);
+    static double objectiveFunctionTime(const std::vector<double> &segment_times, std::vector<double> &gradient, void *data);
 
     // Objective function for the time-only Mellinger Outer Loop.
     // Input: segment_times = Segment times in the current iteration.
@@ -240,9 +237,7 @@ namespace mav_trajectory_generation
     // Thus, only gradient-free optimization methods are possible.
     // Input: Custom data pointer = In our case, it's an ConstraintData object.
     // Output: Cost = based on the parameters passed in.
-    static double objectiveFunctionTimeMellingerOuterLoop(
-        const std::vector<double> &segment_times, std::vector<double> &gradient,
-        void *data);
+    static double objectiveFunctionTimeMellingerOuterLoop(const std::vector<double> &segment_times, std::vector<double> &gradient, void *data);
 
     // Objective function for the version optimizing segment times and free
     // derivatives.
@@ -256,16 +251,12 @@ namespace mav_trajectory_generation
     // Input: data = Custom data pointer. In our case, it's an ConstraintData
     // object.
     // Output: Cost based on the parameters passed in.
-    static double objectiveFunctionTimeAndConstraints(
-        const std::vector<double> &optimization_variables,
-        std::vector<double> &gradient, void *data);
+    static double objectiveFunctionTimeAndConstraints(const std::vector<double> &optimization_variables, std::vector<double> &gradient, void *data);
 
     // Evaluates the maximum magnitude constraint at the current value of
     // the optimization variables.
     // All input parameters are ignored, all information is contained in data.
-    static double evaluateMaximumMagnitudeConstraint(
-        const std::vector<double> &optimization_variables,
-        std::vector<double> &gradient, void *data);
+    static double evaluateMaximumMagnitudeConstraint(const std::vector<double> &optimization_variables, std::vector<double> &gradient, void *data);
 
     // Does the actual optimization work for the time-only version.
     int optimizeTime();
@@ -284,22 +275,17 @@ namespace mav_trajectory_generation
     // Input: maximum_cost = Upper bound of the cost. Necessary, since exp of a
     // high violation can end up in inf.
     // Output: Sum of the costs per constraint.
-    double evaluateMaximumMagnitudeAsSoftConstraint(
-        const std::vector<std::shared_ptr<ConstraintData>> &
-            inequality_constraints,
-        double weight, double maximum_cost = 1.0e12) const;
+    double evaluateMaximumMagnitudeAsSoftConstraint(const std::vector<std::shared_ptr<ConstraintData>> &inequality_constraints, double weight,
+                                                    double maximum_cost = 1.0e12) const;
 
     // Set lower and upper bounds on the optimization parameters
-    void setFreeEndpointDerivativeHardConstraints(
-        const Vertex::Vector &vertices, std::vector<double> *lower_bounds,
-        std::vector<double> *upper_bounds);
+    void setFreeEndpointDerivativeHardConstraints(const Vertex::Vector &vertices, std::vector<double> *lower_bounds, std::vector<double> *upper_bounds);
 
     // Computes the gradients by doing forward difference!
     double getCostAndGradientMellinger(std::vector<double> *gradients);
 
     // Computes the total trajectory time.
-    static double computeTotalTrajectoryTime(
-        const std::vector<double> &segment_times);
+    static double computeTotalTrajectoryTime(const std::vector<double> &segment_times);
 
     // nlopt optimization object.
     std::shared_ptr<nlopt::opt> nlopt_;

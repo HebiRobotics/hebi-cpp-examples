@@ -17,8 +17,9 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "mav_trajectory_generation/polynomial.h"
-#include "mav_trajectory_generation/rpoly/rpoly_ak1.h"
+
+#include <mav_trajectory_generation/polynomial.h>
+#include <mav_trajectory_generation/rpoly/rpoly_ak1.h>
 
 #include <algorithm>
 #include <limits>
@@ -31,10 +32,8 @@ namespace mav_trajectory_generation
     return findRootsJenkinsTraub(getCoefficients(derivative), roots);
   }
 
-  bool Polynomial::selectMinMaxCandidatesFromRoots(
-      double t_start, double t_end,
-      const Eigen::VectorXcd &roots_derivative_of_derivative,
-      std::vector<double> *candidates)
+  bool Polynomial::selectMinMaxCandidatesFromRoots(double t_start, double t_end, const Eigen::VectorXcd &roots_derivative_of_derivative,
+                                                   std::vector<double> *candidates)
   {
     CHECK_NOTNULL(candidates);
     if (t_start > t_end)
@@ -47,12 +46,10 @@ namespace mav_trajectory_generation
     // Put start and end in, as they are valid candidates.
     candidates->push_back(t_start);
     candidates->push_back(t_end);
-    for (size_t i = 0;
-         i < static_cast<size_t>(roots_derivative_of_derivative.size()); i++)
+    for (size_t i = 0; i < static_cast<size_t>(roots_derivative_of_derivative.size()); i++)
     {
       // Only real roots are considered as critical points.
-      if (std::abs(roots_derivative_of_derivative[i].imag()) >
-          std::numeric_limits<double>::epsilon())
+      if (std::abs(roots_derivative_of_derivative[i].imag()) > std::numeric_limits<double>::epsilon())
       {
         continue;
       }
@@ -71,9 +68,7 @@ namespace mav_trajectory_generation
     return true;
   }
 
-  bool Polynomial::computeMinMaxCandidates(
-      double t_start, double t_end, int derivative,
-      std::vector<double> *candidates) const
+  bool Polynomial::computeMinMaxCandidates(double t_start, double t_end, int derivative, std::vector<double> *candidates) const
   {
     CHECK_NOTNULL(candidates);
     candidates->clear();
@@ -95,18 +90,14 @@ namespace mav_trajectory_generation
     return true;
   }
 
-  bool Polynomial::selectMinMaxFromRoots(
-      double t_start, double t_end, int derivative,
-      const Eigen::VectorXcd &roots_derivative_of_derivative,
-      std::pair<double, double> *minimum,
-      std::pair<double, double> *maximum) const
+  bool Polynomial::selectMinMaxFromRoots(double t_start, double t_end, int derivative, const Eigen::VectorXcd &roots_derivative_of_derivative,
+                                         std::pair<double, double> *minimum, std::pair<double, double> *maximum) const
   {
     CHECK_NOTNULL(minimum);
     CHECK_NOTNULL(maximum);
     // Find candidates in interval t_start to t_end computing the roots.
     std::vector<double> candidates;
-    if (!selectMinMaxCandidatesFromRoots(
-            t_start, t_end, roots_derivative_of_derivative, &candidates))
+    if (!selectMinMaxCandidatesFromRoots(t_start, t_end, roots_derivative_of_derivative, &candidates))
     {
       return false;
     }
@@ -114,9 +105,7 @@ namespace mav_trajectory_generation
     return selectMinMaxFromCandidates(candidates, derivative, minimum, maximum);
   }
 
-  bool Polynomial::computeMinMax(double t_start, double t_end, int derivative,
-                                 std::pair<double, double> *minimum,
-                                 std::pair<double, double> *maximum) const
+  bool Polynomial::computeMinMax(double t_start, double t_end, int derivative, std::pair<double, double> *minimum, std::pair<double, double> *maximum) const
   {
     CHECK_NOTNULL(minimum);
     CHECK_NOTNULL(maximum);
@@ -130,10 +119,8 @@ namespace mav_trajectory_generation
     return selectMinMaxFromCandidates(candidates, derivative, minimum, maximum);
   }
 
-  bool Polynomial::selectMinMaxFromCandidates(
-      const std::vector<double> &candidates, int derivative,
-      std::pair<double, double> *minimum,
-      std::pair<double, double> *maximum) const
+  bool Polynomial::selectMinMaxFromCandidates(const std::vector<double> &candidates, int derivative, std::pair<double, double> *minimum,
+                                              std::pair<double, double> *maximum) const
   {
     CHECK_NOTNULL(minimum);
     CHECK_NOTNULL(maximum);
@@ -184,11 +171,9 @@ namespace mav_trajectory_generation
     return base_coefficients;
   }
 
-  Eigen::VectorXd Polynomial::convolve(const Eigen::VectorXd &data,
-                                       const Eigen::VectorXd &kernel)
+  Eigen::VectorXd Polynomial::convolve(const Eigen::VectorXd &data, const Eigen::VectorXd &kernel)
   {
-    const int convolution_dimension =
-        getConvolutionLength(data.size(), kernel.size());
+    const int convolution_dimension = getConvolutionLength(data.size(), kernel.size());
     Eigen::VectorXd convolved = Eigen::VectorXd::Zero(convolution_dimension);
     Eigen::VectorXd kernel_reverse = kernel.reverse();
 
@@ -207,8 +192,7 @@ namespace mav_trajectory_generation
     return convolved;
   }
 
-  bool Polynomial::getPolynomialWithAppendedCoefficients(
-      int new_N, Polynomial *new_polynomial) const
+  bool Polynomial::getPolynomialWithAppendedCoefficients(int new_N, Polynomial *new_polynomial) const
   {
     if (new_N == N_)
     {
@@ -248,7 +232,6 @@ namespace mav_trajectory_generation
     coefficients_[0] += offset;
   }
 
-  Eigen::MatrixXd Polynomial::base_coefficients_ =
-      computeBaseCoefficients(Polynomial::kMaxConvolutionSize);
+  Eigen::MatrixXd Polynomial::base_coefficients_ = computeBaseCoefficients(Polynomial::kMaxConvolutionSize);
 
 } // namespace mav_trajectory_generation

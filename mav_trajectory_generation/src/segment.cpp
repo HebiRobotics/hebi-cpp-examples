@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-#include "mav_trajectory_generation/segment.h"
+#include <mav_trajectory_generation/segment.h>
 
 #include <cmath>
 #include <limits>
@@ -72,8 +72,7 @@ namespace mav_trajectory_generation
   {
     CHECK(derivative >= 0 && derivative < s.N());
     stream << "t: " << s.getTime() << std::endl;
-    stream << " coefficients for " << positionDerivativeToString(derivative)
-           << ": " << std::endl;
+    stream << " coefficients for " << positionDerivativeToString(derivative) << ": " << std::endl;
     for (int i = 0; i < s.D(); ++i)
     {
       stream << "dim " << i << ": " << std::endl;
@@ -87,8 +86,7 @@ namespace mav_trajectory_generation
     return stream;
   }
 
-  std::ostream &operator<<(std::ostream &stream,
-                           const std::vector<Segment> &segments)
+  std::ostream &operator<<(std::ostream &stream, const std::vector<Segment> &segments)
   {
     for (const Segment &s : segments)
       stream << s << std::endl;
@@ -97,8 +95,7 @@ namespace mav_trajectory_generation
   }
 
   bool Segment::computeMinMaxMagnitudeCandidateTimes(
-      int derivative, double t_start, double t_end,
-      const std::vector<int> &dimensions,
+      int derivative, double t_start, double t_end, const std::vector<int> &dimensions,
       std::vector<double> *candidate_times) const
   {
     CHECK_NOTNULL(candidate_times);
@@ -113,26 +110,21 @@ namespace mav_trajectory_generation
     {
       const int n_d = N_ - derivative;
       const int n_dd = n_d - 1;
-      const int convolved_coefficients_length =
-          Polynomial::getConvolutionLength(n_d, n_dd);
+      const int convolved_coefficients_length = Polynomial::getConvolutionLength(n_d, n_dd);
       Eigen::VectorXd convolved_coefficients(convolved_coefficients_length);
       convolved_coefficients.setZero();
       for (int dim : dimensions)
       {
         if (dim < 0 || dim >= D_)
         {
-          LOG(WARNING) << "Specified dimensions " << dim
-                       << " are out of bounds [0.." << D_ - 1 << "]."
-                       << std::endl;
+          LOG(WARNING) << "Specified dimensions " << dim << " are out of bounds [0.." << D_ - 1 << "]." << std::endl;
           return false;
         }
         // Our coefficients are INCREASING, so when you take the derivative,
         // only the lower powers of t have non-zero coefficients.
         // So we take the head.
-        Eigen::VectorXd d =
-            polynomials_[dim].getCoefficients(derivative).head(n_d);
-        Eigen::VectorXd dd =
-            polynomials_[dim].getCoefficients(derivative + 1).head(n_dd);
+        Eigen::VectorXd d = polynomials_[dim].getCoefficients(derivative).head(n_d);
+        Eigen::VectorXd dd = polynomials_[dim].getCoefficients(derivative + 1).head(n_dd);
         convolved_coefficients += Polynomial::convolve(d, dd);
       }
       Polynomial polynomial_convolved(convolved_coefficients);
@@ -140,8 +132,7 @@ namespace mav_trajectory_generation
       // derivative = -1 because the convolved polynomial is the derivative
       // already. We wish to find the minimum and maximum candidates for the
       // integral.
-      if (!polynomial_convolved.computeMinMaxCandidates(t_start, t_end, -1,
-                                                        candidate_times))
+      if (!polynomial_convolved.computeMinMaxCandidates(t_start, t_end, -1, candidate_times))
       {
         return false;
       }
@@ -150,8 +141,7 @@ namespace mav_trajectory_generation
     {
       // For dimension.size() == 1  we can simply evaluate the roots of the
       // derivative.
-      if (!polynomials_[dimensions[0]].computeMinMaxCandidates(
-              t_start, t_end, derivative, candidate_times))
+      if (!polynomials_[dimensions[0]].computeMinMaxCandidates(t_start, t_end, derivative, candidate_times))
       {
         return false;
       }
@@ -160,15 +150,13 @@ namespace mav_trajectory_generation
   }
 
   bool Segment::computeMinMaxMagnitudeCandidates(
-      int derivative, double t_start, double t_end,
-      const std::vector<int> &dimensions,
+      int derivative, double t_start, double t_end, const std::vector<int> &dimensions,
       std::vector<Extremum> *candidates) const
   {
     CHECK_NOTNULL(candidates);
     // Find candidate times (roots + start + end).
     std::vector<double> candidate_times;
-    computeMinMaxMagnitudeCandidateTimes(derivative, t_start, t_end, dimensions,
-                                         &candidate_times);
+    computeMinMaxMagnitudeCandidateTimes(derivative, t_start, t_end, dimensions, &candidate_times);
 
     // Evaluate candidate times.
     candidates->resize(candidate_times.size());
@@ -177,8 +165,7 @@ namespace mav_trajectory_generation
       double magnitude = 0.0;
       for (int dim : dimensions)
       {
-        magnitude += std::pow(
-            polynomials_[dim].evaluate(candidate_times[i], derivative), 2);
+        magnitude += std::pow(polynomials_[dim].evaluate(candidate_times[i], derivative), 2);
       }
       magnitude = std::sqrt(magnitude);
       (*candidates)[i] = Extremum(candidate_times[i], magnitude, 0);
@@ -188,8 +175,7 @@ namespace mav_trajectory_generation
   }
 
   bool Segment::selectMinMaxMagnitudeFromCandidates(
-      int derivative, double t_start, double t_end,
-      const std::vector<int> &dimensions, const std::vector<Extremum> &candidates,
+      int derivative, double t_start, double t_end, const std::vector<int> &dimensions, const std::vector<Extremum> &candidates,
       Extremum *minimum, Extremum *maximum) const
   {
     CHECK_NOTNULL(minimum);
@@ -217,13 +203,11 @@ namespace mav_trajectory_generation
     return true;
   }
 
-  bool Segment::getSegmentWithSingleDimension(int dimension,
-                                              Segment *new_segment) const
+  bool Segment::getSegmentWithSingleDimension(int dimension, Segment *new_segment) const
   {
     if (dimension < 0 || dimension >= D_)
     {
-      LOG(WARNING)
-          << "You shan't ask for a dimension that does not exist in the segment.";
+      LOG(WARNING) << "You shan't ask for a dimension that does not exist in the segment.";
       return false;
     }
 
@@ -233,8 +217,7 @@ namespace mav_trajectory_generation
     return true;
   }
 
-  bool Segment::getSegmentWithAppendedDimension(const Segment &segment_to_append,
-                                                Segment *new_segment) const
+  bool Segment::getSegmentWithAppendedDimension(const Segment &segment_to_append, Segment *new_segment) const
   {
     if (N_ == 0 || D_ == 0)
     {
@@ -295,16 +278,14 @@ namespace mav_trajectory_generation
         Polynomial polynomial_to_append(new_N);
         if (i < D_)
         {
-          if (!polynomials_[i].getPolynomialWithAppendedCoefficients(
-                  new_N, &polynomial_to_append))
+          if (!polynomials_[i].getPolynomialWithAppendedCoefficients(new_N, &polynomial_to_append))
           {
             return false;
           }
         }
         else
         {
-          if (!segment_to_append[i - D_].getPolynomialWithAppendedCoefficients(
-                  new_N, &polynomial_to_append))
+          if (!segment_to_append[i - D_].getPolynomialWithAppendedCoefficients(new_N, &polynomial_to_append))
           {
             return false;
           }

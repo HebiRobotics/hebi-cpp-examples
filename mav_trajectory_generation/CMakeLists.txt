@@ -8,7 +8,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Find required packages
 find_package(PkgConfig)
 find_package(Eigen3 REQUIRED)
-find_package(glog REQUIRED)
 pkg_check_modules(YamlCpp REQUIRED yaml-cpp>=0.5)
 
 # Add eigen_checks directory to the include path

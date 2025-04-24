@@ -21,46 +21,41 @@
 #include <chrono>
 #include <numeric>
 
-#include "mav_trajectory_generation/polynomial_optimization_linear.h"
-#include "mav_trajectory_generation/timing.h"
+#include <mav_trajectory_generation/polynomial_optimization_nonlinear.h>
+#include <mav_trajectory_generation/timing.h>
 
 namespace mav_trajectory_generation
 {
 
-  inline std::ostream &operator<<(std::ostream &stream,
-                                  const OptimizationInfo &val)
+  inline std::ostream &operator<<(std::ostream &stream, const OptimizationInfo &val)
   {
     stream << "--- optimization info ---" << std::endl;
     stream << "  optimization time:     " << val.optimization_time << std::endl;
     stream << "  n_iterations:          " << val.n_iterations << std::endl;
-    stream << "  stopping reason:       "
-           << nlopt::returnValueToString(val.stopping_reason) << std::endl;
+    stream << "  stopping reason:       " << nlopt::returnValueToString(val.stopping_reason) << std::endl;
     stream << "  cost trajectory:       " << val.cost_trajectory << std::endl;
     stream << "  cost time:             " << val.cost_time << std::endl;
-    stream << "  cost soft constraints: " << val.cost_soft_constraints
-           << std::endl;
+    stream << "  cost soft constraints: " << val.cost_soft_constraints << std::endl;
     stream << "  maxima: " << std::endl;
     for (const std::pair<int, Extremum> &m : val.maxima)
     {
-      stream << "    " << positionDerivativeToString(m.first) << ": "
-             << m.second.value << " in segment " << m.second.segment_idx
-             << " and segment time " << m.second.time << std::endl;
+      stream << "    " << positionDerivativeToString(m.first) << ": " << m.second.value << " in segment " << m.second.segment_idx << " and segment time "
+             << m.second.time << std::endl;
     }
     return stream;
   }
 
   template <int _N>
-  PolynomialOptimizationNonLinear<_N>::PolynomialOptimizationNonLinear(
-      size_t dimension, const NonlinearOptimizationParameters &parameters)
-      : poly_opt_(dimension), optimization_parameters_(parameters) {}
+  PolynomialOptimizationNonLinear<_N>::PolynomialOptimizationNonLinear(size_t dimension, const NonlinearOptimizationParameters &parameters)
+      : poly_opt_(dimension), optimization_parameters_(parameters)
+  {
+  }
 
   template <int _N>
-  bool PolynomialOptimizationNonLinear<_N>::setupFromVertices(
-      const Vertex::Vector &vertices, const std::vector<double> &segment_times,
-      int derivative_to_optimize)
+  bool PolynomialOptimizationNonLinear<_N>::setupFromVertices(const Vertex::Vector &vertices, const std::vector<double> &segment_times,
+                                                              int derivative_to_optimize)
   {
-    bool ret = poly_opt_.setupFromVertices(vertices, segment_times,
-                                           derivative_to_optimize);
+    bool ret = poly_opt_.setupFromVertices(vertices, segment_times, derivative_to_optimize);
 
     size_t n_optimization_parameters;
     switch (optimization_parameters_.time_alloc_method)
@@ -71,14 +66,11 @@ namespace mav_trajectory_generation
       n_optimization_parameters = segment_times.size();
       break;
     default:
-      n_optimization_parameters =
-          segment_times.size() +
-          poly_opt_.getNumberFreeConstraints() * poly_opt_.getDimension();
+      n_optimization_parameters = segment_times.size() + poly_opt_.getNumberFreeConstraints() * poly_opt_.getDimension();
       break;
     }
 
-    nlopt_.reset(new nlopt::opt(optimization_parameters_.algorithm,
-                                n_optimization_parameters));
+    nlopt_.reset(new nlopt::opt(optimization_parameters_.algorithm, n_optimization_parameters));
     nlopt_->set_ftol_rel(optimization_parameters_.f_rel);
     nlopt_->set_ftol_abs(optimization_parameters_.f_abs);
     nlopt_->set_xtol_rel(optimization_parameters_.x_rel);
@@ -105,8 +97,7 @@ namespace mav_trajectory_generation
     optimization_info_ = OptimizationInfo();
     int result = nlopt::FAILURE;
 
-    const std::chrono::high_resolution_clock::time_point t_start =
-        std::chrono::high_resolution_clock::now();
+    const std::chrono::high_resolution_clock::time_point t_start = std::chrono::high_resolution_clock::now();
 
     switch (optimization_parameters_.time_alloc_method)
     {
@@ -125,12 +116,8 @@ namespace mav_trajectory_generation
       break;
     }
 
-    const std::chrono::high_resolution_clock::time_point t_stop =
-        std::chrono::high_resolution_clock::now();
-    optimization_info_.optimization_time =
-        std::chrono::duration_cast<std::chrono::duration<double>>(t_stop -
-                                                                  t_start)
-            .count();
+    const std::chrono::high_resolution_clock::time_point t_stop = std::chrono::high_resolution_clock::now();
+    optimization_info_.optimization_time = std::chrono::duration_cast<std::chrono::duration<double>>(t_stop - t_start).count();
 
     optimization_info_.stopping_reason = result;
 
@@ -158,8 +145,7 @@ namespace mav_trajectory_generation
       nlopt_->set_initial_step(initial_step);
       nlopt_->set_upper_bounds(std::numeric_limits<double>::max());
       nlopt_->set_lower_bounds(kOptimizationTimeLowerBound);
-      nlopt_->set_min_objective(
-          &PolynomialOptimizationNonLinear<N>::objectiveFunctionTime, this);
+      nlopt_->set_min_objective(&PolynomialOptimizationNonLinear<N>::objectiveFunctionTime, this);
     }
     catch (std::exception &e)
     {
@@ -186,8 +172,7 @@ namespace mav_trajectory_generation
   template <int _N>
   int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints()
   {
-    std::vector<double> initial_step, initial_solution, segment_times,
-        lower_bounds, upper_bounds;
+    std::vector<double> initial_step, initial_solution, segment_times, lower_bounds, upper_bounds;
 
     poly_opt_.getSegmentTimes(&segment_times);
     const size_t n_segments = segment_times.size();
@@ -198,12 +183,10 @@ namespace mav_trajectory_generation
     poly_opt_.getFreeConstraints(&free_constraints);
     if (free_constraints.size() == 0 || free_constraints.front().size() == 0)
     {
-      LOG(WARNING)
-          << "No free derivative variables, same as time-only optimization.";
+      LOG(WARNING) << "No free derivative variables, same as time-only optimization.";
     }
 
-    const size_t n_optimization_variables =
-        n_segments + free_constraints.size() * free_constraints.front().size();
+    const size_t n_optimization_variables = n_segments + free_constraints.size() * free_constraints.front().size();
 
     CHECK_GT(n_optimization_variables, 0u);
 
@@ -228,8 +211,7 @@ namespace mav_trajectory_generation
 
     // Setup for getting bounds on the free endpoint derivatives
     std::vector<double> lower_bounds_free, upper_bounds_free;
-    const size_t n_optimization_variables_free =
-        free_constraints.size() * free_constraints.front().size();
+    const size_t n_optimization_variables_free = free_constraints.size() * free_constraints.front().size();
     lower_bounds_free.reserve(n_optimization_variables_free);
     upper_bounds_free.reserve(n_optimization_variables_free);
 
@@ -237,8 +219,7 @@ namespace mav_trajectory_generation
     // derivatives
     Vertex::Vector vertices;
     poly_opt_.getVertices(&vertices);
-    setFreeEndpointDerivativeHardConstraints(vertices, &lower_bounds_free,
-                                             &upper_bounds_free);
+    setFreeEndpointDerivativeHardConstraints(vertices, &lower_bounds_free, &upper_bounds_free);
 
     // Set segment time constraints
     for (size_t l = 0; l < n_segments; ++l)
@@ -247,10 +228,8 @@ namespace mav_trajectory_generation
       upper_bounds.push_back(std::numeric_limits<double>::max());
     }
     // Append free endpoint derivative constraints
-    lower_bounds.insert(std::end(lower_bounds), std::begin(lower_bounds_free),
-                        std::end(lower_bounds_free));
-    upper_bounds.insert(std::end(upper_bounds), std::begin(upper_bounds_free),
-                        std::end(upper_bounds_free));
+    lower_bounds.insert(std::end(lower_bounds), std::begin(lower_bounds_free), std::end(lower_bounds_free));
+    upper_bounds.insert(std::end(upper_bounds), std::begin(upper_bounds_free), std::end(upper_bounds_free));
 
     for (size_t i = 0; i < initial_solution.size(); i++)
     {
@@ -263,8 +242,7 @@ namespace mav_trajectory_generation
       }
       else
       {
-        initial_step.push_back(optimization_parameters_.initial_stepsize_rel *
-                               abs_x);
+        initial_step.push_back(optimization_parameters_.initial_stepsize_rel * abs_x);
       }
 
       // Check if initial solution isn't already out of bounds.
@@ -290,9 +268,7 @@ namespace mav_trajectory_generation
       nlopt_->set_initial_step(initial_step);
       nlopt_->set_lower_bounds(lower_bounds);
       nlopt_->set_upper_bounds(upper_bounds);
-      nlopt_->set_min_objective(&PolynomialOptimizationNonLinear<
-                                    N>::objectiveFunctionTimeAndConstraints,
-                                this);
+      nlopt_->set_min_objective(&PolynomialOptimizationNonLinear<N>::objectiveFunctionTimeAndConstraints, this);
     }
     catch (std::exception &e)
     {
@@ -344,9 +320,7 @@ namespace mav_trajectory_generation
       // issues.
       nlopt_->set_upper_bounds(std::numeric_limits<double>::max());
       nlopt_->set_lower_bounds(kOptimizationTimeLowerBound);
-      nlopt_->set_min_objective(&PolynomialOptimizationNonLinear<
-                                    N>::objectiveFunctionTimeMellingerOuterLoop,
-                                this);
+      nlopt_->set_min_objective(&PolynomialOptimizationNonLinear<N>::objectiveFunctionTimeMellingerOuterLoop, this);
     }
     catch (std::exception &e)
     {
@@ -363,9 +337,7 @@ namespace mav_trajectory_generation
     }
     catch (std::exception &e)
     {
-      LOG(ERROR) << "error while running nlopt: " << e.what()
-                 << ". This likely means the optimization aborted early."
-                 << std::endl;
+      LOG(ERROR) << "error while running nlopt: " << e.what() << ". This likely means the optimization aborted early." << std::endl;
       if (final_cost == std::numeric_limits<double>::max())
       {
         return nlopt::FAILURE;
@@ -395,51 +367,34 @@ namespace mav_trajectory_generation
     if (optimization_parameters_.print_debug_info_time_allocation)
     {
       std::cout << "[MEL          Original]: ";
-      std::for_each(original_segment_times.cbegin(),
-                    original_segment_times.cend(),
-                    [](double c)
+      std::for_each(original_segment_times.cbegin(), original_segment_times.cend(), [](double c)
                     { std::cout << c << " "; });
       std::cout << std::endl;
       std::cout << "[MEL RELATIVE Solution]: ";
-      std::for_each(relative_segment_times.cbegin(),
-                    relative_segment_times.cend(),
-                    [](double c)
+      std::for_each(relative_segment_times.cbegin(), relative_segment_times.cend(), [](double c)
                     { std::cout << c << " "; });
       std::cout << std::endl;
       std::cout << "[MEL          Solution]: ";
-      std::for_each(scaled_segment_times.cbegin(), scaled_segment_times.cend(),
-                    [](double c)
+      std::for_each(scaled_segment_times.cbegin(), scaled_segment_times.cend(), [](double c)
                     { std::cout << c << " "; });
       std::cout << std::endl;
-      std::cout << "[MEL   Trajectory Time] Before: "
-                << std::accumulate(original_segment_times.begin(),
-                                   original_segment_times.end(), 0.0)
-                << " | After Rel Change: "
-                << std::accumulate(relative_segment_times.begin(),
-                                   relative_segment_times.end(), 0.0)
-                << " | After Scaling: "
-                << std::accumulate(scaled_segment_times.begin(),
-                                   scaled_segment_times.end(), 0.0)
-                << std::endl;
+      std::cout << "[MEL   Trajectory Time] Before: " << std::accumulate(original_segment_times.begin(), original_segment_times.end(), 0.0)
+                << " | After Rel Change: " << std::accumulate(relative_segment_times.begin(), relative_segment_times.end(), 0.0)
+                << " | After Scaling: " << std::accumulate(scaled_segment_times.begin(), scaled_segment_times.end(), 0.0) << std::endl;
     }
 
     return result;
   }
 
   template <int _N>
-  double PolynomialOptimizationNonLinear<_N>::objectiveFunctionTime(
-      const std::vector<double> &segment_times, std::vector<double> &gradient,
-      void *data)
+  double PolynomialOptimizationNonLinear<_N>::objectiveFunctionTime(const std::vector<double> &segment_times, std::vector<double> &gradient, void *data)
   {
-    CHECK(gradient.empty())
-        << "computing gradient not possible, choose a gradient free method";
+    CHECK(gradient.empty()) << "computing gradient not possible, choose a gradient free method";
     CHECK_NOTNULL(data);
 
-    PolynomialOptimizationNonLinear<N> *optimization_data =
-        static_cast<PolynomialOptimizationNonLinear<N> *>(data); // wheee ...
+    PolynomialOptimizationNonLinear<N> *optimization_data = static_cast<PolynomialOptimizationNonLinear<N> *>(data); // wheee ...
 
-    CHECK_EQ(segment_times.size(),
-             optimization_data->poly_opt_.getNumberSegments());
+    CHECK_EQ(segment_times.size(), optimization_data->poly_opt_.getNumberSegments());
 
     optimization_data->poly_opt_.updateSegmentTimes(segment_times);
     optimization_data->poly_opt_.solveLinear();
@@ -451,62 +406,50 @@ namespace mav_trajectory_generation
     switch (optimization_data->optimization_parameters_.time_alloc_method)
     {
     case NonlinearOptimizationParameters::kRichterTime:
-      cost_time =
-          total_time * optimization_data->optimization_parameters_.time_penalty;
+      cost_time = total_time * optimization_data->optimization_parameters_.time_penalty;
       break;
     default: // kSquaredTime
-      cost_time = total_time * total_time *
-                  optimization_data->optimization_parameters_.time_penalty;
+      cost_time = total_time * total_time * optimization_data->optimization_parameters_.time_penalty;
       break;
     }
 
     if (optimization_data->optimization_parameters_.print_debug_info)
     {
-      std::cout << "---- cost at iteration "
-                << optimization_data->optimization_info_.n_iterations << "---- "
-                << std::endl;
+      std::cout << "---- cost at iteration " << optimization_data->optimization_info_.n_iterations << "---- " << std::endl;
       std::cout << "  trajectory: " << cost_trajectory << std::endl;
       std::cout << "  time: " << cost_time << std::endl;
     }
 
     if (optimization_data->optimization_parameters_.use_soft_constraints)
     {
-      cost_constraints =
-          optimization_data->evaluateMaximumMagnitudeAsSoftConstraint(
-              optimization_data->inequality_constraints_,
-              optimization_data->optimization_parameters_.soft_constraint_weight);
+      cost_constraints = optimization_data->evaluateMaximumMagnitudeAsSoftConstraint(optimization_data->inequality_constraints_,
+                                                                                     optimization_data->optimization_parameters_.soft_constraint_weight);
     }
 
     if (optimization_data->optimization_parameters_.print_debug_info)
     {
-      std::cout << "  sum: " << cost_trajectory + cost_time + cost_constraints
-                << std::endl;
+      std::cout << "  sum: " << cost_trajectory + cost_time + cost_constraints << std::endl;
       std::cout << "  total time: " << total_time << std::endl;
     }
 
     optimization_data->optimization_info_.n_iterations++;
     optimization_data->optimization_info_.cost_trajectory = cost_trajectory;
     optimization_data->optimization_info_.cost_time = cost_time;
-    optimization_data->optimization_info_.cost_soft_constraints =
-        cost_constraints;
+    optimization_data->optimization_info_.cost_soft_constraints = cost_constraints;
 
     return cost_trajectory + cost_time + cost_constraints;
   }
 
   template <int _N>
-  double PolynomialOptimizationNonLinear<_N>::objectiveFunctionTimeAndConstraints(
-      const std::vector<double> &x, std::vector<double> &gradient, void *data)
+  double PolynomialOptimizationNonLinear<_N>::objectiveFunctionTimeAndConstraints(const std::vector<double> &x, std::vector<double> &gradient, void *data)
   {
-    CHECK(gradient.empty())
-        << "computing gradient not possible, choose a gradient-free method";
+    CHECK(gradient.empty()) << "computing gradient not possible, choose a gradient-free method";
     CHECK_NOTNULL(data);
 
-    PolynomialOptimizationNonLinear<N> *optimization_data =
-        static_cast<PolynomialOptimizationNonLinear<N> *>(data); // wheee ...
+    PolynomialOptimizationNonLinear<N> *optimization_data = static_cast<PolynomialOptimizationNonLinear<N> *>(data); // wheee ...
 
     const size_t n_segments = optimization_data->poly_opt_.getNumberSegments();
-    const size_t n_free_constraints =
-        optimization_data->poly_opt_.getNumberFreeConstraints();
+    const size_t n_free_constraints = optimization_data->poly_opt_.getNumberFreeConstraints();
     const size_t dim = optimization_data->poly_opt_.getDimension();
 
     CHECK_EQ(x.size(), n_segments + n_free_constraints * dim);
@@ -544,36 +487,29 @@ namespace mav_trajectory_generation
     switch (optimization_data->optimization_parameters_.time_alloc_method)
     {
     case NonlinearOptimizationParameters::kRichterTimeAndConstraints:
-      cost_time =
-          total_time * optimization_data->optimization_parameters_.time_penalty;
+      cost_time = total_time * optimization_data->optimization_parameters_.time_penalty;
       break;
     default: // kSquaredTimeAndConstraints
-      cost_time = total_time * total_time *
-                  optimization_data->optimization_parameters_.time_penalty;
+      cost_time = total_time * total_time * optimization_data->optimization_parameters_.time_penalty;
       break;
     }
 
     if (optimization_data->optimization_parameters_.print_debug_info)
     {
-      std::cout << "---- cost at iteration "
-                << optimization_data->optimization_info_.n_iterations << "---- "
-                << std::endl;
+      std::cout << "---- cost at iteration " << optimization_data->optimization_info_.n_iterations << "---- " << std::endl;
       std::cout << "  trajectory: " << cost_trajectory << std::endl;
       std::cout << "  time: " << cost_time << std::endl;
     }
 
     if (optimization_data->optimization_parameters_.use_soft_constraints)
     {
-      cost_constraints =
-          optimization_data->evaluateMaximumMagnitudeAsSoftConstraint(
-              optimization_data->inequality_constraints_,
-              optimization_data->optimization_parameters_.soft_constraint_weight);
+      cost_constraints = optimization_data->evaluateMaximumMagnitudeAsSoftConstraint(optimization_data->inequality_constraints_,
+                                                                                     optimization_data->optimization_parameters_.soft_constraint_weight);
     }
 
     if (optimization_data->optimization_parameters_.print_debug_info)
     {
-      std::cout << "  sum: " << cost_trajectory + cost_time + cost_constraints
-                << std::endl;
+      std::cout << "  sum: " << cost_trajectory + cost_time + cost_constraints << std::endl;
       std::cout << "  total time: " << total_time << std::endl;
     }
 
@@ -586,20 +522,15 @@ namespace mav_trajectory_generation
   }
 
   template <int _N>
-  double
-  PolynomialOptimizationNonLinear<_N>::objectiveFunctionTimeMellingerOuterLoop(
-      const std::vector<double> &segment_times, std::vector<double> &gradient,
-      void *data)
+  double PolynomialOptimizationNonLinear<_N>::objectiveFunctionTimeMellingerOuterLoop(const std::vector<double> &segment_times, std::vector<double> &gradient,
+                                                                                      void *data)
   {
-    CHECK(!gradient.empty())
-        << "only with gradients possible, choose a gradient based method";
+    CHECK(!gradient.empty()) << "only with gradients possible, choose a gradient based method";
     CHECK_NOTNULL(data);
 
-    PolynomialOptimizationNonLinear<N> *optimization_data =
-        static_cast<PolynomialOptimizationNonLinear<N> *>(data); // wheee ...
+    PolynomialOptimizationNonLinear<N> *optimization_data = static_cast<PolynomialOptimizationNonLinear<N> *>(data); // wheee ...
 
-    CHECK_EQ(segment_times.size(),
-             optimization_data->poly_opt_.getNumberSegments());
+    CHECK_EQ(segment_times.size(), optimization_data->poly_opt_.getNumberSegments());
 
     optimization_data->poly_opt_.updateSegmentTimes(segment_times);
     optimization_data->poly_opt_.solveLinear();
@@ -615,9 +546,7 @@ namespace mav_trajectory_generation
 
     if (optimization_data->optimization_parameters_.print_debug_info)
     {
-      std::cout << "---- cost at iteration "
-                << optimization_data->optimization_info_.n_iterations << "---- "
-                << std::endl;
+      std::cout << "---- cost at iteration " << optimization_data->optimization_info_.n_iterations << "---- " << std::endl;
       std::cout << "  segment times: ";
       for (double segment_time : segment_times)
       {
@@ -634,8 +563,7 @@ namespace mav_trajectory_generation
   }
 
   template <int _N>
-  double PolynomialOptimizationNonLinear<_N>::getCostAndGradientMellinger(
-      std::vector<double> *gradients)
+  double PolynomialOptimizationNonLinear<_N>::getCostAndGradientMellinger(std::vector<double> *gradients)
   {
     // Weighting terms for different costs
     // Retrieve the current segment times
@@ -779,8 +707,7 @@ namespace mav_trajectory_generation
   }
 
   template <int _N>
-  double PolynomialOptimizationNonLinear<_N>::getTotalCostWithSoftConstraints()
-      const
+  double PolynomialOptimizationNonLinear<_N>::getTotalCostWithSoftConstraints() const
   {
     double cost_trajectory = poly_opt_.computeCost();
 
@@ -788,20 +715,15 @@ namespace mav_trajectory_generation
     // methods.
     std::vector<double> segment_times;
     poly_opt_.getSegmentTimes(&segment_times);
-    double total_time =
-        std::accumulate(segment_times.begin(), segment_times.end(), 0.0);
-    double cost_time =
-        total_time * total_time * optimization_parameters_.time_penalty;
-    double cost_constraints = evaluateMaximumMagnitudeAsSoftConstraint(
-        inequality_constraints_, optimization_parameters_.soft_constraint_weight,
-        1e9);
+    double total_time = std::accumulate(segment_times.begin(), segment_times.end(), 0.0);
+    double cost_time = total_time * total_time * optimization_parameters_.time_penalty;
+    double cost_constraints = evaluateMaximumMagnitudeAsSoftConstraint(inequality_constraints_, optimization_parameters_.soft_constraint_weight, 1e9);
 
     return cost_trajectory + cost_time + cost_constraints;
   }
 
   template <int _N>
-  bool PolynomialOptimizationNonLinear<_N>::addMaximumMagnitudeConstraint(
-      int derivative, double maximum_value)
+  bool PolynomialOptimizationNonLinear<_N>::addMaximumMagnitudeConstraint(int derivative, double maximum_value)
   {
     CHECK_GE(derivative, 0);
     CHECK_GE(maximum_value, 0.0);
@@ -818,16 +740,12 @@ namespace mav_trajectory_generation
     {
       try
       {
-        nlopt_->add_inequality_constraint(
-            &PolynomialOptimizationNonLinear<
-                N>::evaluateMaximumMagnitudeConstraint,
-            constraint_data.get(),
-            optimization_parameters_.inequality_constraint_tolerance);
+        nlopt_->add_inequality_constraint(&PolynomialOptimizationNonLinear<N>::evaluateMaximumMagnitudeConstraint, constraint_data.get(),
+                                          optimization_parameters_.inequality_constraint_tolerance);
       }
       catch (std::exception &e)
       {
-        LOG(ERROR) << "ERROR while setting inequality constraint to the optimizer: " << e.what()
-                   << std::endl;
+        LOG(ERROR) << "ERROR while setting inequality constraint " << e.what() << std::endl;
         return false;
       }
     }
@@ -835,32 +753,24 @@ namespace mav_trajectory_generation
   }
 
   template <int _N>
-  double PolynomialOptimizationNonLinear<_N>::evaluateMaximumMagnitudeConstraint(
-      const std::vector<double> &segment_times, std::vector<double> &gradient,
-      void *data)
+  double PolynomialOptimizationNonLinear<_N>::evaluateMaximumMagnitudeConstraint([[maybe_unused]] const std::vector<double> &segment_times,
+                                                                                 std::vector<double> &gradient, void *data)
   {
-    CHECK(gradient.empty())
-        << "computing gradient not possible, choose a gradient-free method";
-    ConstraintData *constraint_data =
-        static_cast<ConstraintData *>(data); // wheee ...
-    PolynomialOptimizationNonLinear<N> *optimization_data =
-        constraint_data->this_object;
+    CHECK(gradient.empty()) << "computing gradient not possible, choose a gradient-free method";
+    ConstraintData *constraint_data = static_cast<ConstraintData *>(data); // wheee ...
+    PolynomialOptimizationNonLinear<N> *optimization_data = constraint_data->this_object;
 
     Extremum max;
-    max = optimization_data->poly_opt_.computeMaximumOfMagnitude(
-        constraint_data->derivative, nullptr);
+    max = optimization_data->poly_opt_.computeMaximumOfMagnitude(constraint_data->derivative, nullptr);
 
-    optimization_data->optimization_info_.maxima[constraint_data->derivative] =
-        max;
+    optimization_data->optimization_info_.maxima[constraint_data->derivative] = max;
 
     return max.value - constraint_data->value;
   }
 
   template <int _N>
-  double
-  PolynomialOptimizationNonLinear<_N>::evaluateMaximumMagnitudeAsSoftConstraint(
-      const std::vector<std::shared_ptr<ConstraintData>> &inequality_constraints,
-      double weight, double maximum_cost) const
+  double PolynomialOptimizationNonLinear<_N>::evaluateMaximumMagnitudeAsSoftConstraint(
+      [[maybe_unused]] const std::vector<std::shared_ptr<ConstraintData>> &inequality_constraints, double weight, double maximum_cost) const
   {
     std::vector<double> dummy;
     double cost = 0;
@@ -868,23 +778,18 @@ namespace mav_trajectory_generation
     if (optimization_parameters_.print_debug_info)
       std::cout << "  soft_constraints: " << std::endl;
 
-    for (std::shared_ptr<const ConstraintData> constraint :
-         inequality_constraints_)
+    for (std::shared_ptr<const ConstraintData> constraint : inequality_constraints_)
     {
       // need to call the c-style callback function here, thus the ugly cast to
       // void*.
-      double abs_violation = evaluateMaximumMagnitudeConstraint(
-          dummy, dummy, (void *)constraint.get());
+      double abs_violation = evaluateMaximumMagnitudeConstraint(dummy, dummy, (void *)constraint.get());
 
       double relative_violation = abs_violation / constraint->value;
-      const double current_cost =
-          std::min(maximum_cost, exp(relative_violation * weight));
+      const double current_cost = std::min(maximum_cost, exp(relative_violation * weight));
       cost += current_cost;
       if (optimization_parameters_.print_debug_info)
       {
-        std::cout << "    derivative " << constraint->derivative
-                  << " abs violation: " << abs_violation
-                  << " : relative violation: " << relative_violation
+        std::cout << "    derivative " << constraint->derivative << " abs violation: " << abs_violation << " : relative violation: " << relative_violation
                   << " cost: " << current_cost << std::endl;
       }
     }
@@ -892,10 +797,8 @@ namespace mav_trajectory_generation
   }
 
   template <int _N>
-  void PolynomialOptimizationNonLinear<_N>::
-      setFreeEndpointDerivativeHardConstraints(
-          const Vertex::Vector &vertices, std::vector<double> *lower_bounds,
-          std::vector<double> *upper_bounds)
+  void PolynomialOptimizationNonLinear<_N>::setFreeEndpointDerivativeHardConstraints(const Vertex::Vector &vertices, std::vector<double> *lower_bounds,
+                                                                                     std::vector<double> *upper_bounds)
   {
     CHECK_NOTNULL(lower_bounds);
     CHECK_NOTNULL(upper_bounds);
@@ -907,10 +810,8 @@ namespace mav_trajectory_generation
     const int derivative_to_optimize = poly_opt_.getDerivativeToOptimize();
 
     // Set all values to -inf/inf and reset only bounded opti param with values
-    lower_bounds->resize(dim * n_free_constraints,
-                         std::numeric_limits<double>::lowest());
-    upper_bounds->resize(dim * n_free_constraints,
-                         std::numeric_limits<double>::max());
+    lower_bounds->resize(dim * n_free_constraints, std::numeric_limits<double>::lowest());
+    upper_bounds->resize(dim * n_free_constraints, std::numeric_limits<double>::max());
 
     // Add higher order derivative constraints (v_max and a_max)
     // Check at each vertex which of the derivatives is a free derivative.
@@ -948,8 +849,7 @@ namespace mav_trajectory_generation
   }
 
   template <int _N>
-  double PolynomialOptimizationNonLinear<_N>::computeTotalTrajectoryTime(
-      const std::vector<double> &segment_times)
+  double PolynomialOptimizationNonLinear<_N>::computeTotalTrajectoryTime(const std::vector<double> &segment_times)
   {
     double total_time = 0;
     for (double t : segment_times)

@@ -21,11 +21,9 @@
 #ifndef MAV_TRAJECTORY_GENERATION_POLYNOMIAL_H_
 #define MAV_TRAJECTORY_GENERATION_POLYNOMIAL_H_
 
-#include <glog/logging.h>
-// Add all required Eigen modules
-#include <Eigen/Core>
+#include <mav_trajectory_generation/misc.h>
+#include <Eigen/Eigen>
 #include <Eigen/SVD>
-#include <Eigen/LU> // For matrix inversion
 #include <utility>
 #include <vector>
 
@@ -53,19 +51,25 @@ namespace mav_trajectory_generation
     // kMaxConvolutionSize.
     static Eigen::MatrixXd base_coefficients_;
 
-    Polynomial(int N) : N_(N), coefficients_(N) { coefficients_.setZero(); }
+    Polynomial(int N) : N_(N), coefficients_(N)
+    {
+      coefficients_.setZero();
+    }
 
     // Assigns arbitrary coefficients to a polynomial.
-    Polynomial(int N, const Eigen::VectorXd &coeffs)
-        : N_(N), coefficients_(coeffs)
+    Polynomial(int N, const Eigen::VectorXd &coeffs) : N_(N), coefficients_(coeffs)
     {
       CHECK_EQ(N_, coeffs.size()) << "Number of coefficients has to match.";
     }
 
-    Polynomial(const Eigen::VectorXd &coeffs)
-        : N_(coeffs.size()), coefficients_(coeffs) {}
+    Polynomial(const Eigen::VectorXd &coeffs) : N_(coeffs.size()), coefficients_(coeffs)
+    {
+    }
     /// Gets the number of coefficients (order + 1) of the polynomial.
-    int N() const { return N_; }
+    int N() const
+    {
+      return N_;
+    }
 
     inline bool operator==(const Polynomial &rhs) const
     {
@@ -119,11 +123,7 @@ namespace mav_trajectory_generation
         Eigen::VectorXd result(N_);
         result.setZero();
         result.head(N_ - derivative) =
-            coefficients_.tail(N_ - derivative)
-                .cwiseProduct(
-                    base_coefficients_
-                        .block(derivative, derivative, 1, N_ - derivative)
-                        .transpose());
+            coefficients_.tail(N_ - derivative).cwiseProduct(base_coefficients_.block(derivative, derivative, 1, N_ - derivative).transpose());
         return result;
       }
     }
@@ -176,43 +176,32 @@ namespace mav_trajectory_generation
 
     // Finds all candidates for the minimum and maximum between t_start and t_end
     // by evaluating the roots of the polynomial's derivative.
-    static bool selectMinMaxCandidatesFromRoots(
-        double t_start, double t_end,
-        const Eigen::VectorXcd &roots_derivative_of_derivative,
-        std::vector<double> *candidates);
+    static bool selectMinMaxCandidatesFromRoots(double t_start, double t_end, const Eigen::VectorXcd &roots_derivative_of_derivative,
+                                                std::vector<double> *candidates);
 
     // Finds all candidates for the minimum and maximum between t_start and t_end
     // by computing the roots of the derivative polynomial.
-    bool computeMinMaxCandidates(double t_start, double t_end, int derivative,
-                                 std::vector<double> *candidates) const;
+    bool computeMinMaxCandidates(double t_start, double t_end, int derivative, std::vector<double> *candidates) const;
 
     // Evaluates the minimum and maximum of a polynomial between time t_start and
     // t_end given the roots of the derivative.
     // Returns the minimum and maximum as pair<t, value>.
-    bool selectMinMaxFromRoots(
-        double t_start, double t_end, int derivative,
-        const Eigen::VectorXcd &roots_derivative_of_derivative,
-        std::pair<double, double> *minimum,
-        std::pair<double, double> *maximum) const;
+    bool selectMinMaxFromRoots(double t_start, double t_end, int derivative, const Eigen::VectorXcd &roots_derivative_of_derivative,
+                               std::pair<double, double> *minimum, std::pair<double, double> *maximum) const;
 
     // Computes the minimum and maximum of a polynomial between time t_start and
     // t_end by computing the roots of the derivative polynomial.
     // Returns the minimum and maximum as pair<t, value>.
-    bool computeMinMax(double t_start, double t_end, int derivative,
-                       std::pair<double, double> *minimum,
-                       std::pair<double, double> *maximum) const;
+    bool computeMinMax(double t_start, double t_end, int derivative, std::pair<double, double> *minimum, std::pair<double, double> *maximum) const;
 
     // Selects the minimum and maximum of a polynomial among a candidate set.
     // Returns the minimum and maximum as pair<t, value>.
-    bool selectMinMaxFromCandidates(const std::vector<double> &candidates,
-                                    int derivative,
-                                    std::pair<double, double> *minimum,
+    bool selectMinMaxFromCandidates(const std::vector<double> &candidates, int derivative, std::pair<double, double> *minimum,
                                     std::pair<double, double> *maximum) const;
 
     // Increase the number of coefficients of this polynomial up to the specified
     // degree by appending zeros.
-    bool getPolynomialWithAppendedCoefficients(int new_N,
-                                               Polynomial *new_polynomial) const;
+    bool getPolynomialWithAppendedCoefficients(int new_N, Polynomial *new_polynomial) const;
 
     // Computes the base coefficients with the according powers of t, as
     // e.g. needed for computation of (in)equality constraints.
@@ -220,8 +209,7 @@ namespace mav_trajectory_generation
     // Input: polynomial derivative for which the coefficients have to
     // be computed
     // Input: t = time of evaluation
-    static void baseCoeffsWithTime(int N, int derivative, double t,
-                                   Eigen::VectorXd *coeffs)
+    static void baseCoeffsWithTime(int N, int derivative, double t, Eigen::VectorXd *coeffs)
     {
       CHECK_LT(derivative, N);
       CHECK_GE(derivative, 0);
@@ -255,8 +243,7 @@ namespace mav_trajectory_generation
 
     // Discrete convolution of two vectors.
     // convolve(d, k)[m] = sum(d[m - n] * k[n])
-    static Eigen::VectorXd convolve(const Eigen::VectorXd &data,
-                                    const Eigen::VectorXd &kernel);
+    static Eigen::VectorXd convolve(const Eigen::VectorXd &data, const Eigen::VectorXd &kernel);
 
     static inline int getConvolutionLength(int data_size, int kernel_size)
     {

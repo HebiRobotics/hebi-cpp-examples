@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-#include "mav_trajectory_generation/trajectory.h"
+#include <mav_trajectory_generation/trajectory.h>
 #include <limits>
 
 // fixes error due to std::iota (has been introduced in c++ standard lately
@@ -90,9 +90,7 @@ namespace mav_trajectory_generation
     return segments_[i].evaluate(t - accumulated_time, derivative_order);
   }
 
-  void Trajectory::evaluateRange(double t_start, double t_end, double dt,
-                                 int derivative_order,
-                                 std::vector<Eigen::VectorXd> *result,
+  void Trajectory::evaluateRange(double t_start, double t_end, double dt, int derivative_order, std::vector<Eigen::VectorXd> *result,
                                  std::vector<double> *sampling_times) const
   {
     const size_t expected_number_of_samples = (t_end - t_start) / dt + 1;
@@ -181,8 +179,7 @@ namespace mav_trajectory_generation
     return traj;
   }
 
-  bool Trajectory::getTrajectoryWithAppendedDimension(
-      const Trajectory &trajectory_to_append, Trajectory *new_trajectory) const
+  bool Trajectory::getTrajectoryWithAppendedDimension(const Trajectory &trajectory_to_append, Trajectory *new_trajectory) const
   {
     // Handle the case of one of the trajectories being empty.
     if (N_ == 0 || D_ == 0)
@@ -204,8 +201,7 @@ namespace mav_trajectory_generation
     for (size_t k = 0; k < segments_.size(); ++k)
     {
       Segment new_segment(0, 0);
-      if (!segments_[k].getSegmentWithAppendedDimension(
-              trajectory_to_append.segments()[k], &new_segment))
+      if (!segments_[k].getSegmentWithAppendedDimension(trajectory_to_append.segments()[k], &new_segment))
       {
         return false;
       }
@@ -216,13 +212,11 @@ namespace mav_trajectory_generation
     return true;
   }
 
-  bool Trajectory::computeMinMaxMagnitude(int derivative,
-                                          const std::vector<int> &dimensions,
-                                          Extremum *minimum,
-                                          Extremum *maximum) const
+  bool Trajectory::computeMinMaxMagnitude(int derivative, const std::vector<int> &dimensions, Extremum *minimum, Extremum *maximum) const
   {
     CHECK_NOTNULL(minimum);
     CHECK_NOTNULL(maximum);
+
     minimum->value = std::numeric_limits<double>::max();
     maximum->value = std::numeric_limits<double>::lowest();
 
@@ -231,17 +225,14 @@ namespace mav_trajectory_generation
     {
       // Compute candidates.
       std::vector<Extremum> candidates;
-      if (!segments_[segment_idx].computeMinMaxMagnitudeCandidates(
-              derivative, 0.0, segments_[segment_idx].getTime(), dimensions,
-              &candidates))
+      if (!segments_[segment_idx].computeMinMaxMagnitudeCandidates(derivative, 0.0, segments_[segment_idx].getTime(), dimensions, &candidates))
       {
         return false;
       }
       // Evaluate candidates.
       Extremum minimum_candidate, maximum_candidate;
-      if (!segments_[segment_idx].selectMinMaxMagnitudeFromCandidates(
-              derivative, 0.0, segments_[segment_idx].getTime(), dimensions,
-              candidates, &minimum_candidate, &maximum_candidate))
+      if (!segments_[segment_idx].selectMinMaxMagnitudeFromCandidates(derivative, 0.0, segments_[segment_idx].getTime(), dimensions, candidates,
+                                                                      &minimum_candidate, &maximum_candidate))
       {
         return false;
       }
@@ -270,8 +261,7 @@ namespace mav_trajectory_generation
     return segment_times;
   }
 
-  bool Trajectory::addTrajectories(const std::vector<Trajectory> &trajectories,
-                                   Trajectory *merged) const
+  bool Trajectory::addTrajectories(const std::vector<Trajectory> &trajectories, Trajectory *merged) const
   {
     CHECK_NOTNULL(merged);
     merged->clear();
@@ -283,10 +273,8 @@ namespace mav_trajectory_generation
       // TODO(rikba): Allow different number of coefficients.
       if (t.D() != D_ || t.N() != N_)
       {
-        LOG(WARNING) << "Dimension to append: " << t.D()
-                     << " this dimension: " << D_;
-        LOG(WARNING) << "Number of coefficients to append: " << t.N()
-                     << " this number of coefficients: " << N_;
+        LOG(WARNING) << "Dimension to append: " << t.D() << " this dimension: " << D_;
+        LOG(WARNING) << "Number of coefficients to append: " << t.N() << " this number of coefficients: " << N_;
         return false;
       }
       // Add segments.
@@ -319,7 +307,7 @@ namespace mav_trajectory_generation
   Vertex Trajectory::getVertexAtTime(double t, int max_derivative_order) const
   {
     Vertex v(D_);
-    for (size_t i = 0; i <= max_derivative_order; i++)
+    for (int i = 0; i <= max_derivative_order; i++)
     {
       v.addConstraint(i, evaluate(t, i));
     }
@@ -336,28 +324,22 @@ namespace mav_trajectory_generation
     return getVertexAtTime(max_time_, max_derivative_order);
   }
 
-  bool Trajectory::getVertices(int max_derivative_order_pos,
-                               int max_derivative_order_yaw,
-                               Vertex::Vector *pos_vertices,
-                               Vertex::Vector *yaw_vertices) const
+  bool Trajectory::getVertices(int max_derivative_order_pos, int max_derivative_order_yaw, Vertex::Vector *pos_vertices, Vertex::Vector *yaw_vertices) const
   {
     CHECK_NOTNULL(pos_vertices);
     CHECK_NOTNULL(yaw_vertices);
     const std::vector<size_t> kPosDimensions = {0, 1, 2};
     const std::vector<size_t> kYawDimensions = {3};
-    const int kMaxDerivativeOrder =
-        std::max(max_derivative_order_pos, max_derivative_order_yaw);
+    const int kMaxDerivativeOrder = std::max(max_derivative_order_pos, max_derivative_order_yaw);
     pos_vertices->resize(segments_.size() + 1, Vertex(3));
     yaw_vertices->resize(segments_.size() + 1, Vertex(1));
 
     // Start vertex.
     Vertex temp_vertex(4);
     temp_vertex = getStartVertex(kMaxDerivativeOrder);
-    if (!temp_vertex.getSubdimension(kPosDimensions, max_derivative_order_pos,
-                                     &pos_vertices->front()))
+    if (!temp_vertex.getSubdimension(kPosDimensions, max_derivative_order_pos, &pos_vertices->front()))
       return false;
-    if (!temp_vertex.getSubdimension(kYawDimensions, max_derivative_order_yaw,
-                                     &yaw_vertices->front()))
+    if (!temp_vertex.getSubdimension(kYawDimensions, max_derivative_order_yaw, &yaw_vertices->front()))
       return false;
 
     double t = 0.0;
@@ -365,18 +347,15 @@ namespace mav_trajectory_generation
     {
       t += segments_[i].getTime();
       temp_vertex = getVertexAtTime(t, kMaxDerivativeOrder);
-      if (!temp_vertex.getSubdimension(kPosDimensions, max_derivative_order_pos,
-                                       &(*pos_vertices)[i + 1]))
+      if (!temp_vertex.getSubdimension(kPosDimensions, max_derivative_order_pos, &(*pos_vertices)[i + 1]))
         return false;
-      if (!temp_vertex.getSubdimension(kYawDimensions, max_derivative_order_yaw,
-                                       &(*yaw_vertices)[i + 1]))
+      if (!temp_vertex.getSubdimension(kYawDimensions, max_derivative_order_yaw, &(*yaw_vertices)[i + 1]))
         return false;
     }
     return true;
   }
 
-  bool Trajectory::getVertices(int max_derivative_order,
-                               Vertex::Vector *vertices) const
+  bool Trajectory::getVertices(int max_derivative_order, Vertex::Vector *vertices) const
   {
     CHECK_NOTNULL(vertices);
     vertices->resize(segments_.size() + 1, D_);
