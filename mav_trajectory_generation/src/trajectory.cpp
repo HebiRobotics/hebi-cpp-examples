@@ -251,6 +251,42 @@ namespace mav_trajectory_generation
     return true;
   }
 
+  bool Trajectory::computeMinMaxMagnitude(int derivative, const std::vector<int> &dimensions, Extremum *minimum, Extremum *maximum, int seg) const
+  {
+    CHECK_NOTNULL(minimum);
+    CHECK_NOTNULL(maximum);
+
+    minimum->value = std::numeric_limits<double>::max();
+    maximum->value = std::numeric_limits<double>::lowest();
+
+    // Compute candidates.
+    std::vector<Extremum> candidates;
+    if (!segments_[seg].computeMinMaxMagnitudeCandidates(derivative, 0.0, segments_[seg].getTime(), dimensions, &candidates))
+    {
+      return false;
+    }
+    // Evaluate candidates.
+    Extremum minimum_candidate, maximum_candidate;
+    if (!segments_[seg].selectMinMaxMagnitudeFromCandidates(derivative, 0.0, segments_[seg].getTime(), dimensions, candidates, &minimum_candidate,
+                                                            &maximum_candidate))
+    {
+      return false;
+    }
+    // Select minimum / maximum.
+    if (minimum_candidate < *minimum)
+    {
+      *minimum = minimum_candidate;
+      minimum->segment_idx = static_cast<int>(seg);
+    }
+    if (maximum_candidate > *maximum)
+    {
+      *maximum = maximum_candidate;
+      maximum->segment_idx = static_cast<int>(seg);
+    }
+
+    return true;
+  }
+
   std::vector<double> Trajectory::getSegmentTimes() const
   {
     std::vector<double> segment_times(segments_.size());
@@ -370,22 +406,42 @@ namespace mav_trajectory_generation
     return true;
   }
 
-  // Compute max velocity and max acceleration.
-  bool Trajectory::computeMaxVelocityAndAcceleration(double *v_max,
-                                                     double *a_max) const
+  // Compute max velocity and max acceleration for a specific segment.
+  bool Trajectory::computeMaxVelocityAndAcceleration(int dimension, double *v_max, double *a_max, int seg) const
   {
-    std::vector<int> dimensions(D_); // Evaluate in whatever dimensions we have.
-    std::iota(dimensions.begin(), dimensions.end(), 0);
+    if (dimension < 0 || dimension >= D_)
+    {
+      LOG(ERROR) << "Dimension " << dimension << " is out of range for trajectory with dimension " << D_;
+      return false;
+    }
+    std::vector<int> dimensions;
+    dimensions.push_back(dimension); // Evaluate in the specified dimension.
 
     Extremum v_min_traj, v_max_traj, a_min_traj, a_max_traj;
 
-    bool success = computeMinMaxMagnitude(
-        mav_trajectory_generation::derivative_order::VELOCITY, dimensions,
-        &v_min_traj, &v_max_traj);
-    success &= computeMinMaxMagnitude(
-        mav_trajectory_generation::derivative_order::ACCELERATION, dimensions,
-        &a_min_traj, &a_max_traj);
+    bool success = computeMinMaxMagnitude(mav_trajectory_generation::derivative_order::VELOCITY, dimensions, &v_min_traj, &v_max_traj, seg);
+    success &= computeMinMaxMagnitude(mav_trajectory_generation::derivative_order::ACCELERATION, dimensions, &a_min_traj, &a_max_traj, seg);
 
+    *v_max = v_max_traj.value;
+    *a_max = a_max_traj.value;
+
+    return success;
+  }
+
+  bool Trajectory::computeMaxVelocityAndAcceleration(int dimension, double *v_max, double *a_max) const
+  {
+    if (dimension < 0 || dimension >= D_)
+    {
+      LOG(ERROR) << "Dimension " << dimension << " is out of range for trajectory with dimension " << D_;
+      return false;
+    }
+    std::vector<int> dimensions;
+    dimensions.push_back(dimension); // Evaluate in the specified dimension.
+
+    Extremum v_min_traj, v_max_traj, a_min_traj, a_max_traj;
+
+    bool success = computeMinMaxMagnitude(mav_trajectory_generation::derivative_order::VELOCITY, dimensions, &v_min_traj, &v_max_traj);
+    success &= computeMinMaxMagnitude(mav_trajectory_generation::derivative_order::ACCELERATION, dimensions, &a_min_traj, &a_max_traj);
     *v_max = v_max_traj.value;
     *a_max = a_max_traj.value;
     return success;
@@ -417,26 +473,110 @@ namespace mav_trajectory_generation
   // This method SCALES the segment times evenly to ensure that the trajectory
   // is feasible given the provided v_max and a_max. Does not change the shape
   // of the trajectory, and only *increases* segment times.
-  bool Trajectory::scaleSegmentTimesToMeetConstraints(double v_max,
-                                                      double a_max)
+  bool Trajectory::scaleSegmentTimesToMeetConstraints(const std::vector<double> &v_max, const std::vector<double> &a_max, const bool segment_wise)
   {
+    CHECK_EQ(v_max.size(), D_) << "v_max size does not match trajectory dimension.";
+    CHECK_EQ(a_max.size(), D_) << "a_max size does not match trajectory dimension.";
+
     // In vast majority of cases, this will converge within 1 iteration.
     constexpr size_t kMaxCounter = 20;
     constexpr double kTolerance = 1e-3;
 
     bool within_range = false;
 
+    if (segment_wise) {
+    for (size_t i = 0; i < kMaxCounter; i++)
+    {
+      for (size_t seg = 0; seg < segments_.size(); seg++)
+      {
+        // From Liu, Sikang, et al. "Planning Dynamically Feasible Trajectories for
+        // Quadrotors Using Safe Flight Corridors in 3-D Complex Environments." IEEE
+        // Robotics and Automation Letters 2.3 (2017).
+        std::vector<double> v_max_actual, a_max_actual;
+        for (int d = 0; d < D_; d++)
+        {
+          double v_max_d, a_max_d;
+          computeMaxVelocityAndAcceleration(d, &v_max_d, &a_max_d, seg);
+          v_max_actual.push_back(v_max_d);
+          a_max_actual.push_back(a_max_d);
+        }
+
+        // Reevaluate constraint/bound violation
+        double velocity_violation = 0.0, acceleration_violation = 0.0;
+        for (int d = 0; d < D_; d++)
+        {
+          velocity_violation = std::max(velocity_violation, v_max_actual[d] / v_max[d]);
+          acceleration_violation = std::max(acceleration_violation, a_max_actual[d] / a_max[d]);
+        }
+
+        within_range = velocity_violation <= 1.0 + kTolerance && acceleration_violation <= 1.0 + kTolerance;
+
+        double violation_scaling = std::max(
+          1.0, std::max(velocity_violation, sqrt(acceleration_violation)));
+
+        // First figure out how to stretch the trajectory in time.
+        double violation_scaling_inverse = 1.0 / violation_scaling;
+
+        // Scale the segment times of each segment.
+        double new_max_time = 0.0;
+        double new_time = segments_[seg].getTime() * violation_scaling;
+        for (int d = 0; d < segments_[seg].D(); d++)
+        {
+          (segments_[seg])[d].scalePolynomialInTime(violation_scaling_inverse);
+        }
+        segments_[seg].setTime(new_time);
+        new_max_time += new_time;
+        max_time_ = new_max_time;
+      }
+
+      std::vector<double> v_max_actual, a_max_actual;
+      for (int d = 0; d < D_; d++)
+      {
+        double v_max_d, a_max_d;
+        computeMaxVelocityAndAcceleration(d, &v_max_d, &a_max_d);
+        v_max_actual.push_back(v_max_d);
+        a_max_actual.push_back(a_max_d);
+      }
+
+      // Reevaluate constraint/bound violation
+      double velocity_violation = 0.0, acceleration_violation = 0.0;
+      for (int d = 0; d < D_; d++)
+      {
+        velocity_violation = std::max(velocity_violation, v_max_actual[d] / v_max[d]);
+        acceleration_violation = std::max(acceleration_violation, a_max_actual[d] / a_max[d]);
+      }
+
+      within_range = velocity_violation <= 1.0 + kTolerance && acceleration_violation <= 1.0 + kTolerance;
+
+      if (within_range)
+      {
+        break;
+      }
+    }
+    return within_range;
+    }
+    else {
     for (size_t i = 0; i < kMaxCounter; i++)
     {
       // From Liu, Sikang, et al. "Planning Dynamically Feasible Trajectories for
       // Quadrotors Using Safe Flight Corridors in 3-D Complex Environments." IEEE
       // Robotics and Automation Letters 2.3 (2017).
-      double v_max_actual, a_max_actual;
-      computeMaxVelocityAndAcceleration(&v_max_actual, &a_max_actual);
+      std::vector<double> v_max_actual, a_max_actual;
+      for (int d = 0; d < D_; d++)
+      {
+        double v_max_d, a_max_d;
+        computeMaxVelocityAndAcceleration(d, &v_max_d, &a_max_d);
+        v_max_actual.push_back(v_max_d);
+        a_max_actual.push_back(a_max_d);
+      }
 
       // Reevaluate constraint/bound violation
-      double velocity_violation = v_max_actual / v_max;
-      double acceleration_violation = a_max_actual / a_max;
+      double velocity_violation = 0.0, acceleration_violation = 0.0;
+      for (int d = 0; d < D_; d++)
+      {
+        velocity_violation = std::max(velocity_violation, v_max_actual[d] / v_max[d]);
+        acceleration_violation = std::max(acceleration_violation, a_max_actual[d] / a_max[d]);
+      }
 
       within_range = velocity_violation <= 1.0 + kTolerance &&
                      acceleration_violation <= 1.0 + kTolerance;
@@ -466,6 +606,7 @@ namespace mav_trajectory_generation
       max_time_ = new_max_time;
     }
     return within_range;
+    }
   }
 
 } // namespace mav_trajectory_generation

@@ -125,8 +125,7 @@ namespace mav_trajectory_generation
   // Makes a rough estimate based on v_max and a_max about the time
   // required to get from one vertex to the next. Uses the current preferred
   // method.
-  std::vector<double> estimateSegmentTimes(const Vertex::Vector &vertices,
-                                           double v_max, double a_max);
+  std::vector<double> estimateSegmentTimes(const Vertex::Vector &vertices, const std::vector<double> &v_max, const std::vector<double> &a_max);
 
   // Calculate the velocity assuming instantaneous constant acceleration a_max
   // and straight line rest-to-rest trajectories.
@@ -140,7 +139,7 @@ namespace mav_trajectory_generation
   // t_est = 2 * distance/v_max * (1 + magic_fabian_constant * v_max/a_max * exp(-
   // distance/v_max * 2);
   // magic_fabian_constant was determined to 6.5 in a student project ...
-  std::vector<double> estimateSegmentTimesNfabian(const Vertex::Vector &vertices, double v_max, double a_max, double magic_fabian_constant = 6.5);
+  std::vector<double> estimateSegmentTimesNfabian(const Vertex::Vector &vertices, const std::vector<double> &v_max, const std::vector<double> &a_max, double magic_fabian_constant = 6.5);
 
   double computeTimeVelocityRamp(const Eigen::VectorXd &start, const Eigen::VectorXd &goal, double v_max, double a_max);
 

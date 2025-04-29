@@ -127,9 +127,11 @@ namespace mav_trajectory_generation
     // derivative and dimensions, e.g., [0, 1, 2] for position or [3] for yaw.
     // Returns false in case of extremum calculation failure.
     bool computeMinMaxMagnitude(int derivative, const std::vector<int> &dimensions, Extremum *minimum, Extremum *maximum) const;
+    bool computeMinMaxMagnitude(int derivative, const std::vector<int> &dimensions, Extremum *minimum, Extremum *maximum, int seg) const;
 
     // Compute max velocity and max acceleration. Shorthand for the method above.
-    bool computeMaxVelocityAndAcceleration(double *v_max, double *a_max) const;
+    bool computeMaxVelocityAndAcceleration(int dimension, double *v_max, double *a_max, int seg) const;
+    bool computeMaxVelocityAndAcceleration(int dimension, double *v_max, double *a_max) const;
 
     // This method SCALES the segment times evenly.
     bool scaleSegmentTimes(double scaling);
@@ -137,7 +139,7 @@ namespace mav_trajectory_generation
     // This method SCALES the segment times evenly to ensure that the trajectory
     // is feasible given the provided v_max and a_max. Does not change the shape
     // of the trajectory, and only *increases* segment times.
-    bool scaleSegmentTimesToMeetConstraints(double v_max, double a_max);
+    bool scaleSegmentTimesToMeetConstraints(const std::vector<double> &v_max, const std::vector<double> &a_max, const bool segment_wise = false);
 
   private:
     int D_;           // Number of dimensions.

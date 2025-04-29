@@ -29,8 +29,6 @@
 namespace mav_trajectory_generation
 {
 
-  constexpr double kOptimizationTimeLowerBound = 0.1;
-
   // Class holding all important parameters for nonlinear optimization.
   struct NonlinearOptimizationParameters
   {
@@ -66,6 +64,9 @@ namespace mav_trajectory_generation
     // Maximum number of iterations. Disabled if negative.
     int max_iterations = 3000;
 
+    // max execution time in secs
+    // double max_time = 1.0;
+
     // Penalty for the segment time.
     double time_penalty = 500.0;
 
@@ -99,6 +100,10 @@ namespace mav_trajectory_generation
 
     bool print_debug_info = false;
     bool print_debug_info_time_allocation = false;
+
+    bool segment_wise = false; // If true, the segment times are scaled independently, otherwise the same scaling factor is applied to all segments.
+
+    double minimum_segment_time = 0.1; // Minimum segment time, used to avoid numerical issues.
   };
 
   struct OptimizationInfo
@@ -160,7 +165,7 @@ namespace mav_trajectory_generation
     // Input: derivative_order = Order of the derivative, for which the
     // constraint should be checked. Usually velocity (=1) or acceleration (=2).
     // maximum_value = Maximum magnitude of the specified derivative.
-    bool addMaximumMagnitudeConstraint(int derivative_order, double maximum_value);
+    bool addMaximumMagnitudeConstraint(int dimension, int derivative_order, double maximum_value);
 
     // Solves the linear optimization problem according to [1].
     // The solver is re-used for every dimension, which means:
@@ -209,7 +214,7 @@ namespace mav_trajectory_generation
     // metrics regardless of time estimation method set.
     double getTotalCostWithSoftConstraints() const;
 
-    void scaleSegmentTimesWithViolation();
+    void scaleSegmentTimesWithViolation(const bool segment_wise = false);
 
   private:
     // Holds the data for constraint evaluation, since these methods are
@@ -218,6 +223,7 @@ namespace mav_trajectory_generation
     {
       PolynomialOptimizationNonLinear<N> *this_object;
       int derivative;
+      int dimension;
       double value;
     };
 
@@ -260,7 +266,7 @@ namespace mav_trajectory_generation
 
     // Does the actual optimization work for the time-only version.
     int optimizeTime();
-    int optimizeTimeMellingerOuterLoop();
+    int optimizeTimeMellingerOuterLoop(const bool segment_wise = false);
 
     // Does the actual optimization work for the full optimization version.
     int optimizeTimeAndFreeConstraints();

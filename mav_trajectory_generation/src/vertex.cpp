@@ -154,7 +154,7 @@ namespace mav_trajectory_generation
   void Vertex::makeStartOrEnd(const Eigen::VectorXd &constraint, int up_to_derivative)
   {
     addConstraint(derivative_order::POSITION, constraint);
-    for (int i = 1; i <= up_to_derivative; ++i)
+    for (int i = 1; i < up_to_derivative; ++i)
     {
       constraints_[i] = ConstraintValue::Zero(static_cast<int>(D_));
     }
@@ -245,8 +245,7 @@ namespace mav_trajectory_generation
     return stream;
   }
 
-  std::vector<double> estimateSegmentTimes(const Vertex::Vector &vertices,
-                                           double v_max, double a_max)
+  std::vector<double> estimateSegmentTimes(const Vertex::Vector &vertices, const std::vector<double> &v_max, const std::vector<double> &a_max)
   {
     return estimateSegmentTimesNfabian(vertices, v_max, a_max);
   }
@@ -273,9 +272,13 @@ namespace mav_trajectory_generation
     return segment_times;
   }
 
-  std::vector<double> estimateSegmentTimesNfabian(const Vertex::Vector &vertices, double v_max, double a_max, double magic_fabian_constant)
+  std::vector<double> estimateSegmentTimesNfabian(const Vertex::Vector& vertices, const std::vector<double>& v_max, const std::vector<double>& a_max, double magic_fabian_constant)
   {
     CHECK_GE(vertices.size(), 2);
+    const int num_dims = vertices.front().D();
+    CHECK_EQ(v_max.size(), num_dims);
+    CHECK_EQ(a_max.size(), num_dims);
+
     std::vector<double> segment_times;
     segment_times.reserve(vertices.size() - 1);
     for (size_t i = 0; i < vertices.size() - 1; ++i)
@@ -283,11 +286,16 @@ namespace mav_trajectory_generation
       Eigen::VectorXd start, end;
       vertices[i].getConstraint(derivative_order::POSITION, &start);
       vertices[i + 1].getConstraint(derivative_order::POSITION, &end);
-      double distance = (end - start).norm();
-      double t = distance / v_max * 2 *
-                 (1.0 + magic_fabian_constant * v_max / a_max *
-                            exp(-distance / v_max * 2));
-      segment_times.push_back(t);
+      double max_time_estimate = 0;
+      for (int d = 0; d < num_dims; ++d)
+      {
+        const double distance = std::abs(end[d] - start[d]);
+        const double v_max_safe = std::max(1e-4, std::abs(v_max[d]));
+        const double a_max_safe = std::max(1e-4, std::abs(a_max[d]));
+        const double time_estimate = (distance / v_max_safe) * 2.0 * (1.0 + magic_fabian_constant * (v_max_safe / a_max_safe) * std::exp(-2.0 * distance / v_max_safe));
+        max_time_estimate = std::max(max_time_estimate, time_estimate);
+      }
+      segment_times.push_back(max_time_estimate);
     }
     return segment_times;
   }

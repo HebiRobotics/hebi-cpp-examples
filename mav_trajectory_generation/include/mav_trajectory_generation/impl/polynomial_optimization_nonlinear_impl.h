@@ -76,6 +76,7 @@ namespace mav_trajectory_generation
     nlopt_->set_xtol_rel(optimization_parameters_.x_rel);
     nlopt_->set_xtol_abs(optimization_parameters_.x_abs);
     nlopt_->set_maxeval(optimization_parameters_.max_iterations);
+    // nlopt_->set_maxtime(optimization_parameters_.max_time);
 
     if (optimization_parameters_.random_seed < 0)
       nlopt_srand_time();
@@ -110,7 +111,7 @@ namespace mav_trajectory_generation
       result = optimizeTimeAndFreeConstraints();
       break;
     case NonlinearOptimizationParameters::kMellingerOuterLoop:
-      result = optimizeTimeMellingerOuterLoop();
+      result = optimizeTimeMellingerOuterLoop(optimization_parameters_.segment_wise);
       break;
     default:
       break;
@@ -144,7 +145,7 @@ namespace mav_trajectory_generation
       // issues.
       nlopt_->set_initial_step(initial_step);
       nlopt_->set_upper_bounds(std::numeric_limits<double>::max());
-      nlopt_->set_lower_bounds(kOptimizationTimeLowerBound);
+      nlopt_->set_lower_bounds(optimization_parameters_.minimum_segment_time);
       nlopt_->set_min_objective(&PolynomialOptimizationNonLinear<N>::objectiveFunctionTime, this);
     }
     catch (std::exception &e)
@@ -224,7 +225,7 @@ namespace mav_trajectory_generation
     // Set segment time constraints
     for (size_t l = 0; l < n_segments; ++l)
     {
-      lower_bounds.push_back(kOptimizationTimeLowerBound);
+      lower_bounds.push_back(optimization_parameters_.minimum_segment_time);
       upper_bounds.push_back(std::numeric_limits<double>::max());
     }
     // Append free endpoint derivative constraints
@@ -296,7 +297,7 @@ namespace mav_trajectory_generation
   }
 
   template <int _N>
-  int PolynomialOptimizationNonLinear<_N>::optimizeTimeMellingerOuterLoop()
+  int PolynomialOptimizationNonLinear<_N>::optimizeTimeMellingerOuterLoop(const bool segment_wise)
   {
     std::vector<double> segment_times;
     poly_opt_.getSegmentTimes(&segment_times);
@@ -319,7 +320,7 @@ namespace mav_trajectory_generation
       // Set a lower bound on the segment time per segment to avoid numerical
       // issues.
       nlopt_->set_upper_bounds(std::numeric_limits<double>::max());
-      nlopt_->set_lower_bounds(kOptimizationTimeLowerBound);
+      nlopt_->set_lower_bounds(optimization_parameters_.minimum_segment_time);
       nlopt_->set_min_objective(&PolynomialOptimizationNonLinear<N>::objectiveFunctionTimeMellingerOuterLoop, this);
     }
     catch (std::exception &e)
@@ -359,7 +360,7 @@ namespace mav_trajectory_generation
     // Scaling of segment times
     std::vector<double> relative_segment_times;
     poly_opt_.getSegmentTimes(&relative_segment_times);
-    scaleSegmentTimesWithViolation();
+    scaleSegmentTimesWithViolation(segment_wise);
     std::vector<double> scaled_segment_times;
     poly_opt_.getSegmentTimes(&scaled_segment_times);
 
@@ -623,10 +624,10 @@ namespace mav_trajectory_generation
         // }
 
         // Check and make sure that segment times are >
-        // kOptimizationTimeLowerBound
+        // optimization_parameters_.minimum_segment_time
         for (double &t : segment_times_bigger)
         {
-          t = std::max(kOptimizationTimeLowerBound, t);
+          t = std::max(optimization_parameters_.minimum_segment_time, t);
         }
 
         // Update the segment times. This changes the polynomial coefficients.
@@ -652,38 +653,41 @@ namespace mav_trajectory_generation
   }
 
   template <int _N>
-  void PolynomialOptimizationNonLinear<_N>::scaleSegmentTimesWithViolation()
+  void PolynomialOptimizationNonLinear<_N>::scaleSegmentTimesWithViolation(const bool segment_wise)
   {
     // Get trajectory
     Trajectory traj;
     poly_opt_.getTrajectory(&traj);
 
     // Get constraints
-    double v_max = 0.0;
-    double a_max = 0.0;
+    const int dims = poly_opt_.getDimension();
+    std::vector<double> v_max(dims, 0.0), a_max(dims, 0.0);
+
     for (const auto &constraint : inequality_constraints_)
     {
       if (constraint->derivative == derivative_order::VELOCITY)
       {
-        v_max = constraint->value;
+        v_max[constraint->dimension] = constraint->value;
       }
       else if (constraint->derivative == derivative_order::ACCELERATION)
       {
-        a_max = constraint->value;
+        a_max[constraint->dimension] = constraint->value;
       }
     }
 
     if (optimization_parameters_.print_debug_info_time_allocation)
     {
-      double v_max_actual, a_max_actual;
-      traj.computeMaxVelocityAndAcceleration(&v_max_actual, &a_max_actual);
-      std::cout << "[Time Scaling] Beginning:  v: max: " << v_max_actual << " / "
-                << v_max << " a: max: " << a_max_actual << " / " << a_max
-                << std::endl;
+      for (int d = 0; d < dims; d++)
+      {
+        double v_max_actual_d, a_max_actual_d;
+        traj.computeMaxVelocityAndAcceleration(d, &v_max_actual_d, &a_max_actual_d);
+        std::cout << "[Time Scaling] Beginning: dimension " << d << ": v: max: " << v_max_actual_d << " / " << v_max[d]
+                  << " a: max: " << a_max_actual_d << " / " << a_max[d] << std::endl;
+      }
     }
 
     // Run the trajectory time scaling.
-    traj.scaleSegmentTimesToMeetConstraints(v_max, a_max);
+    traj.scaleSegmentTimesToMeetConstraints(v_max, a_max, segment_wise);
 
     std::vector<double> segment_times;
     segment_times = traj.getSegmentTimes();
@@ -692,11 +696,13 @@ namespace mav_trajectory_generation
 
     if (optimization_parameters_.print_debug_info_time_allocation)
     {
-      double v_max_actual, a_max_actual;
-      traj.computeMaxVelocityAndAcceleration(&v_max_actual, &a_max_actual);
-      std::cout << "[Time Scaling] End: v: max: " << v_max_actual << " / "
-                << v_max << " a: max: " << a_max_actual << " / " << a_max
-                << std::endl;
+      for (int d = 0; d < dims; d++)
+      {
+        double v_max_actual_d, a_max_actual_d;
+        traj.computeMaxVelocityAndAcceleration(d, &v_max_actual_d, &a_max_actual_d);
+        std::cout << "[Time Scaling] End: dimension " << d << ": v: max: " << v_max_actual_d << " / " << v_max[d]
+                  << " a: max: " << a_max_actual_d << " / " << a_max[d] << std::endl;
+      }
     }
   }
 
@@ -723,12 +729,13 @@ namespace mav_trajectory_generation
   }
 
   template <int _N>
-  bool PolynomialOptimizationNonLinear<_N>::addMaximumMagnitudeConstraint(int derivative, double maximum_value)
+  bool PolynomialOptimizationNonLinear<_N>::addMaximumMagnitudeConstraint(int dimension, int derivative, double maximum_value)
   {
     CHECK_GE(derivative, 0);
     CHECK_GE(maximum_value, 0.0);
 
     std::shared_ptr<ConstraintData> constraint_data(new ConstraintData);
+    constraint_data->dimension = dimension;
     constraint_data->derivative = derivative;
     constraint_data->value = maximum_value;
     constraint_data->this_object = this;
@@ -822,6 +829,7 @@ namespace mav_trajectory_generation
     {
       unsigned int free_deriv_counter = 0;
       const int derivative_hc = constraint_data->derivative;
+      const int dimension = constraint_data->dimension;
       const double value_hc = constraint_data->value;
 
       for (size_t v = 0; v < vertices.size(); ++v)
@@ -832,14 +840,9 @@ namespace mav_trajectory_generation
           {
             if (deriv == derivative_hc)
             {
-              for (size_t k = 0; k < dim; ++k)
-              {
-                unsigned int start_idx = k * n_free_constraints;
-                lower_bounds->at(start_idx + free_deriv_counter) =
-                    -std::abs(value_hc);
-                upper_bounds->at(start_idx + free_deriv_counter) =
-                    std::abs(value_hc);
-              }
+              unsigned int start_idx = dimension * n_free_constraints;
+              lower_bounds->at(start_idx + free_deriv_counter) = -std::abs(value_hc);
+              upper_bounds->at(start_idx + free_deriv_counter) = std::abs(value_hc);
             }
             free_deriv_counter++;
           }

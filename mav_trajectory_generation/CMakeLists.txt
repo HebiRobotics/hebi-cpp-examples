@@ -24,7 +24,6 @@ endif()
 include_directories(
   include
   ${EIGEN3_INCLUDE_DIRS}  # Add Eigen3 include directories
-  ${GLOG_INCLUDE_DIRS}
   ${YamlCpp_INCLUDE_DIRS}
   ${EIGEN_CHECKS_INCLUDE_DIR}  # Add eigen_checks include directory
   ${NLOPT_INCLUDE_DIRS}  # Add NLopt include directories
@@ -44,45 +43,11 @@ set(LIB_SOURCES
 )
 
 add_library(${PROJECT_NAME} ${LIB_SOURCES})
-target_link_libraries(${PROJECT_NAME} ${YamlCpp_LIBRARIES} ${GLOG_LIBRARIES} glog)
-
-############
-# BINARIES #
-############
-add_executable(polynomial_timing_evaluation
-  src/polynomial_timing_evaluation.cpp
-)
-target_link_libraries(polynomial_timing_evaluation ${PROJECT_NAME} ${GLOG_LIBRARIES} glog)
-
-#########
-# TESTS #
-#########
-option(BUILD_TESTS "Build tests" ON)
-if(BUILD_TESTS)
-  enable_testing()
-  
-  # Find GTest
-  find_package(GTest REQUIRED)
-  include_directories(${GTEST_INCLUDE_DIRS})
-  
-  add_executable(test_polynomial test/test_polynomial.cpp)
-  target_link_libraries(test_polynomial ${PROJECT_NAME} ${GTEST_LIBRARIES} ${GLOG_LIBRARIES} glog pthread)
-  add_test(NAME test_polynomial COMMAND test_polynomial)
-  
-  add_executable(test_polynomial_optimization test/test_polynomial_optimization.cpp)
-  target_link_libraries(test_polynomial_optimization ${PROJECT_NAME} ${GTEST_LIBRARIES} ${GLOG_LIBRARIES} glog pthread nlopt)
-  add_test(NAME test_polynomial_optimization COMMAND test_polynomial_optimization)
-endif()
+target_link_libraries(${PROJECT_NAME} ${YamlCpp_LIBRARIES})
 
 ##########
 # INSTALL #
 ##########
-install(TARGETS ${PROJECT_NAME} polynomial_timing_evaluation
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
-)
-
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION include/${PROJECT_NAME}
   FILES_MATCHING PATTERN "*.h"
