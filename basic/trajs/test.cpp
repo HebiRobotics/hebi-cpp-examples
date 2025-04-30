@@ -1,250 +1,276 @@
-#include <nlopt.hpp>
+/**
+ * Generate a trajectory and execute it.
+ *
+ * For more information, go to http://docs.hebi.us/tools.html#cpp-api
+ *
+ * This script assumes you can create a group with 1 module.
+ *
+ * HEBI Robotics
+ * September 2018
+ */
+
+#include "trajectory.hpp"
+#include "Eigen/Eigen"
+
+#include "lookup.hpp"
+#include "group_command.hpp"
+#include "group_feedback.hpp"
+#include <mav_trajectory_generation/polynomial_optimization_nonlinear.h>
+#include "command.hpp"
+#include <math.h>
+#include <chrono>
 #include <vector>
 #include <iostream>
 #include "util/plot_functions.h"
-
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
+#endif
+#ifndef M_PI_2
+#define M_PI_2 1.57079632679489661923
 #endif
 
 namespace plt = matplotlibcpp;
 
-std::vector<double> waypoints = {0.0, 3.0, 7.0, 10.0};  // Example positions
-const double w_time = 1.0, w_jerk = 0.1;  // Optimization weights
+int main(int argc, char **argv)
+{
+  /*----------- PARSE ARGUMENTS ------------*/
+  // Default parameters
+  int num_joints = 1;
+  int num_waypoints = 10;
+  bool show_plot = true;
 
-// Objective function: minimize time and jerk
-double objective(unsigned n, const double* x, double* grad, void* data) {
-    double total = 0.0;
-    // Sum of time intervals
-    for (size_t i = 0; i < n/2; ++i) {
-        total += w_time * x[2*i];  // Time weight * dt
-        total += w_jerk * x[2*i+1] * x[2*i+1];  // Jerk weight * j^2
+  // Process command line arguments
+  for (int i = 1; i < argc; i++)
+  {
+    std::string arg = argv[i];
+    if (arg == "--no-plot")
+    {
+      show_plot = false;
     }
-    
-    // Compute gradient if requested
-    if (grad) {
-        for (size_t i = 0; i < n/2; ++i) {
-            grad[2*i] = w_time;  // Derivative with respect to dt
-            grad[2*i+1] = 2.0 * w_jerk * x[2*i+1];  // Derivative with respect to jerk
-        }
+    else if (arg == "--joints" && i + 1 < argc)
+    {
+      num_joints = std::stoi(argv[++i]);
+      if (num_joints <= 0)
+      {
+        std::cerr << "Number of joints must be positive" << std::endl;
+        return 1;
+      }
     }
-    
-    return total;
-}
+    else if (arg == "--waypoints" && i + 1 < argc)
+    {
+      num_waypoints = std::stoi(argv[++i]);
+      if (num_waypoints < 2)
+      {
+        std::cerr << "Number of waypoints must be at least 2" << std::endl;
+        return 1;
+      }
+    }
+    else if (arg == "--help" || arg == "-h")
+    {
+      std::cout << "Usage: " << argv[0] << " [options]" << std::endl;
+      std::cout << "Options:" << std::endl;
+      std::cout << "  --no-plot               Disable plotting" << std::endl;
+      std::cout << "  --joints <number>       Set number of joints (default: 10)" << std::endl;
+      std::cout << "  --waypoints <number>    Set number of waypoints (default: 10)" << std::endl;
+      std::cout << "  --help, -h              Show this help message" << std::endl;
+      return 0;
+    }
+    else
+    {
+      std::cerr << "Unknown argument: " << arg << std::endl;
+      std::cerr << "Use --help for usage information" << std::endl;
+      return 1;
+    }
+  }
 
-struct ConstraintData { int segment; double target_pos; };
+  std::cout << "Running with " << num_joints << " joints, "
+            << num_waypoints << " waypoints, plotting "
+            << (!show_plot ? "enabled" : "disabled") << std::endl;
 
-// Position constraints for each segment - modified to match NLopt's expected signature
-double position_constraint(unsigned n, const double* x, double* grad, void* data) {
-    auto* cd = static_cast<ConstraintData*>(data);
-    double p = waypoints[0], v = 0, a = 0;
-    
-    // Calculate position at the end of the segment
-    for (int i = 0; i <= cd->segment; ++i) {
-        double dt = x[2*i], j = x[2*i+1];
-        p += v*dt + 0.5*a*dt*dt + (j*dt*dt*dt)/6;
-        v += a*dt + 0.5*j*dt*dt;
-        a += j*dt;
-    }
-    
-    // Compute gradient if requested
-    if (grad) {
-        std::fill(grad, grad + n, 0.0); // Initialize all gradients to zero
-        
-        // Reset state to compute gradients
-        double pgrad = waypoints[0], vgrad = 0, agrad = 0;
-        
-        for (int i = 0; i <= cd->segment; ++i) {
-            double dt = x[2*i], j = x[2*i+1];
-            
-            // Gradient with respect to dt
-            grad[2*i] = vgrad + agrad*dt + j*dt*dt/2;
-            
-            // Gradient with respect to jerk
-            grad[2*i+1] = dt*dt*dt/6;
-            
-            // Update state for next segment
-            pgrad += vgrad*dt + 0.5*agrad*dt*dt + (j*dt*dt*dt)/6;
-            vgrad += agrad*dt + 0.5*j*dt*dt;
-            agrad += j*dt;
-        }
-    }
-    
-    return p - cd->target_pos;
-}
+  /*----------- COMMON ------------*/
+  // Define trajectory parameters
 
-// Position, velocity, and acceleration calculation at time t
-void evaluate_state(const std::vector<double>& x, double t, double& pos, double& vel, double& acc) {
-    pos = waypoints[0];
-    vel = 0.0;
-    acc = 0.0;
-    double elapsed = 0.0;
-    
-    for (size_t i = 0; i < x.size()/2; ++i) {
-        double dt = x[2*i];
-        double jerk = x[2*i+1];
-        
-        if (t <= elapsed + dt) {
-            // We're in this segment
-            double segment_t = t - elapsed;
-            pos += vel * segment_t + 0.5 * acc * segment_t * segment_t + (jerk * segment_t * segment_t * segment_t) / 6.0;
-            vel += acc * segment_t + 0.5 * jerk * segment_t * segment_t;
-            acc += jerk * segment_t;
-            return;
-        }
-        
-        // Move to next segment
-        pos += vel * dt + 0.5 * acc * dt * dt + (jerk * dt * dt * dt) / 6.0;
-        vel += acc * dt + 0.5 * jerk * dt * dt;
-        acc += jerk * dt;
-        elapsed += dt;
-    }
-}
+  // Create waypoint matrices for both trajectory generators
+  Eigen::MatrixXd positions(num_joints, num_waypoints);
+  Eigen::MatrixXd velocities(num_joints, num_waypoints);
+  Eigen::MatrixXd accelerations(num_joints, num_waypoints);
 
-int main() {
-    const int M = waypoints.size()-1;  // Number of segments
-    nlopt::opt opt(nlopt::LD_SLSQP, 2*M);
-    
-    // Set bounds (dt > 0)
-    std::vector<double> lb(2*M);
-    for (int i = 0; i < M; ++i) {
-        lb[2*i] = 0.1;     // Minimum time interval (avoid near-zero dt)
-        lb[2*i+1] = -100;  // Allow negative jerk values
-    }
-    opt.set_lower_bounds(lb);
-    
-    // Set upper bounds to prevent extremely large values
-    std::vector<double> ub(2*M);
-    for (int i = 0; i < M; ++i) {
-        ub[2*i] = 10.0;    // Maximum time interval
-        ub[2*i+1] = 100;   // Maximum jerk
-    }
-    opt.set_upper_bounds(ub);
-    
-    // Configure optimization
-    opt.set_min_objective(objective, nullptr);
-    opt.set_xtol_rel(1e-6);    // Tighter relative tolerance
-    opt.set_ftol_rel(1e-6);    // Function value tolerance
-    opt.set_maxeval(1000);     // Maximum number of evaluations
-    
-    // Create and store constraint data to ensure proper cleanup
-    std::vector<ConstraintData*> constraint_data;
-    
-    // Add position constraints - modified to use NLopt's function type
-    for (int i = 0; i < M; ++i) {
-        auto* data = new ConstraintData{i, waypoints[i+1]};
-        constraint_data.push_back(data);
-        opt.add_equality_constraint(position_constraint, data, 1e-6); // Relaxed tolerance
-    }
+  // Start point with full constraints
+  positions.col(0) = Eigen::VectorXd::Zero(num_joints);
 
-    // Initial guess: better estimate based on distance between waypoints
-    std::vector<double> x(2*M);
-    for (size_t i = 0; i < M; ++i) {
-        // Estimate time based on distance between waypoints
-        double distance = std::abs(waypoints[i+1] - waypoints[i]);
-        x[2*i] = 0.5 + 0.5 * distance; // Base time + distance-dependent component
-        
-        // Initial jerk estimate
-        x[2*i+1] = (i % 2 == 0) ? 0.5 : -0.5; // Alternating jerk directions
+  // Generate random waypoints between 0 and M_PI for intermediate points
+  srand(7); // Seed the random number generator
+  for (int i = 1; i < num_waypoints - 1; i++)
+  {
+    for (int j = 0; j < num_joints; j++)
+    {
+      positions(j, i) = ((double)rand() / RAND_MAX) * M_PI;
     }
+    velocities.col(i) = Eigen::VectorXd::Constant(num_joints, std::numeric_limits<double>::quiet_NaN());
+    accelerations.col(i) = Eigen::VectorXd::Constant(num_joints, std::numeric_limits<double>::quiet_NaN());
+  }
 
-    // Execute optimization
-    try {
-        double minf;
-        nlopt::result result = opt.optimize(x, minf);
-        
-        std::cout << "Optimization result: ";
-        switch (result) {
-            case nlopt::SUCCESS: std::cout << "Success!\n"; break;
-            case nlopt::STOPVAL_REACHED: std::cout << "Stop value reached\n"; break;
-            case nlopt::FTOL_REACHED: std::cout << "Function tolerance reached\n"; break;
-            case nlopt::XTOL_REACHED: std::cout << "Variable tolerance reached\n"; break;
-            case nlopt::MAXEVAL_REACHED: std::cout << "Max evaluations reached\n"; break;
-            case nlopt::MAXTIME_REACHED: std::cout << "Max time reached\n"; break;
-            case nlopt::ROUNDOFF_LIMITED: std::cout << "Roundoff limited (but results may still be usable)\n"; break;
-            default: std::cout << "Other termination code: " << result << "\n"; break;
-        }
-        
-        std::cout << "Optimized trajectory:\n";
-        double total_time = 0.0;
-        for (int i = 0; i < M; ++i) {
-            total_time += x[2*i];
-            std::cout << "Segment " << i+1 << ": dt=" << x[2*i] 
-                      << "s, jerk=" << x[2*i+1] << "m/s³\n";
-        }
-        std::cout << "Total trajectory time: " << total_time << "s\n";
-        std::cout << "Minimum objective value: " << minf << "\n";
+  // End point with position and velocity constraints
+  positions.col(num_waypoints - 1) = Eigen::VectorXd::Constant(num_joints, M_PI_2);
+  velocities.col(num_waypoints - 1) = Eigen::VectorXd::Zero(num_joints);
+  accelerations.col(num_waypoints - 1) = Eigen::VectorXd::Zero(num_joints);
 
-        // Plot the optimized trajectory
-        try {
-            std::cout << "\nGenerating trajectory plots...\n";
-            
-            // Generate time points for plotting
-            auto time_points = linspace(0.0, total_time, 1000);
-            
-            // Calculate trajectory states at each time point
-            std::vector<double> positions, velocities, accelerations;
-            for (double t : time_points) {
-                double pos, vel, acc;
-                evaluate_state(x, t, pos, vel, acc);
-                positions.push_back(pos);
-                velocities.push_back(vel);
-                accelerations.push_back(acc);
-            }
-            
-            // Create waypoints for plotting
-            std::vector<double> waypoint_times;
-            double t = 0;
-            for (int i = 0; i < M; i++) {
-                waypoint_times.push_back(t);
-                t += x[2*i]; // Add segment time
-            }
-            waypoint_times.push_back(t); // Add final waypoint time
-            
-            // Create position subplot
-            plt::figure();
-            
-            plt::subplot(3, 1, 1);
-            plt::named_plot("Position", time_points, positions, "-b");
-            plt::named_plot("Waypoints", waypoint_times, waypoints, "ro");
-            plt::title("Position Trajectory");
-            plt::xlabel("Time (s)");
-            plt::ylabel("Position");
-            plt::grid(true);
-            plt::legend();
-            
-            // Create velocity subplot
-            plt::subplot(3, 1, 2);
-            plt::named_plot("Velocity", time_points, velocities, "-g");
-            plt::title("Velocity Profile");
-            plt::xlabel("Time (s)");
-            plt::ylabel("Velocity");
-            plt::grid(true);
-            
-            // Create acceleration subplot
-            plt::subplot(3, 1, 3);
-            plt::named_plot("Acceleration", time_points, accelerations, "-r");
-            plt::title("Acceleration Profile");
-            plt::xlabel("Time (s)");
-            plt::ylabel("Acceleration");
-            plt::grid(true);
-            
-            // Show the combined plot
-            plt::tight_layout();
-            plt::show();
-            
-        } catch (const std::exception& e) {
-            std::cout << "Note: plotting skipped - " << e.what() << std::endl;
-        }
-        
-    } catch (std::exception& e) {
-        std::cerr << "Optimization failed: " << e.what() << "\n";
+  // Set maximum velocity and acceleration
+  Eigen::VectorXd max_v = Eigen::VectorXd::Constant(num_joints, 5.0);    // m/s
+  Eigen::VectorXd max_a = Eigen::VectorXd::Constant(num_joints, 1000.0); // m/s^2
+
+  Eigen::VectorXd times;
+  hebi::trajectory::Trajectory::getOptimalTimeVector(positions, max_v, max_a, times);
+
+  // Generate trajectory
+  auto trajectory = hebi::trajectory::Trajectory::createUnconstrainedQp(times, positions, &velocities, &accelerations);
+
+  // Get trajectory duration
+  double duration = trajectory->getDuration();
+  std::cout << "Trajectory duration: " << duration << " seconds" << std::endl;
+  
+  std::vector<std::vector<double>> pos_minmax_candidates;
+  std::vector<std::vector<double>> vel_minmax_candidates;
+  std::vector<std::vector<double>> acc_minmax_candidates;
+  pos_minmax_candidates.resize(num_joints);
+  vel_minmax_candidates.resize(num_joints);
+  acc_minmax_candidates.resize(num_joints);
+
+  for (int i = 0; i < num_joints; i++)
+  {
+    for (int j = 0; j < num_waypoints - 1; j++)
+    {
+      double p_max, v_max, a_max;
+      trajectory->getMaxInSegment(j, 0, p_max);
+      trajectory->getMaxInSegment(j, 1, v_max);
+      trajectory->getMaxInSegment(j, 2, a_max);
+      pos_minmax_candidates[i].push_back(p_max);
+      vel_minmax_candidates[i].push_back(v_max);
+      acc_minmax_candidates[i].push_back(a_max);
     }
-    
-    // Clean up constraint data
-    for (auto* data : constraint_data) {
-        delete data;
-    }
+  }
 
+  if (!show_plot)
+  {
     return 0;
+  }
+  try
+  {
+    std::cout << "Generating trajectory plots..." << std::endl;
+
+    // Generate time points for plotting
+    auto time_points = linspace(0.0, duration, 1000.0);
+
+    for (int i = 0; i < num_joints; i++)
+    {
+      // Get trajectory data for position, velocity, acceleration
+      std::vector<double> pos_data = f_x(time_points, [&, i](double t)
+                                         {
+        Eigen::VectorXd pos(num_joints); 
+        trajectory->getState(t, &pos, nullptr, nullptr); 
+        return pos[i]; });
+
+      std::vector<double> vel_data = f_x(time_points, [&, i](double t)
+                                         {
+        Eigen::VectorXd vel(num_joints); 
+        trajectory->getState(t, nullptr, &vel, nullptr); 
+        return vel[i]; });
+
+      std::vector<double> acc_data = f_x(time_points, [&, i](double t)
+                                         {
+        Eigen::VectorXd acc(num_joints); 
+        trajectory->getState(t, nullptr, nullptr, &acc); 
+        return acc[i]; });
+
+      // Create subplots for position, velocity, and acceleration
+      plt::figure();
+
+      // Position subplot
+      plt::subplot(3, 1, 1);
+      plt::named_plot("Trajectory", time_points, pos_data, "-b");
+
+      // Plot position waypoints
+      std::vector<double> waypoint_times;
+      std::vector<double> waypoint_positions;
+      for (int j = 0; j < num_waypoints; j++)
+      {
+        waypoint_times.push_back(times(j));
+        waypoint_positions.push_back(positions(i, j));
+      }
+      plt::named_plot("Waypoints", waypoint_times, waypoint_positions, "ko");
+
+      // Plot min/max candidates
+      for (size_t j = 0; j < pos_minmax_candidates[i].size(); j += 1)
+      {
+        double maxval = pos_minmax_candidates[i][j];
+        std::vector<double> x_values = {times(j), times(j+1)};
+        std::vector<double> y_values = {maxval, maxval};
+        // Add to legend only for the first candidate
+        if (j == 0) {
+          plt::named_plot("Min/Max Candidates", x_values, y_values, "k--");
+        } else {
+          plt::plot(x_values, y_values, "k--");
+        }
+      }
+
+      plt::title("Position Profile - Joint " + std::to_string(i + 1));
+      plt::xlabel("Time (s)");
+      plt::ylabel("Position (rad)");
+      plt::legend();
+
+      // Velocity subplot
+      plt::subplot(3, 1, 2);
+      plt::named_plot("Trajectory", time_points, vel_data, "-g");
+      
+      // Plot velocity min/max candidates
+      for (size_t j = 0; j < vel_minmax_candidates[i].size(); j += 1)
+      {
+        double maxval = vel_minmax_candidates[i][j];
+        std::vector<double> x_values = {times(j), times(j+1)};
+        std::vector<double> y_values = {maxval, maxval};
+        // Add to legend only for the first candidate
+        if (j == 0) {
+          plt::named_plot("Min/Max Candidates", x_values, y_values, "k--");
+        } else {
+          plt::plot(x_values, y_values, "k--");
+        }
+      }
+      
+      plt::title("Velocity Profile - Joint " + std::to_string(i + 1));
+      plt::xlabel("Time (s)");
+      plt::ylabel("Velocity (rad/s)");
+      plt::legend();
+
+      // Acceleration subplot
+      plt::subplot(3, 1, 3);
+      plt::named_plot("Trajectory", time_points, acc_data, "-r");
+      
+      // Plot acceleration min/max candidates
+      for (size_t j = 0; j < acc_minmax_candidates[i].size(); j += 1)
+      {
+        double maxval = acc_minmax_candidates[i][j];
+        std::vector<double> x_values = {times(j), times(j+1)};
+        std::vector<double> y_values = {maxval, maxval};
+        // Add to legend only for the first candidate
+        if (j == 0) {
+          plt::named_plot("Min/Max Candidates", x_values, y_values, "k--");
+        } else {
+          plt::plot(x_values, y_values, "k--");
+        }
+      }
+      
+      plt::title("Acceleration Profile - Joint " + std::to_string(i + 1));
+      plt::xlabel("Time (s)");
+      plt::ylabel("Acceleration (rad/s²)");
+      plt::legend();
+
+      plt::show();
+    }
+  }
+  catch (const std::exception &e)
+  {
+    std::cout << "Note: plotting failed - " << e.what() << std::endl;
+  }
+
+  return 0;
 }
