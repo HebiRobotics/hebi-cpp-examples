@@ -120,7 +120,7 @@ int main(int argc, char **argv)
   Eigen::VectorXd max_a = Eigen::VectorXd::Constant(num_joints, 1000.0); // m/s^2
 
   Eigen::VectorXd times;
-  hebi::trajectory::Trajectory::getOptimalTimeVector(positions, max_v, max_a, times);
+  hebi::trajectory::Trajectory::estimateBestTimes(positions, max_v, max_a, times);
 
   // Generate trajectory
   auto trajectory = hebi::trajectory::Trajectory::createUnconstrainedQp(times, positions, &velocities, &accelerations);
@@ -129,25 +129,23 @@ int main(int argc, char **argv)
   double duration = trajectory->getDuration();
   std::cout << "Trajectory duration: " << duration << " seconds" << std::endl;
   
-  std::vector<std::vector<double>> pos_minmax_candidates;
-  std::vector<std::vector<double>> vel_minmax_candidates;
-  std::vector<std::vector<double>> acc_minmax_candidates;
-  pos_minmax_candidates.resize(num_joints);
-  vel_minmax_candidates.resize(num_joints);
-  acc_minmax_candidates.resize(num_joints);
+  Eigen::MatrixXd pos_minmax_candidates(num_joints, num_waypoints - 1);
+  Eigen::MatrixXd vel_minmax_candidates(num_joints, num_waypoints - 1);
+  Eigen::MatrixXd acc_minmax_candidates(num_joints, num_waypoints - 1);
 
-  for (int i = 0; i < num_joints; i++)
+  pos_minmax_candidates.setZero();
+  vel_minmax_candidates.setZero();
+  acc_minmax_candidates.setZero();
+
+  for (int j = 0; j < num_waypoints - 1; j++)
   {
-    for (int j = 0; j < num_waypoints - 1; j++)
-    {
-      double p_max, v_max, a_max;
-      trajectory->getMaxInSegment(j, 0, p_max);
-      trajectory->getMaxInSegment(j, 1, v_max);
-      trajectory->getMaxInSegment(j, 2, a_max);
-      pos_minmax_candidates[i].push_back(p_max);
-      vel_minmax_candidates[i].push_back(v_max);
-      acc_minmax_candidates[i].push_back(a_max);
-    }
+    Eigen::VectorXd p_max(num_joints), v_max(num_joints), a_max(num_joints);
+    trajectory->getMaxInSegment(j, 0, p_max);
+    trajectory->getMaxInSegment(j, 1, v_max);
+    trajectory->getMaxInSegment(j, 2, a_max);
+    pos_minmax_candidates.col(j) = p_max;
+    vel_minmax_candidates.col(j) = v_max;
+    acc_minmax_candidates.col(j) = a_max;
   }
 
   if (!show_plot)
@@ -200,9 +198,9 @@ int main(int argc, char **argv)
       plt::named_plot("Waypoints", waypoint_times, waypoint_positions, "ko");
 
       // Plot min/max candidates
-      for (size_t j = 0; j < pos_minmax_candidates[i].size(); j += 1)
+      for (int j = 0; j < pos_minmax_candidates.cols(); j++)
       {
-        double maxval = pos_minmax_candidates[i][j];
+        double maxval = pos_minmax_candidates(i, j);
         std::vector<double> x_values = {times(j), times(j+1)};
         std::vector<double> y_values = {maxval, maxval};
         // Add to legend only for the first candidate
@@ -223,9 +221,9 @@ int main(int argc, char **argv)
       plt::named_plot("Trajectory", time_points, vel_data, "-g");
       
       // Plot velocity min/max candidates
-      for (size_t j = 0; j < vel_minmax_candidates[i].size(); j += 1)
+      for (int j = 0; j < vel_minmax_candidates.cols(); j++)
       {
-        double maxval = vel_minmax_candidates[i][j];
+        double maxval = vel_minmax_candidates(i, j);
         std::vector<double> x_values = {times(j), times(j+1)};
         std::vector<double> y_values = {maxval, maxval};
         // Add to legend only for the first candidate
@@ -246,9 +244,9 @@ int main(int argc, char **argv)
       plt::named_plot("Trajectory", time_points, acc_data, "-r");
       
       // Plot acceleration min/max candidates
-      for (size_t j = 0; j < acc_minmax_candidates[i].size(); j += 1)
+      for (int j = 0; j < acc_minmax_candidates.cols(); j++)
       {
-        double maxval = acc_minmax_candidates[i][j];
+        double maxval = acc_minmax_candidates(i, j);
         std::vector<double> x_values = {times(j), times(j+1)};
         std::vector<double> y_values = {maxval, maxval};
         // Add to legend only for the first candidate

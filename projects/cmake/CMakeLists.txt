@@ -232,8 +232,8 @@ add_custom_target(examples)
 
 # Trajectory Examples
 SET(TRAJECTORY_SOURCES
-  ${ROOT_DIR}/basic/trajs/example.cpp
-  ${ROOT_DIR}/basic/trajs/test.cpp)
+  ${ROOT_DIR}/basic/trajs/test_maxInSegment.cpp
+  ${ROOT_DIR}/basic/trajs/test_scaleSegment.cpp)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY basic/trajs)
 foreach(EXAMPLE ${TRAJECTORY_SOURCES})
