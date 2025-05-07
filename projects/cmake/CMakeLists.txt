@@ -14,6 +14,8 @@ get_filename_component(ROOT_DIR "${ROOT_DIR}" REALPATH)
 # `HEBI_CPP_DIR` can be used to point to an already downloaded C++ API.
 # This is useful for environments that would prefer not to download files
 # from the internet (or even don't have internet access).
+
+set(HEBI_CPP_DIR /home/hariharan/hebi/HEBI-Core-Cpp/build/3.12.2)
 if(NOT HEBI_CPP_DIR)
   set(HEBI_DIR ${ROOT_DIR}/hebi-cpp)
   include(DownloadHebiCpp.cmake)
@@ -27,11 +29,16 @@ get_filename_component(hebi_cpp_build_dir "${CMAKE_CURRENT_BINARY_DIR}/${hebi_cp
 
 add_subdirectory(${HEBI_DIR} ${hebi_cpp_build_dir})
 
-find_package(Python 3.6 COMPONENTS Interpreter Development.Module Development.Embed NumPy)
+find_package(Python 3.6 COMPONENTS Interpreter Development.Module Development.Embed NumPy REQUIRED)
 
 # Due to an issue in Windows and mac with some versions of numpy/distutils/etc, need
 # to manually add this here:
-set(NUMPY_INCLUDE_DIR ${Python_SITELIB}/numpy/core/include)
+set(NUMPY_INCLUDE_DIR ${Python3_NumPy_INCLUDE_DIRS})
+
+# If the standard NumPy include directory is not detected correctly, use the path from python -c "import numpy; print(numpy.get_include())"
+if(NOT EXISTS "${NUMPY_INCLUDE_DIR}/numpy/arrayobject.h")
+  set(NUMPY_INCLUDE_DIR "/usr/lib/python3/dist-packages/numpy/core/include")
+endif()
 
 # Helper function for adding target with HEBI library/dependency references
 function(hebi_add_target TARGET_NAME TARGET_SOURCES)
@@ -233,7 +240,7 @@ add_custom_target(examples)
 # Trajectory Examples
 SET(TRAJECTORY_SOURCES
   ${ROOT_DIR}/basic/trajs/test_maxInSegment.cpp
-  ${ROOT_DIR}/basic/trajs/test_scaleSegment.cpp)
+  ${ROOT_DIR}/basic/trajs/compare_algorithms.cpp)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY basic/trajs)
 foreach(EXAMPLE ${TRAJECTORY_SOURCES})
@@ -241,7 +248,7 @@ foreach(EXAMPLE ${TRAJECTORY_SOURCES})
   # The target for the individual example is based on the filename
   get_filename_component(EX_NAME ${EXAMPLE} NAME_WE)
   
-  # Add this target with specific include directories for mav_trajectory_generation
+  # Add this target with specific include directories
   if(WIN32)
     add_executable(${EX_NAME} ${EXAMPLE} $<TARGET_OBJECTS:_hebic++-obj>)
   else()
@@ -253,12 +260,13 @@ foreach(EXAMPLE ${TRAJECTORY_SOURCES})
 
   ## Add include paths, Link and copy libraries
   target_include_directories(${EX_NAME} PRIVATE ${ROOT_DIR})
-  target_include_directories(${EX_NAME} PRIVATE ${ROOT_DIR}/mav_trajectory_generation/include)
   target_include_directories(${EX_NAME} PRIVATE /usr/include/eigen3)
   target_include_directories(${EX_NAME} PRIVATE ${HEBI_DIR})
   target_include_directories(${EX_NAME} PRIVATE ${HEBI_DIR}/src)
 
-  target_include_directories(${EX_NAME} PRIVATE ${Python_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIR})
+  # Make sure NumPy headers are correctly included
+  target_include_directories(${EX_NAME} PRIVATE ${Python_INCLUDE_DIRS})
+  target_include_directories(${EX_NAME} PRIVATE ${NUMPY_INCLUDE_DIR})
   target_link_libraries(${EX_NAME} ${Python_LIBRARIES})
   
   if(WIN32)
@@ -274,7 +282,6 @@ foreach(EXAMPLE ${TRAJECTORY_SOURCES})
       $<TARGET_FILE_DIR:${EX_NAME}>)
   elseif(UNIX)
     target_link_libraries(${EX_NAME} hebi hebic++ m pthread)
-    target_link_libraries(${EX_NAME} ${ROOT_DIR}/mav_trajectory_generation/build/libmav_trajectory_generation.a)
     target_link_libraries(${EX_NAME} yaml-cpp nlopt)
   endif()
 

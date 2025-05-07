@@ -15,7 +15,6 @@
 #include "lookup.hpp"
 #include "group_command.hpp"
 #include "group_feedback.hpp"
-#include <mav_trajectory_generation/polynomial_optimization_nonlinear.h>
 #include "command.hpp"
 #include <math.h>
 #include <chrono>
