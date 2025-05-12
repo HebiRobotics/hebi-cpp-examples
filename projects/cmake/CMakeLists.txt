@@ -240,7 +240,9 @@ add_custom_target(examples)
 # Trajectory Examples
 SET(TRAJECTORY_SOURCES
   ${ROOT_DIR}/basic/trajs/test_maxInSegment.cpp
-  ${ROOT_DIR}/basic/trajs/compare_algorithms.cpp)
+  ${ROOT_DIR}/basic/trajs/test_poly_solver.cpp
+  ${ROOT_DIR}/basic/trajs/compare_algorithms.cpp
+)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY basic/trajs)
 foreach(EXAMPLE ${TRAJECTORY_SOURCES})

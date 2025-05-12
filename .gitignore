@@ -6,3 +6,4 @@ projects/**/*.user
 build
 hebi-cpp
 eigen_checks
+.vscode/
