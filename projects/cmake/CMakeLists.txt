@@ -56,6 +56,8 @@ function(hebi_add_target TARGET_NAME TARGET_SOURCES)
     # For Windows, we copy the .dll file into the binary directory so that we
     # don't have to set the PATH variable.
 
+    set_target_properties(${TARGET_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "$(OutDir)")
+
     set(LIBHEBI_LOCATION "lib/win_${LIBHEBI_TARGET_ARCHITECTURE}")
     set(HEBI_CPP_LIB_DIRECTORY ${HEBI_DIR}/hebi/${LIBHEBI_LOCATION}/)
 

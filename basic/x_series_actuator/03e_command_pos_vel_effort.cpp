@@ -97,6 +97,11 @@ int main() {
 
   // Stop logging
   auto log_file = group->stopLog();
+  if (!log_file) {
+      std::cout << "~~ERROR~~\n"
+                << "Log file not found!\n";
+      return 1;
+  }
 
   return 0;
 }

@@ -10,7 +10,11 @@
 #include <cstdint> // <cstdint> requires c++11 support
 #include <functional>
 
+//#include <Python.h>
+#undef _DEBUG
 #include <Python.h>
+#define _DEBUG
+
 
 #ifndef WITHOUT_NUMPY
 #  define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
