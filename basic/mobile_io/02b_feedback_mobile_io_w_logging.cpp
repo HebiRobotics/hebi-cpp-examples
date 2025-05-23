@@ -112,6 +112,11 @@ int main() {
 
   // Stop logging
   std::shared_ptr<LogFile> log_file = group -> stopLog();
+  if (!log_file) {
+      std::cout << "~~ERROR~~\n"
+                << "Log file not found!\n";
+      return 1;
+  }
 
   group -> clearFeedbackHandlers();
   return 0;

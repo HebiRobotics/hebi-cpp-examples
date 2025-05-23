@@ -187,6 +187,11 @@ int main() {
 
   // Stop logging
   auto log_file = group->stopLog();
+  if (!log_file) {
+      std::cout << "~~ERROR~~\n"
+                << "Log file not found!\n";
+      return 1;
+  }
 
   //plot logged position, velocity and efforts for each module
   std::vector<std::vector<double>> pos;
