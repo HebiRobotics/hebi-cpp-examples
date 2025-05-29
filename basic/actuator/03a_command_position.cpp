@@ -20,43 +20,8 @@
 
 using namespace hebi;
 
-//static std::atomic_bool did_start{false};
-/*
-class StartWrapper {
-public:
-  StartWrapper(int argc, char** argv) {
-    std::cout << "Running!\n";
-    runner = std::thread([argc, argv](){
-    });
-    while (!did_start) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-    // Needs to be called on main...and never returns
-    hebi::charts::hebiChartsRunApplication(main2, argc, argv);
-    std::cout << "Started Thread.\n";
-  }
-  ~StartWrapper() {
-    // TODO: otherwise?
-    std::cout << "Joining Thread.  Perhaps this is where we kill 'main2'?\n";
-    runner.join();
-  }
-private:
-  static int main2(int argc, char** argv) {
-    did_start = true;
-    std::this_thread::sleep_for(std::chrono::seconds(40));
-    // TODO: wait here?
-    return 0;
-  }
-  std::thread runner;
-};
-*/
-//std::atomic_bool StartWrapper::did_start = false;
-
-static std::atomic_bool did_plot{false};
-int main2(int argc, char** argv)
+int run(int argc, char** argv)
 {
-  //StartWrapper wrapper(argc, argv);
-
   // Get group
   Lookup lookup;
   auto group = lookup.getGroupFromNames({"HEBI"}, {"J3"});
@@ -143,57 +108,12 @@ int main2(int argc, char** argv)
     chart->addLine(title.c_str(), times.data(), pos[i].data(), times.size());
   }
   chart->show();
-  did_plot = true;
-
-  std::cout << "robot thread:\n";
-  hebi::charts::JavaFxDebugUtil::printThreadInfo("robot");
 
   hebi::charts::ChartFramework::waitUntilStagesClosed();
 
   return 0;
 }
 
-static std::atomic_bool did_start{false};
-int ui_callback(int argc, char** argv) {
-  hebi::charts::JavaFxDebugUtil::printThreadInfo("ui start");
-  did_start = true;
-  auto main_thread = std::thread([argc, argv](){
-    // Wait for plotting thread to initialize:
-    while (!did_start)
-      std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    main2(argc, argv);
-  });
-  while (!did_plot)
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-  std::cout << "UI callback thread:\n";
-  hebi::charts::JavaFxDebugUtil::printThreadInfo("ui");
-  main_thread.join();
-  return 0;
-}
-
 int main(int argc, char** argv) {
-  // Never returns:
-  hebi::charts::JavaFxDebugUtil::printThreadInfo("main call");
-  hebi::charts::hebiChartsRunApplication(ui_callback, argc, argv);
+  hebi::charts::hebiChartsRunApplication(run, argc, argv);
 }
-
-
-
-/*
-static std::atomic_bool did_start{false};
-int ui_callback(int argc, char** argv) {
-  did_start = true;
-  return 0;
-}
-
-int main(int argc, char** argv) {
-  auto main_thread = std::thread([argc, argv](){
-    // Wait for plotting thread to initialize:
-    while (!did_start)
-      std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    main2(argc, argv);
-  });
-  // Never returns:
-  hebi::charts::hebiChartsRunApplication(ui_callback, argc, argv);
-}
-*/

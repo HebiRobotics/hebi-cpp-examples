@@ -8,8 +8,10 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "")
   set(CMAKE_BUILD_TYPE Debug)
 endif()
 
+option(USE_HEBI_CHARTS OFF)
+
 set(ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../..)
-set(HEBI_CHARTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../hebi-charts)
+set(HEBI_CHARTS_DIR ${ROOT_DIR}/hebi-charts)
 get_filename_component(ROOT_DIR "${ROOT_DIR}" REALPATH)
 
 # `HEBI_CPP_DIR` can be used to point to an already downloaded C++ API.
@@ -20,6 +22,10 @@ if(NOT HEBI_CPP_DIR)
   include(DownloadHebiCpp.cmake)
 else()
   set(HEBI_DIR ${HEBI_CPP_DIR})
+endif()
+
+if (USE_HEBI_CHARTS)
+  include(${HEBI_CHARTS_DIR}/download.cmake)
 endif()
 
 set(hebi_cpp_build_dir hebi-cpp-${CMAKE_BUILD_TYPE})
@@ -43,7 +49,7 @@ function(hebi_add_target TARGET_NAME TARGET_SOURCES)
   ## Add include paths, Link and copy libraries
   target_include_directories(${TARGET_NAME} PRIVATE ${ROOT_DIR} ${HEBI_CHARTS_DIR})
 
-  if(WIN32)
+  if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_link_libraries(${TARGET_NAME} hebi kernel32)
     target_include_directories(${TARGET_NAME} PRIVATE ${HEBI_DIR}/src ${HEBI_DIR}/include ${HEBI_DIR}/Eigen)
     # For Windows, we copy the .dll file into the binary directory so that we
@@ -58,12 +64,15 @@ function(hebi_add_target TARGET_NAME TARGET_SOURCES)
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
       "${HEBI_CPP_LIB_DIRECTORY}/hebi.dll"
       $<TARGET_FILE_DIR:${TARGET_NAME}>)
-    add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-      "${HEBI_CHARTS_DIR}/charts.dll"
-      $<TARGET_FILE_DIR:${TARGET_NAME}>)
   elseif(UNIX)
     target_link_libraries(${TARGET_NAME} hebi hebic++ m pthread)
+  endif()
+
+  if (USE_HEBI_CHARTS)
+    add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "${HEBI_CHARTS_LIB_DIR}/${HEBI_CHARTS_PLATFORM}/${HEBI_CHARTS_SO_NAME}"
+      $<TARGET_FILE_DIR:${TARGET_NAME}>)
   endif()
 endfunction()
 
