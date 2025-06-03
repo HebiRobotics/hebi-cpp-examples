@@ -6,17 +6,19 @@
 #include "group_command.hpp"
 #include "group_feedback.hpp"
 #include "robot_model.hpp"
-#include "util/plot_functions.h"
+#include "hebi_charts.hpp"
+
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
 
 using namespace hebi;
-using ActuatorType = robot_model::ActuatorType;
-using BracketType = robot_model::BracketType;
-using LinkType = robot_model::LinkType;
 
-int main()
+int run(int, char**);
+int main(int argc, char** argv) {
+  hebi::charts::hebiChartsRunApplication(run, argc, argv);
+}
+int run(int, char**)
 {
   //////////////////////////////////////
   // Set up group and robot_model
@@ -28,7 +30,7 @@ int main()
 
   if (!group)
   {
-    std::cout << "Group not found!";
+    std::cout << "Group not found!\n";
     return -1;
   }
 
@@ -37,7 +39,7 @@ int main()
     robot_model::RobotModel::loadHRDF("hrdf/3-DoF_arm_example.hrdf");
   if (!model)
   {
-    std::cout << "Could not load HRDF!" << std::endl;
+    std::cout << "Could not load HRDF!\n";
     return -1;
   }
 
@@ -57,7 +59,7 @@ int main()
   
   if (!group->getNextFeedback(group_fbk))
   {
-    std::cout << "Couldn't get feedback!";
+    std::cout << "Couldn't get feedback!\n";
     return -1;
   }
 
@@ -116,10 +118,17 @@ int main()
   std::vector<std::vector<double>> lines_y;
   std::vector<std::vector<double>> lines_z;
 
+  auto chart = hebi::charts::Chart3d::create();
+  chart->show();
   for(size_t j = 0; j < transforms.size(); ++j) {
-    plot_3dtriad(transforms[j],&lines_x,&lines_y,&lines_z, static_cast<bool>(j));
+    auto triad = chart->addTriad(0.075);
+    Eigen::Quaterniond q(Eigen::Matrix3d(transforms[j].topLeftCorner(3, 3)));
+    triad->setOrientation(q.w(), q.x(), q.y(), q.z());
+    Eigen::Vector3d xyz = transforms[j].topRightCorner(3, 1);
+    triad->setTranslation(xyz.x(), xyz.y(), xyz.z());
   }
-  plt::pause(1);
+
+  hebi::charts::ChartFramework::waitUntilStagesClosed();
 
   //////////////////////////////////////
   // Send commands to the physical robot

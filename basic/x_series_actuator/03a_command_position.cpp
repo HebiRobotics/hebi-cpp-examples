@@ -20,11 +20,15 @@
 
 using namespace hebi;
 
-int run(int argc, char** argv)
+int run(int, char**);
+int main(int argc, char** argv) {
+  hebi::charts::hebiChartsRunApplication(run, argc, argv);
+}
+int run(int, char**)
 {
   // Get group
   Lookup lookup;
-  auto group = lookup.getGroupFromNames({"HEBI"}, {"J3"});
+  auto group = lookup.getGroupFromNames({"Test Family"}, {"Test Actuator"});
 
   if (!group) {
     std::cout
@@ -87,9 +91,9 @@ int run(int argc, char** argv)
 
   //plot the logged position data
   std::vector<std::vector<double>> pos;
+  pos.resize(group->size());
   double t0{};
   std::vector<double> times;
-  pos.resize(group->size());
   GroupFeedback fbk(group->size());
   while(log_file->getNextFeedback(fbk)) {
     for(size_t i = 0; i < group->size(); i++){
@@ -101,9 +105,6 @@ int run(int argc, char** argv)
   }
   auto chart = hebi::charts::Chart::create();
   for(size_t i = 0; i < group->size(); i++){
-    // TODO: memory? is dataset freed or tracked by the chart?  Dataset is released, but is this reference counted internally?
-    // (usually this would be a member variable of chart, so would be tracked on there...maybe is still is, or we should add
-    // it there...)
     auto title =(std::string("module ") + std::to_string(i));
     chart->addLine(title.c_str(), times.data(), pos[i].data(), times.size());
   }
@@ -112,8 +113,4 @@ int run(int argc, char** argv)
   hebi::charts::ChartFramework::waitUntilStagesClosed();
 
   return 0;
-}
-
-int main(int argc, char** argv) {
-  hebi::charts::hebiChartsRunApplication(run, argc, argv);
 }

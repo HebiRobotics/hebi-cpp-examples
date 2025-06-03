@@ -16,13 +16,15 @@
 #include "group_command.hpp"
 #include "group_feedback.hpp"
 #include "log_file.hpp"
-#include "util/plot_functions.h"
-
-namespace plt = matplotlibcpp;
+#include "hebi_charts.hpp"
 
 using namespace hebi;
 
-int main() {
+int run(int, char**);
+int main(int argc, char** argv) {
+  hebi::charts::hebiChartsRunApplication(run, argc, argv);
+}
+int run(int, char**) {
   // Get group
   Lookup lookup;
   auto group = lookup.getGroupFromNames({"Test Family"}, {"Test Actuator" });
@@ -89,16 +91,25 @@ int main() {
   //plot logged effort
   std::vector<std::vector<double>> eff;
   eff.resize(group->size());
+  double t0{};
+  std::vector<double> times;
   GroupFeedback fbk(group->size());
   while(log_file->getNextFeedback(fbk)) {
     for(size_t i = 0; i < group->size(); i++){
       eff[i].push_back(fbk.getEffort()[i]);
     }
+    if (t0 == 0)
+      t0 = fbk.getTime();
+    times.push_back(fbk.getTime() - t0);
   }
+  auto chart = hebi::charts::Chart::create();
   for(size_t i = 0; i < group->size(); i++){
-    plt::plot(eff[i]);
+    auto title =(std::string("module ") + std::to_string(i));
+    chart->addLine(title.c_str(), times.data(), eff[i].data(), times.size());
   }
-  plt::show();
+  chart->show();
+
+  hebi::charts::ChartFramework::waitUntilStagesClosed();
 
   return 0;
 }
