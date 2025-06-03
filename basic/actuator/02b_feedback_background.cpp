@@ -3,13 +3,15 @@
 #include <thread>
 #include "lookup.hpp"
 #include "group_feedback.hpp"
-#include "util/plot_functions.h"
+#include "hebi_charts.hpp"
 
 using namespace hebi;
 
-namespace plt = matplotlibcpp;
-
-int main()
+int run(int, char**);
+int main(int argc, char** argv) {
+  hebi::charts::hebiChartsRunApplication(run, argc, argv);
+}
+int run(int, char**)
 {
   // Get a group
   Lookup lookup;
@@ -29,24 +31,32 @@ int main()
   // but you can also pass in a C-style function pointer with the signature:
   //   void func(const hebi::GroupFeedback& group_fbk);
   std::vector<double> y;
-  group->addFeedbackHandler([&y](const GroupFeedback& group_fbk)
+  y.resize(3, 0);
+  std::vector<std::string> x_labels = {"X","Y","Z"};
+  std::vector<double> x_ticks = {0.0,1.0,2.0};
+
+  auto chart = hebi::charts::Chart::create();
+  chart->getAxisY()->setLimits(-3.14, 3.14);
+  // TODO:
+  //chart->getAxisX()->setNames("X", "Y", "Z");
+  //plt::xticks(x_ticks,x_labels);
+
+  auto chart_data = chart->addBars("X/Y/Z", x_ticks.data(), y.data(), 3);
+  chart->show();
+  group->addFeedbackHandler([&x_ticks, &y, &chart_data](const GroupFeedback& group_fbk)
   {
     auto gyro = group_fbk.getGyro();
     y = { gyro(0,0), gyro(0,1), gyro(0,2) };
 
     //plot the feedback
-    std::vector<std::string> x_labels = {"X","Y","Z"};
-    std::vector<double> x_ticks = {0.0,1.0,2.0};
-    plt::clf();
-    plt::ylim(-3.14, 3.14); 
-    plt::xticks(x_ticks,x_labels);
-    plt::bar(y);
-    plt::pause(0.01);
+    chart_data->setData(x_ticks.data(), y.data(), 3);
   });
 
   // Wait for 10 seconds, and then stop.
   std::this_thread::sleep_for(std::chrono::milliseconds(10000));
   group->clearFeedbackHandlers();
+
+  hebi::charts::ChartFramework::waitUntilStagesClosed();
 
   return 0;
 }
