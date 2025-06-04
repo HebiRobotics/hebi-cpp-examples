@@ -89,29 +89,29 @@ add_custom_target(examples)
 
 # Build X_SERIES Examples
 SET(X_SERIES_SOURCES
-  ${ROOT_DIR}/basic/x_series_actuator/01a_lookup.cpp
-  ${ROOT_DIR}/basic/x_series_actuator/01b_get_group_single_module.cpp
-  ${ROOT_DIR}/basic/x_series_actuator/01c_get_group_multiple_modules.cpp
-  ${ROOT_DIR}/basic/x_series_actuator/02a_feedback_foreground.cpp
-  ${ROOT_DIR}/basic/x_series_actuator/02b_feedback_background.cpp
-  ${ROOT_DIR}/basic/x_series_actuator/03a_command_position.cpp
-  ${ROOT_DIR}/basic/x_series_actuator/03b_command_velocity.cpp
-  ${ROOT_DIR}/basic/x_series_actuator/03c_command_effort.cpp
-  ${ROOT_DIR}/basic/x_series_actuator/03d_command_pos_vel.cpp
-  ${ROOT_DIR}/basic/x_series_actuator/03e_command_pos_vel_effort.cpp
-  ${ROOT_DIR}/basic/x_series_actuator/03f_command_vel_w_feedback.cpp
-  ${ROOT_DIR}/basic/x_series_actuator/04a_gains_position_kp.cpp
-  ${ROOT_DIR}/basic/x_series_actuator/04b_gains_saving_xml.cpp
-  ${ROOT_DIR}/basic/x_series_actuator/04c_gains_loading_xml.cpp
-  ${ROOT_DIR}/basic/x_series_actuator/05_trajectory.cpp
-  ${ROOT_DIR}/basic/x_series_actuator/06a_kinematics_setup.cpp
-  ${ROOT_DIR}/basic/x_series_actuator/06b_kinematics_fwd_kinematics.cpp
-  ${ROOT_DIR}/basic/x_series_actuator/06c_kinematics_inv_kinematics.cpp
-  ${ROOT_DIR}/basic/x_series_actuator/07a_robot_3_dof_arm.cpp
-  ${ROOT_DIR}/basic/x_series_actuator/07b_robot_6_dof_arm.cpp)
+  ${ROOT_DIR}/basic/actuator/01a_lookup.cpp
+  ${ROOT_DIR}/basic/actuator/01b_get_group_single_module.cpp
+  ${ROOT_DIR}/basic/actuator/01c_get_group_multiple_modules.cpp
+  ${ROOT_DIR}/basic/actuator/02a_feedback_foreground.cpp
+  ${ROOT_DIR}/basic/actuator/02b_feedback_background.cpp
+  ${ROOT_DIR}/basic/actuator/03a_command_position.cpp
+  ${ROOT_DIR}/basic/actuator/03b_command_velocity.cpp
+  ${ROOT_DIR}/basic/actuator/03c_command_effort.cpp
+  ${ROOT_DIR}/basic/actuator/03d_command_pos_vel.cpp
+  ${ROOT_DIR}/basic/actuator/03e_command_pos_vel_effort.cpp
+  ${ROOT_DIR}/basic/actuator/03f_command_vel_w_feedback.cpp
+  ${ROOT_DIR}/basic/actuator/04a_gains_position_kp.cpp
+  ${ROOT_DIR}/basic/actuator/04b_gains_saving_xml.cpp
+  ${ROOT_DIR}/basic/actuator/04c_gains_loading_xml.cpp
+  ${ROOT_DIR}/basic/actuator/05_trajectory.cpp
+  ${ROOT_DIR}/basic/actuator/06a_kinematics_setup.cpp
+  ${ROOT_DIR}/basic/actuator/06b_kinematics_fwd_kinematics.cpp
+  ${ROOT_DIR}/basic/actuator/06c_kinematics_inv_kinematics.cpp
+  ${ROOT_DIR}/basic/actuator/07a_robot_3_dof_arm.cpp
+  ${ROOT_DIR}/basic/actuator/07b_robot_6_dof_arm.cpp)
 
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY basic/x_series_actuator)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY basic/actuator)
 foreach(EXAMPLE ${X_SERIES_SOURCES})
 
   # The target for the individual example is based on the filename
