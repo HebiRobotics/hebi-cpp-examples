@@ -16,7 +16,7 @@ using namespace hebi;
 
 int run(int, char**);
 int main(int argc, char** argv) {
-  hebi::charts::hebiChartsRunApplication(run, argc, argv);
+  hebi::charts::runApplication(run, argc, argv);
 }
 int run(int, char**)
 {
@@ -113,22 +113,21 @@ int run(int, char**)
   model->getFK(robot_model::FrameType::Output, ik_result_joint_angles, transforms);
 
   // plot frames on a 3d graph
-  transforms.emplace(transforms.begin(),Eigen::Matrix<double,4,4>::Identity());
-  std::vector<std::vector<double>> lines_x;
-  std::vector<std::vector<double>> lines_y;
-  std::vector<std::vector<double>> lines_z;
+  transforms.emplace(transforms.begin(), Eigen::Matrix<double,4,4>::Identity());
 
-  auto chart = hebi::charts::Chart3d::create();
-  chart->show();
-  for(size_t j = 0; j < transforms.size(); ++j) {
-    auto triad = chart->addTriad(0.075);
-    Eigen::Quaterniond q(Eigen::Matrix3d(transforms[j].topLeftCorner(3, 3)));
-    triad->setOrientation(q.w(), q.x(), q.y(), q.z());
-    Eigen::Vector3d xyz = transforms[j].topRightCorner(3, 1);
-    triad->setTranslation(xyz.x(), xyz.y(), xyz.z());
+  if (hebi::charts::framework::isLoaded()) {
+    hebi::charts::Chart3d chart;
+    chart.show();
+    for(size_t j = 0; j < transforms.size(); ++j) {
+      auto triad = chart.addTriad(0.075);
+      Eigen::Quaterniond q(Eigen::Matrix3d(transforms[j].topLeftCorner(3, 3)));
+      triad.setOrientation(q.w(), q.x(), q.y(), q.z());
+      Eigen::Vector3d xyz = transforms[j].topRightCorner(3, 1);
+      triad.setTranslation(xyz.x(), xyz.y(), xyz.z());
+    }
+    
+    hebi::charts::framework::waitUntilWindowsClosed();
   }
-
-  hebi::charts::ChartFramework::waitUntilStagesClosed();
 
   //////////////////////////////////////
   // Send commands to the physical robot
