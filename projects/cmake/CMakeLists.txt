@@ -25,7 +25,7 @@ else()
 endif()
 
 if (USE_HEBI_CHARTS)
-  include(${HEBI_CHARTS_DIR}/download.cmake)
+  include(${HEBI_CHARTS_DIR}/hebi_charts.cmake)
 endif()
 
 set(hebi_cpp_build_dir hebi-cpp-${CMAKE_BUILD_TYPE})
@@ -47,7 +47,7 @@ function(hebi_add_target TARGET_NAME TARGET_SOURCES)
   add_dependencies(examples ${TARGET_NAME})
 
   ## Add include paths, Link and copy libraries
-  target_include_directories(${TARGET_NAME} PRIVATE ${ROOT_DIR} ${HEBI_CHARTS_DIR})
+  target_include_directories(${TARGET_NAME} PRIVATE ${ROOT_DIR} ${HEBI_CHARTS_DIR}/include)
 
   if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_link_libraries(${TARGET_NAME} hebi kernel32)
@@ -71,7 +71,7 @@ function(hebi_add_target TARGET_NAME TARGET_SOURCES)
   if (USE_HEBI_CHARTS)
     add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
-      "${HEBI_CHARTS_LIB_DIR}/${HEBI_CHARTS_PLATFORM}/${HEBI_CHARTS_SO_NAME}"
+      "${HEBI_CHARTS_LIB_FILE}"
       $<TARGET_FILE_DIR:${TARGET_NAME}>)
   endif()
 endfunction()
