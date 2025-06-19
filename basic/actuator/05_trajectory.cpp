@@ -53,7 +53,7 @@ std::vector<T> linspace(T min, T max, int count){
 
 int run(int, char**);
 int main(int argc, char** argv) {
-  hebi::charts::hebiChartsRunApplication(run, argc, argv);
+  hebi::charts::runApplication(run, argc, argv);
 }
 int run(int, char**)
 {
@@ -130,18 +130,6 @@ int run(int, char**)
     cmd.setVelocity(vel_cmd);
     group->sendCommand(cmd);
   }
-  //plot graph of trajectories
-  auto chart = hebi::charts::Chart::create();
-  auto x = linspace(0.0,time[2],100.0);
-  for (size_t i = 0; i < num_joints; i++) {
-    //these are calls to the function f_x which takes a vector of doubles, x, and a lambda, f, and returns a vector f(x)
-    std::vector<double> p = f_x(x,[&, i](double t) {Eigen::VectorXd pos(num_joints); trajectory->getState(t,&pos,nullptr,nullptr); return pos[i]; });
-    std::vector<double> v = f_x(x,[&, i](double t) {Eigen::VectorXd vel(num_joints); trajectory->getState(t,nullptr,&vel,nullptr); return vel[i]; });
-    auto line = chart->addLine("", x.data(), p.data(), x.size());
-    auto line2 = chart->addLine("", x.data(), v.data(), x.size());
-    chart->show();
-  }
-
   // Stop logging
   auto log_file = group->stopLog();
   if (!log_file) {
@@ -150,7 +138,25 @@ int run(int, char**)
       return 1;
   }
 
-  hebi::charts::ChartFramework::waitUntilStagesClosed();
+  //plot graph of trajectories
+  if (hebi::charts::framework::isLoaded()) {
+    hebi::charts::Chart chart;
+    auto x = linspace(0.0,time[2],100.0);
+    for (size_t i = 0; i < num_joints; i++) {
+      //these are calls to the function f_x which takes a vector of doubles, x, and a lambda, f, and returns a vector f(x)
+      std::vector<double> p = f_x(x,[&, i](double t) {Eigen::VectorXd pos(num_joints); trajectory->getState(t,&pos,nullptr,nullptr); return pos[i]; });
+      std::vector<double> v = f_x(x,[&, i](double t) {Eigen::VectorXd vel(num_joints); trajectory->getState(t,nullptr,&vel,nullptr); return vel[i]; });
+      auto line = chart.addLine("", x, p);
+      line.setColor(hebi::charts::Color::Blue);
+      line.setLineStyle(hebi::charts::LineStyle::Solid);
+      auto line2 = chart.addLine("", x, v);
+      line2.setColor(hebi::charts::Color::Red);
+      line2.setLineStyle(hebi::charts::LineStyle::Dashed);
+      chart.show();
+    }
+
+    hebi::charts::framework::waitUntilWindowsClosed();
+  }
 
   return 0;
 }

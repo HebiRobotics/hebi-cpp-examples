@@ -43,7 +43,7 @@ int run(int, char**)
     //chart->getAxisX()->setNames("X", "Y", "Z");
     //plt::xticks(x_ticks,x_labels);
 
-    auto chart_data = chart.addBars("X/Y/Z", x_ticks.data(), y.data(), 3);
+    auto chart_data = chart.addBars("X/Y/Z", x_ticks, y);
     chart.show();
     for (size_t i = 0; i < 50; ++i)
     { 
@@ -55,7 +55,7 @@ int run(int, char**)
         y = { gyro(0,0), gyro(0,1), gyro(0,2) };
       
         //plot the feedback
-        chart_data.setData(x_ticks.data(), y.data(), 3);
+        chart_data.setData(x_ticks, y);
       }
     }
 

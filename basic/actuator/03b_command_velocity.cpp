@@ -22,7 +22,7 @@ using namespace hebi;
 
 int run(int, char**);
 int main(int argc, char** argv) {
-  hebi::charts::hebiChartsRunApplication(run, argc, argv);
+  hebi::charts::runApplication(run, argc, argv);
 }
 int run(int, char**) {
   // Get group
@@ -102,14 +102,15 @@ int run(int, char**) {
       t0 = fbk.getTime();
     times.push_back(fbk.getTime() - t0);
   }
-  auto chart = hebi::charts::Chart::create();
-  for(size_t i = 0; i < group->size(); i++){
-    auto title =(std::string("module ") + std::to_string(i));
-    chart->addLine(title.c_str(), times.data(), vel[i].data(), times.size());
+  if (hebi::charts::framework::isLoaded()) {
+    hebi::charts::Chart chart;
+    for(size_t i = 0; i < group->size(); i++){
+      auto title = (std::string("module ") + std::to_string(i));
+      chart.addLine(title, times, vel[i]);
+    }
+    chart.show();
+
+    hebi::charts::framework::waitUntilWindowsClosed();
   }
-  chart->show();
-
-  hebi::charts::ChartFramework::waitUntilStagesClosed();
-
   return 0;
 }

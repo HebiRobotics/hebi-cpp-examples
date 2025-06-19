@@ -99,7 +99,7 @@ void executeTrajectory(
 
 int run(int, char**);
 int main(int argc, char** argv) {
-  hebi::charts::hebiChartsRunApplication(run, argc, argv);
+  hebi::charts::runApplication(run, argc, argv);
 }
 /// The main function which actually executes to run the example
 int run(int, char**) {
@@ -211,29 +211,31 @@ int run(int, char**) {
     times.push_back(fbk.getTime() - t0);
   }
   
-  auto pos_chart = hebi::charts::Chart::create();
-  pos_chart->setTitle("Position");
-  for(size_t i = 0; i < group->size(); i++){
-    auto title =(std::string("module ") + std::to_string(i));
-    pos_chart->addLine(title.c_str(), times.data(), pos[i].data(), times.size());
-  }
-  pos_chart->show();
-  auto vel_chart = hebi::charts::Chart::create();
-  vel_chart->setTitle("Velocity");
-  for(size_t i = 0; i < group->size(); i++){
-    auto title =(std::string("module ") + std::to_string(i));
-    vel_chart->addLine(title.c_str(), times.data(), vel[i].data(), times.size());
-  }
-  vel_chart->show();
-  auto eff_chart = hebi::charts::Chart::create();
-  eff_chart->setTitle("Effort");
-  for(size_t i = 0; i < group->size(); i++){
-    auto title =(std::string("module ") + std::to_string(i));
-    eff_chart->addLine(title.c_str(), times.data(), eff[i].data(), times.size());
-  }
-  eff_chart->show();
+  if (hebi::charts::framework::isLoaded()) {
+    hebi::charts::Chart pos_chart;
+    pos_chart.setTitle("Position");
+    for(size_t i = 0; i < group->size(); i++){
+      auto title = (std::string("module ") + std::to_string(i));
+      pos_chart.addLine(title, times, pos[i]);
+    }
+    pos_chart.show();
+    hebi::charts::Chart vel_chart;
+    vel_chart.setTitle("Velocity");
+    for(size_t i = 0; i < group->size(); i++){
+      auto title = (std::string("module ") + std::to_string(i));
+      vel_chart.addLine(title, times, vel[i]);
+    }
+    vel_chart.show();
+    hebi::charts::Chart eff_chart;
+    eff_chart.setTitle("Effort");
+    for(size_t i = 0; i < group->size(); i++){
+      auto title = (std::string("module ") + std::to_string(i));
+      eff_chart.addLine(title, times, eff[i]);
+    }
+    eff_chart.show();
 
-  hebi::charts::ChartFramework::waitUntilStagesClosed();
+    hebi::charts::framework::waitUntilWindowsClosed();
+  }
 
   return 0;
 }
