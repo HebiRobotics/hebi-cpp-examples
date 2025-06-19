@@ -17,13 +17,21 @@
  
 #include "lookup.hpp"
 #include "group_feedback.hpp"
-#include "util/plot_functions.h"
-
-namespace plt = matplotlibcpp;
+#include "hebi_charts.hpp"
 
 using namespace hebi;
 
-int main() {
+int run(int, char**);
+int main(int argc, char** argv) {
+  hebi::charts::runApplication(run, argc, argv);
+}
+int run(int, char**) {
+
+  if (!hebi::charts::framework::isLoaded()) {
+    std::cout << "Plotting library not found; cannot continue!" << std::endl;
+    return 1;
+  }
+
   // Find your module on the network 
   // You can also plot feedback from multiple modules by including multiple modules
   // in your group.
@@ -41,17 +49,12 @@ int main() {
   // Set the feedback frequency. 
   // This is by default "100"; setting this to 5 here allows the console output
   // to be more reasonable.
-  group -> setFeedbackFrequencyHz(5);
+  group->setFeedbackFrequencyHz(5);
 
   // Retrieve feedback with a blocking all to "getNextFeedback". This
   // constrains the loop to run at the feedback frequency above; we run 
   // for about 10 seconds here
   GroupFeedback group_fbk(group->size());
-
-  std::vector<int64_t> buttons;
-  std::vector<float> sliders(8); // we know we have 8 pins
-  std::vector<std::string> x_labels = {"1", "2", "3", "4", "5", "6", "7", "8"};
-  std::vector<double> x_ticks = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0};
 
   std::cout << "\n Drag the Sliders and press some buttons on the app screen!" 
             << std::endl;
@@ -67,23 +70,43 @@ int main() {
     return 1;
   }
 
+  std::vector<double> buttons;
+  buttons.resize(8, 0);// we know we have 8 pins
+  std::vector<double> sliders;
+  sliders.resize(8, 0);// we know we have 8 pins
+  std::vector<std::string> x_labels = {"1", "2", "3", "4", "5", "6", "7", "8"};
+  std::vector<double> x_ticks = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0};
+
+  hebi::charts::Chart chart;
+  chart.setTitle("Mobile I/O Input Feedback");
+  chart.getAxisY().setLimits(-1, 1);
+  chart.getAxisX().setName("Digital Inputs and Analog Inputs");
+  chart.getAxisY().setName("[-1 to 1]");
+  // TODO:
+  //chart.getAxisX().setNames(x_labels);
+  //chart.getAxisX().setTicks(x_ticks);
+
+  auto button_chart_data = chart.addBars("X/Y/Z", x_ticks, buttons);
+  auto slider_chart_data = chart.addBars("X/Y/Z", x_ticks, sliders);
+  chart.show();
   for (size_t i = 0; i < 50; ++i)
   {
-    if (group -> getNextFeedback(group_fbk))
+    if (group->getNextFeedback(group_fbk))
     {
       // Obtain feedback for a singular module from the groupFeedback object
       auto& buttons_data = group_fbk[0].io();
 
       // Digital Feedback (Buttons) 
       // We can safely assume that all buttons return an int value
-      buttons = {buttons_data.b().getInt(1),
-                 buttons_data.b().getInt(2),
-                 buttons_data.b().getInt(3),
-                 buttons_data.b().getInt(4),
-                 buttons_data.b().getInt(5),
-                 buttons_data.b().getInt(6),
-                 buttons_data.b().getInt(7),
-                 buttons_data.b().getInt(8)};
+      // Store as double for interop with the plotting library
+      buttons = {static_cast<double>(buttons_data.b().getInt(1)),
+                  static_cast<double>(buttons_data.b().getInt(2)),
+                  static_cast<double>(buttons_data.b().getInt(3)),
+                  static_cast<double>(buttons_data.b().getInt(4)),
+                  static_cast<double>(buttons_data.b().getInt(5)),
+                  static_cast<double>(buttons_data.b().getInt(6)),
+                  static_cast<double>(buttons_data.b().getInt(7)),
+                  static_cast<double>(buttons_data.b().getInt(8))};
 
       // Analog Feedback (Sliders) 
       // We expect float values, but may recieve an int in certain cases.
@@ -94,19 +117,13 @@ int main() {
         if (buttons_data.a().hasFloat(i+1)) {
           sliders[i] = buttons_data.a().getFloat(i+1);
         } else {
-          sliders[i] = (float)buttons_data.a().getInt(i+1);
+          sliders[i] = static_cast<double>(buttons_data.a().getInt(i+1));
         }
       }
 
       // Now we plot the collected feedback
-      plt::clf();
-      plt::ylim(-1, 1);
-      plt::xticks(x_ticks, x_labels);
-      plt::xlabel("Digital Inputs and Analog Inputs");
-      plt::ylabel("[-1 to 1]"); 
-      plt::bar(sliders);
-      plt::bar(buttons);
-      plt::pause(0.01);
+      button_chart_data.setData(x_ticks, buttons);
+      slider_chart_data.setData(x_ticks, sliders);
     }
   }
 
@@ -118,7 +135,8 @@ int main() {
       return 1;
   }
 
-  group -> clearFeedbackHandlers();
+  hebi::charts::framework::waitUntilWindowsClosed();
+
   return 0;
 }
 

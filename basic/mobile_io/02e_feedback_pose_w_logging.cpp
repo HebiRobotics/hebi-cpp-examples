@@ -15,14 +15,16 @@
  
 #include "lookup.hpp"
 #include "group_feedback.hpp"
-#include "util/plot_functions.h"
+#include "hebi_charts.hpp"
 #include "log_file.hpp"
-
-namespace plt = matplotlibcpp;
 
 using namespace hebi;
 
-int main() {
+int run(int, char**);
+int main(int argc, char** argv) {
+  hebi::charts::runApplication(run, argc, argv);
+}
+int run(int, char**) {
   // Find your module on the network 
   // You can also plot feedback from multiple modules by including multiple modules
   // in your group. Look at example 01c on how to do that.
@@ -40,7 +42,7 @@ int main() {
   // Set the feedback frequency. 
   // This is by default "100"; setting this to 5 here allows the console output
   // to be more reasonable.
-  group -> setFeedbackFrequencyHz(5);
+  group->setFeedbackFrequencyHz(5);
 
   // Retrieve feedback with a blocking all to "getNextFeedback". This
   // constrains the loop to run at the feedback frequency above; we run 
@@ -51,79 +53,69 @@ int main() {
             << "\n Move it around to make the feedback interesting..." 
             << std::endl;
 
-  // Start logging (you can also specify log file name as second parameter)
-  std::string log_path = group->startLog("./logs");
+  if (hebi::charts::framework::isLoaded()) {
+    // Start logging (you can also specify log file name as second parameter)
+    std::string log_path = group->startLog("./logs");
 
-  if (log_path.empty()) {
-    std::cout << "~~ERROR~~\n"
-              << "Target directory for log file not found!\n"
-              << "HINT: Remember that the path declared in 'group->startLog()' "
-              << "is relative to your current working directory...\n";
-    return 1;
-  }
-
-  for (size_t i = 0; i < 50; ++i)
-  {
-    if (group -> getNextFeedback(group_fbk))
-    {
-      // Obtain feedback for a singular module from the groupFeedback object
-      auto orient = group_fbk[0].mobile().arOrientation().get();
-      auto pos = group_fbk[0].mobile().arPosition().get();
-
-      // Derive a rotation matrix from the orientation quaternion
-      Eigen::Quaterniond q;
-      q.w() = orient.getW();
-      q.x() = orient.getX();
-      q.y() = orient.getY();
-      q.z() = orient.getZ();
-      auto rot_matrix = q.toRotationMatrix();
-
-      // Construct a complete 4x4 transform
-      Eigen::Matrix4d final_transform;
-      final_transform << rot_matrix(0,0), rot_matrix(0,1), rot_matrix(0,2), pos.getX(),
-                         rot_matrix(1,0), rot_matrix(1,1), rot_matrix(1,2), pos.getY(),
-                         rot_matrix(2,0), rot_matrix(2,1), rot_matrix(2,2), pos.getZ(),
-                         0, 0, 0, 1;
-
-      // Initialize vectors to pass the plot_3dtriad graphing function
-      std::vector<std::vector<double>> lines_x;
-      std::vector<std::vector<double>> lines_y;
-      std::vector<std::vector<double>> lines_z;      
-
-      // Plot the 6-Dof Pose
-      plt::clf();
-      plot_3dtriad(final_transform, &lines_x, &lines_y, &lines_z);
-      plt::pause(0.01);
+    if (log_path.empty()) {
+      std::cout << "~~ERROR~~\n"
+                << "Target directory for log file not found!\n"
+                << "HINT: Remember that the path declared in 'group->startLog()' "
+                << "is relative to your current working directory...\n";
+      return 1;
     }
-  }
+
+    hebi::charts::Chart3d orient_chart;
+    orient_chart.show();
+    auto triad = orient_chart.addTriad(0.075);
+    for (size_t i = 0; i < 50; ++i)
+    {
+      if (group->getNextFeedback(group_fbk))
+      {
+        // Obtain feedback for a singular module from the groupFeedback object
+        auto orient = group_fbk[0].mobile().arOrientation().get();
+        auto pos = group_fbk[0].mobile().arPosition().get();
+
+        // Plot the 6-Dof Pose
+        triad.setOrientation(orient.getW(), orient.getX(), orient.getY(), orient.getZ());
+        triad.setTranslation(pos.getX(), pos.getY(), pos.getZ());
+      }
+    }
   
-  // Stop logging
-  std::shared_ptr<LogFile> log_file = group -> stopLog();
+    // Stop logging
+    std::shared_ptr<LogFile> log_file = group -> stopLog();
 
-  // Gather the logged Position data
-  std::vector<double> x_pos;
-  std::vector<double> y_pos;
-  std::vector<double> z_pos;
-  GroupFeedback fbk(group->size());
-  while (log_file -> getNextFeedback(fbk)) 
-  {
-    x_pos.push_back(fbk[0].mobile().arPosition().get().getX());
-    y_pos.push_back(fbk[0].mobile().arPosition().get().getY());
-    z_pos.push_back(fbk[0].mobile().arPosition().get().getZ());
+    // Gather the logged Position data
+    std::vector<double> x_pos;
+    std::vector<double> y_pos;
+    std::vector<double> z_pos;
+    std::vector<double> times;
+    double t0{};
+    GroupFeedback fbk(group->size());
+    while (log_file -> getNextFeedback(fbk)) 
+    {
+      x_pos.push_back(fbk[0].mobile().arPosition().get().getX());
+      y_pos.push_back(fbk[0].mobile().arPosition().get().getY());
+      z_pos.push_back(fbk[0].mobile().arPosition().get().getZ());
+      if (t0 == 0)
+        t0 = fbk.getTime();
+      times.push_back(fbk.getTime() - t0);
+    }
+
+    // Plot the logged Position data
+    hebi::charts::Chart pos_chart;
+    pos_chart.setTitle("Device Position by Axis (x/y/z)");
+    pos_chart.getAxisY().setName("Position (m)");
+    auto chart_x = pos_chart.addLine("X Position", times, x_pos);
+    auto chart_y = pos_chart.addLine("Y Position", times, y_pos);
+    auto chart_z = pos_chart.addLine("Z Position", times, z_pos);
+    chart_x.setColor(hebi::charts::Color::Red);
+    chart_y.setColor(hebi::charts::Color::Blue);
+    chart_z.setColor(hebi::charts::Color::Magenta); // TODO: black
+
+    hebi::charts::framework::waitUntilWindowsClosed();
   }
 
-  // Plot the logged Position data
-  plt::clf();
-  plt::figure_size(1200,780);
-  plt::named_plot("X Position", x_pos, "r-");
-  plt::named_plot("Y Position", y_pos, "b-");
-  plt::named_plot("Z Position", z_pos, "k-");
-  plt::legend();
-  plt::ylabel("Position (m)");
-  plt::title("Device Position by Axis (x/y/z)");
-  plt::show();
-
-  group -> clearFeedbackHandlers();
   return 0;
 }
 

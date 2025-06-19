@@ -13,13 +13,15 @@
  
 #include "lookup.hpp"
 #include "group_feedback.hpp"
-#include "util/plot_functions.h"
-
-namespace plt = matplotlibcpp;
+#include "hebi_charts.hpp"
 
 using namespace hebi;
 
-int main() {
+int run(int, char**);
+int main(int argc, char** argv) {
+  hebi::charts::runApplication(run, argc, argv);
+}
+int run(int, char**) {
 
   // Find your module on the network 
   Lookup lookup;
@@ -36,33 +38,43 @@ int main() {
   // Set the feedback frequency. 
   // This is by default "100"; setting this to 5 here allows the console output
   // to be more reasonable.
-  group -> setFeedbackFrequencyHz(5);
+  group->setFeedbackFrequencyHz(5);
 
   // Add a callback to react to feedback received on a background thread
   // Note: We use a C++11 "lambda function" here to pass in a function pointer,
   // but you can also pass in a C-style function pointer with the signature:
   //      void func(const hebi::GroupFeedback& group_fbk);
   std::vector<double> y;
-  group->addFeedbackHandler([&y](const GroupFeedback& group_fbk) 
-  {
-    auto gyro = group_fbk.getGyro();
-    y = {gyro(0,0), gyro(0,1), gyro(0,2)};
-
-    // Plot the feedback
+  if (hebi::charts::framework::isLoaded()) {
+    std::vector<double> y;
+    y.resize(3,0);
     std::vector<std::string> x_labels = {"X", "Y", "Z"};
     std::vector<double> x_ticks = {0.0, 1.0, 2.0};
-    plt::clf();
-    plt::ylim(-3.14, 3.14);
-    plt::xticks(x_ticks, x_labels);
-    plt::xlabel("Axis");
-    plt::ylabel("Angular Velocity (rad/s)");
-    plt::bar(y);
-    plt::pause(0.01);
-  });
 
-  // Wait 10 seconds, and then stop and clear threads
-  std::this_thread::sleep_for(std::chrono::milliseconds(10000));
-  group -> clearFeedbackHandlers();
+    hebi::charts::Chart chart;
+    chart.setTitle("Mobile I/O Gyro Feedback");
+    chart.getAxisY().setLimits(-3.14, 3.14);
+    chart.getAxisX().setName("Axis");
+    chart.getAxisY().setName("Angular Velocity (rad/s)");
+    // TODO:
+    //chart.getAxisX().setNames(x_labels);
+    //chart.getAxisX().setTicks(x_ticks);
+
+    auto chart_data = chart.addBars("X/Y/Z", x_ticks, y);
+    group->addFeedbackHandler([&y, &x_ticks, &chart_data](const GroupFeedback& group_fbk) 
+    {
+      auto gyro = group_fbk.getGyro();
+      y = {gyro(0,0), gyro(0,1), gyro(0,2)};
+
+      // Plot the feedback
+      chart_data.setData(x_ticks, y);
+    });
+
+    // Wait 10 seconds, and then stop and clear threads
+    std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+    group->clearFeedbackHandlers();
+    hebi::charts::framework::waitUntilWindowsClosed();
+  }
 
   return 0;
 }
