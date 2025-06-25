@@ -1,11 +1,6 @@
 /**
- * This file is a barebones skeleton of how to setup an arm for use.
- * It demonstrates gravity compensation behavior by commanding torques
- * equal to the force from gravity on the links and joints of an arm.
- * Note that this only approximately balances out gravity, as imperfections in
- * the torque sensing and modeled system can lead to "drift".  Also, the
- * particular choice of PID control gains can affect the performance of this
- * demo.
+ * This example demonstrates how to set up a HEBI arm using configuration files
+ * and command it to move to a predefined home position.
  */
 
 #include "arm/arm.hpp"
