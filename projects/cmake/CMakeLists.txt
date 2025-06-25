@@ -196,6 +196,7 @@ endforeach()
 
 # Arm kit Examples
 SET(ARM_SOURCES
+  ${ROOT_DIR}/kits/arms/ex_home_arm.cpp
   ${ROOT_DIR}/kits/arms/ex_gravity_compensation.cpp
   ${ROOT_DIR}/kits/arms/ex_mobile_io_control.cpp
   ${ROOT_DIR}/kits/arms/ex_teach_repeat.cpp
