@@ -112,7 +112,7 @@ int run(int, char**)
   // plot frames on a 3d graph
   transforms.emplace(transforms.begin(), Eigen::Matrix<double,4,4>::Identity());
 
-  if (hebi::charts::framework::isLoaded()) {
+  if (hebi::charts::lib::isAvailable()) {
     hebi::charts::Chart3d chart;
     chart.show();
     for(size_t j = 0; j < transforms.size(); ++j) {

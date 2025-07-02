@@ -102,7 +102,7 @@ int run(int, char**) {
       t0 = fbk.getTime();
     times.push_back(fbk.getTime() - t0);
   }
-  if (hebi::charts::framework::isLoaded()) {
+  if (hebi::charts::lib::isAvailable()) {
     hebi::charts::Chart chart;
     for(size_t i = 0; i < group->size(); i++){
       auto title = (std::string("module ") + std::to_string(i));

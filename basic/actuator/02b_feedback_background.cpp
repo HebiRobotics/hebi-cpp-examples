@@ -26,7 +26,7 @@ int run(int, char**)
   // to be more reasonable.
   group->setFeedbackFrequencyHz(5);
 
-  if (hebi::charts::framework::isLoaded()) {
+  if (hebi::charts::lib::isAvailable()) {
     std::vector<double> y;
     y.resize(3, 0);
     std::vector<std::string> x_labels = {"X","Y","Z"};

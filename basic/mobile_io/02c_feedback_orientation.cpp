@@ -54,7 +54,7 @@ int run(int, char**) {
             << "\n Move it around to make the feedback interesting..." 
             << std::endl;
 
-  if (hebi::charts::framework::isLoaded()) {
+  if (hebi::charts::lib::isAvailable()) {
     hebi::charts::Chart3d chart;
     chart.show();
     auto triad = chart.addTriad(0.075);

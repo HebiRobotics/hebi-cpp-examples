@@ -208,7 +208,7 @@ int run(int, char**) {
       t0 = fbk.getTime();
     times.push_back(fbk.getTime() - t0);
   }
-  if (hebi::charts::framework::isLoaded()) {
+  if (hebi::charts::lib::isAvailable()) {
     hebi::charts::Chart pos_chart;
     pos_chart.setTitle("Position");
     for(size_t i = 0; i < group->size(); i++){
