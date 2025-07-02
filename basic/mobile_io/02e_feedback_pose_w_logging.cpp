@@ -53,7 +53,7 @@ int run(int, char**) {
             << "\n Move it around to make the feedback interesting..." 
             << std::endl;
 
-  if (hebi::charts::framework::isLoaded()) {
+  if (hebi::charts::lib::isAvailable()) {
     // Start logging (you can also specify log file name as second parameter)
     std::string log_path = group->startLog("./logs");
 

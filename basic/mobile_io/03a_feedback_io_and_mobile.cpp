@@ -51,7 +51,7 @@ int run(int, char**) {
   std::cout << "\n Drag the Sliders, press some buttons, and move the device..." 
             << std::endl;
 
-  if (hebi::charts::framework::isLoaded()) {
+  if (hebi::charts::lib::isAvailable()) {
     std::vector<double> buttons;
     buttons.resize(8,0); // we know we have 8 pins
     std::vector<double> sliders;

@@ -57,7 +57,7 @@ int run(int, char**) {
     return 1;
   }
 
-  if (hebi::charts::framework::isLoaded()) {
+  if (hebi::charts::lib::isAvailable()) {
     std::vector<double> gyro_data;
     gyro_data.resize(3,0);
     std::vector<std::string> x_labels = {"X", "Y", "Z"};

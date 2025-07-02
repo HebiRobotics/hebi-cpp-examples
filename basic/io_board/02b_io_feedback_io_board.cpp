@@ -57,7 +57,7 @@ int run(int, char**) {
     return 1;
   }
 
-  if (hebi::charts::framework::isLoaded()) {
+  if (hebi::charts::lib::isAvailable()) {
     std::vector<double> pin_values; // we know we have 8 pins
     pin_values.resize(8, 0);
     std::vector<std::string> x_labels = {"1", "2", "3", "4", "5", "6", "7", "8"};

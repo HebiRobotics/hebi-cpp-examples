@@ -45,7 +45,7 @@ int run(int, char**) {
   // but you can also pass in a C-style function pointer with the signature:
   //      void func(const hebi::GroupFeedback& group_fbk);
   std::vector<double> y;
-  if (hebi::charts::framework::isLoaded()) {
+  if (hebi::charts::lib::isAvailable()) {
     std::vector<double> y;
     y.resize(3,0);
     std::vector<std::string> x_labels = {"X", "Y", "Z"};

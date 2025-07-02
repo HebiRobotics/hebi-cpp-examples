@@ -40,7 +40,7 @@ int run(int, char**)
   hebi::robot_model::Matrix4dVector transforms;
   GroupFeedback group_fbk(group->size());
 
-  if (hebi::charts::framework::isLoaded()) {
+  if (hebi::charts::lib::isAvailable()) {
     hebi::charts::Chart3d chart;
     chart.show();
     // Get frame count; add one for base frame added after FK call below)

@@ -144,7 +144,7 @@ int run(int, char**)
   }
 
   //plot graph of trajectories
-  if (hebi::charts::framework::isLoaded()) {
+  if (hebi::charts::lib::isAvailable()) {
     hebi::charts::Chart chart;
     auto x = linspace(0.0,time[2],100.0);
     for (size_t i = 0; i < num_joints; i++) {

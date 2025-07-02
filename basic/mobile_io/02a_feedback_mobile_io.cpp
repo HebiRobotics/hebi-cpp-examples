@@ -49,7 +49,7 @@ int run(int, char**) {
   // for about 10 seconds here
   GroupFeedback group_fbk(group->size());
 
-  if (hebi::charts::framework::isLoaded()) {
+  if (hebi::charts::lib::isAvailable()) {
     std::vector<double> gyro_data;
     gyro_data.resize(3,0);
     std::vector<std::string> x_labels = {"X", "Y", "Z"};

@@ -31,7 +31,7 @@ int run(int, char**)
   // about 10 seconds here
   GroupFeedback group_fbk(group->size());
 
-  if (hebi::charts::framework::isLoaded()) {
+  if (hebi::charts::lib::isAvailable()) {
     std::vector<double> y;
     y.resize(3, 0);
     std::vector<std::string> x_labels = {"X","Y","Z"};

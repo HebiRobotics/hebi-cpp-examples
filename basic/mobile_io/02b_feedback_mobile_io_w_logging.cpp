@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
 }
 int run(int, char**) {
 
-  if (!hebi::charts::framework::isLoaded()) {
+  if (!hebi::charts::lib::isAvailable()) {
     std::cout << "Plotting library not found; cannot continue!" << std::endl;
     return 1;
   }
