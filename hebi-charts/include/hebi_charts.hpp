@@ -1,6 +1,8 @@
 #pragma once
 
+#include <algorithm>
 #include <cassert>
+#include <cstddef>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -45,7 +47,7 @@ enum class Theme {
 // ==== Forward Declarations ====
 class Chart;
 class Chart3d;
-class Chart3dRobot;
+class Chart3dModel;
 class Chart3dTriad;
 class Axis;
 class Dataset;
@@ -92,14 +94,14 @@ class Chart {
 public:
   Chart();
   void show();
-  void setTitle(const char* title);
   void setTitle(const std::string& title);
+  void setTitle(const char* title);
   Axis getAxisX();
   Axis getAxisY();
-  Dataset addLine(const char* name, const double* x, const double* y, size_t length);
   Dataset addLine(const std::string& name, const std::vector<double>& x, const std::vector<double>& y);
-  Dataset addBars(const char* name, const double* x, const double* y, size_t length);
+  Dataset addLine(const char* name, const double* x, const double* y, size_t length);
   Dataset addBars(const std::string& name, const std::vector<double>& x, const std::vector<double>& y);
+  Dataset addBars(const char* name, const double* x, const double* y, size_t length);
   Chart(Chart&& from) noexcept;
   Chart& operator=(Chart&& from) noexcept;
   ~Chart();
@@ -113,10 +115,10 @@ class Chart3d {
 public:
   Chart3d();
   void show();
-  void setTitle(const char* title);
   void setTitle(const std::string& title);
-  Chart3dRobot addHrdf(const char* filePath);
-  Chart3dRobot addHrdf(const std::string& filePath);
+  void setTitle(const char* title);
+  Chart3dModel addHrdf(const std::string& filePath);
+  Chart3dModel addHrdf(const char* filePath);
   Chart3dTriad addTriad(double length);
   Chart3d(Chart3d&& from) noexcept;
   Chart3d& operator=(Chart3d&& from) noexcept;
@@ -127,20 +129,22 @@ private:
   NativeChart3dPtr ptr_{};
 };
 
-class Chart3dRobot {
+class Chart3dModel {
   friend class Chart3d;
 public:
-  int getNumJoints();
-  void setPositions(const double* positions, size_t length);
+  size_t getNumJoints();
   void setPositions(const std::vector<double>& positions);
+  void setPositions(const double* positions, size_t length);
   void setOrientation(double qw, double qx, double qy, double qz);
   void setTranslation(double x, double y, double z);
-  Chart3dRobot(Chart3dRobot&& from) noexcept;
-  Chart3dRobot& operator=(Chart3dRobot&& from) noexcept;
-  ~Chart3dRobot();
+  void setTransform4x4(const std::vector<double>& matrix);
+  void setTransform4x4(const double* matrix, size_t length);
+  Chart3dModel(Chart3dModel&& from) noexcept;
+  Chart3dModel& operator=(Chart3dModel&& from) noexcept;
+  ~Chart3dModel();
 private:
   void cleanup();
-  explicit Chart3dRobot(NativeChart3dModelPtr cPointer) : ptr_(cPointer) {}
+  explicit Chart3dModel(NativeChart3dModelPtr cPointer) : ptr_(cPointer) {}
   NativeChart3dModelPtr ptr_{};
 };
 
@@ -149,6 +153,8 @@ class Chart3dTriad {
 public:
   void setOrientation(double qw, double qx, double qy, double qz);
   void setTranslation(double x, double y, double z);
+  void setTransform4x4(const std::vector<double>& matrix);
+  void setTransform4x4(const double* matrix, size_t length);
   Chart3dTriad(Chart3dTriad&& from) noexcept;
   Chart3dTriad& operator=(Chart3dTriad&& from) noexcept;
   ~Chart3dTriad();
@@ -161,10 +167,10 @@ private:
 class Axis {
   friend class Chart;
 public:
-  void setName(const char* name);
   void setName(const std::string& name);
-  void setUnit(const char* unit);
+  void setName(const char* name);
   void setUnit(const std::string& unit);
+  void setUnit(const char* unit);
   void setLimits(double min, double max);
   Axis(Axis&& from) noexcept;
   Axis& operator=(Axis&& from) noexcept;
@@ -178,15 +184,13 @@ private:
 class Dataset {
   friend class Chart;
 public:
-  void setName(const char* name);
   void setName(const std::string& name);
-  void setData(const double* x, const double* y, size_t length);
+  void setName(const char* name);
   void setData(const std::vector<double>& x, const std::vector<double>& y);
+  void setData(const double* x, const double* y, size_t length);
+  void addPoint(double x, double y);
   void setColor(Color color);
   void setLineStyle(LineStyle lineStyle);
-  void addDataPoint(double x, double y);
-  void addStyleClass(const char* style);
-  void addStyleClass(const std::string& style);
   Dataset(Dataset&& from) noexcept;
   Dataset& operator=(Dataset&& from) noexcept;
   ~Dataset();
@@ -198,20 +202,8 @@ private:
 
 namespace framework {
 
-struct Version {
-  Version(int major, int minor, int patch) : major_(major), minor_(minor), patch_(patch) {}
-  int major_{};
-  int minor_{};
-  int patch_{};
-};
-
-bool isLoaded();
-Version getHeaderVersion();
-Version getLibraryVersion();
-int getBuildNumber();
 bool setTheme(Theme theme);
 void setAutoCloseWindows(bool autoClose);
-void setWaitForAsyncCallFinish(bool emulateSyncCalls);
 void waitUntilWindowsClosed();
 
 } // namespace framework
@@ -227,12 +219,12 @@ inline void Chart::show() {
   static auto hebiChartsChartShow = DynamicLookup::instance().getFunc<void(*)(NativeChartPtr)>("hebiChartsChartShow");
   hebiChartsChartShow(ptr_);
 }
+inline void Chart::setTitle(const std::string& title) {
+   setTitle(title.c_str());
+}
 inline void Chart::setTitle(const char* title) {
   static auto hebiChartsChartSetTitle = DynamicLookup::instance().getFunc<void(*)(NativeChartPtr, const char*)>("hebiChartsChartSetTitle");
   hebiChartsChartSetTitle(ptr_, title);
-}
-inline void Chart::setTitle(const std::string& title) {
-  setTitle(title.c_str());
 }
 inline Axis Chart::getAxisX() {
   static auto hebiChartsChartGetAxisX = DynamicLookup::instance().getFunc<NativeChartAxisPtr(*)(NativeChartPtr)>("hebiChartsChartGetAxisX");
@@ -242,19 +234,19 @@ inline Axis Chart::getAxisY() {
   static auto hebiChartsChartGetAxisY = DynamicLookup::instance().getFunc<NativeChartAxisPtr(*)(NativeChartPtr)>("hebiChartsChartGetAxisY");
   return Axis(hebiChartsChartGetAxisY(ptr_));
 }
-inline Dataset Chart::addLine(const char* name, const double* x, const double* y, size_t length) {
-  static auto hebiChartsChartAddLine = DynamicLookup::instance().getFunc<NativeChartDatasetPtr(*)(NativeChartPtr, const char*, const double*, const double*, int)>("hebiChartsChartAddLine");
-  return Dataset(hebiChartsChartAddLine(ptr_, name, x, y, static_cast<int>(length)));
-}
 inline Dataset Chart::addLine(const std::string& name, const std::vector<double>& x, const std::vector<double>& y) {
-  return addLine(name.c_str(), x.data(), y.data(), std::min(x.size(), y.size()));
+  return addLine(name.c_str(), x.data(), y.data(), (std::min)(x.size(), y.size()));
 }
-inline Dataset Chart::addBars(const char* name, const double* x, const double* y, size_t length) {
-  static auto hebiChartsChartAddBars = DynamicLookup::instance().getFunc<NativeChartDatasetPtr(*)(NativeChartPtr, const char*, const double*, const double*, int)>("hebiChartsChartAddBars");
-  return Dataset(hebiChartsChartAddBars(ptr_, name, x, y, static_cast<int>(length)));
+inline Dataset Chart::addLine(const char* name, const double* x, const double* y, size_t length) {
+  static auto hebiChartsChartAddLine = DynamicLookup::instance().getFunc<NativeChartDatasetPtr(*)(NativeChartPtr, const char*, const double*, const double*, size_t)>("hebiChartsChartAddLine");
+  return Dataset(hebiChartsChartAddLine(ptr_, name, x, y, length));
 }
 inline Dataset Chart::addBars(const std::string& name, const std::vector<double>& x, const std::vector<double>& y) {
-  return addBars(name.c_str(), x.data(), y.data(), std::min(x.size(), y.size()));
+  return addBars(name.c_str(), x.data(), y.data(), (std::min)(x.size(), y.size()));
+}
+inline Dataset Chart::addBars(const char* name, const double* x, const double* y, size_t length) {
+  static auto hebiChartsChartAddBars = DynamicLookup::instance().getFunc<NativeChartDatasetPtr(*)(NativeChartPtr, const char*, const double*, const double*, size_t)>("hebiChartsChartAddBars");
+  return Dataset(hebiChartsChartAddBars(ptr_, name, x, y, length));
 }
 inline void Chart::cleanup() {
   if (ptr_ != nullptr) {
@@ -284,19 +276,19 @@ inline void Chart3d::show() {
   static auto hebiChartsChart3dShow = DynamicLookup::instance().getFunc<void(*)(NativeChart3dPtr)>("hebiChartsChart3dShow");
   hebiChartsChart3dShow(ptr_);
 }
+inline void Chart3d::setTitle(const std::string& title) {
+   setTitle(title.c_str());
+}
 inline void Chart3d::setTitle(const char* title) {
   static auto hebiChartsChart3dSetTitle = DynamicLookup::instance().getFunc<void(*)(NativeChart3dPtr, const char*)>("hebiChartsChart3dSetTitle");
   hebiChartsChart3dSetTitle(ptr_, title);
 }
-inline void Chart3d::setTitle(const std::string& title) {
-  setTitle(title.c_str());
-}
-inline Chart3dRobot Chart3d::addHrdf(const char* filePath) {
-  static auto hebiChartsChart3dAddHrdf = DynamicLookup::instance().getFunc<NativeChart3dModelPtr(*)(NativeChart3dPtr, const char*)>("hebiChartsChart3dAddHrdf");
-  return Chart3dRobot(hebiChartsChart3dAddHrdf(ptr_, filePath));
-}
-inline Chart3dRobot Chart3d::addHrdf(const std::string& filePath) {
+inline Chart3dModel Chart3d::addHrdf(const std::string& filePath) {
   return addHrdf(filePath.c_str());
+}
+inline Chart3dModel Chart3d::addHrdf(const char* filePath) {
+  static auto hebiChartsChart3dAddHrdf = DynamicLookup::instance().getFunc<NativeChart3dModelPtr(*)(NativeChart3dPtr, const char*)>("hebiChartsChart3dAddHrdf");
+  return Chart3dModel(hebiChartsChart3dAddHrdf(ptr_, filePath));
 }
 inline Chart3dTriad Chart3d::addTriad(double length) {
   static auto hebiChartsChart3dAddTriad = DynamicLookup::instance().getFunc<NativeChart3dTriadPtr(*)(NativeChart3dPtr, double)>("hebiChartsChart3dAddTriad");
@@ -321,42 +313,49 @@ inline Chart3d::~Chart3d() {
   cleanup();
 }
 
-// Chart3dRobot
-inline int Chart3dRobot::getNumJoints() {
-  static auto hebiChartsChart3dRobotGetNumJoints = DynamicLookup::instance().getFunc<int(*)(NativeChart3dModelPtr)>("hebiChartsChart3dRobotGetNumJoints");
-  return hebiChartsChart3dRobotGetNumJoints(ptr_);
+// Chart3dModel
+inline size_t Chart3dModel::getNumJoints() {
+  static auto hebiChartsChart3dModelGetNumJoints = DynamicLookup::instance().getFunc<size_t(*)(NativeChart3dModelPtr)>("hebiChartsChart3dModelGetNumJoints");
+  return hebiChartsChart3dModelGetNumJoints(ptr_);
 }
-inline void Chart3dRobot::setPositions(const double* positions, size_t length) {
-  static auto hebiChartsChart3dRobotSetPositions = DynamicLookup::instance().getFunc<void(*)(NativeChart3dModelPtr, const double*, int)>("hebiChartsChart3dRobotSetPositions");
-  hebiChartsChart3dRobotSetPositions(ptr_, positions, static_cast<int>(length));
-}
-inline void Chart3dRobot::setPositions(const std::vector<double>& positions) {
+inline void Chart3dModel::setPositions(const std::vector<double>& positions) {
    setPositions(positions.data(), positions.size());
 }
-inline void Chart3dRobot::setOrientation(double qw, double qx, double qy, double qz) {
-  static auto hebiChartsChart3dRobotSetOrientation = DynamicLookup::instance().getFunc<void(*)(NativeChart3dModelPtr, double, double, double, double)>("hebiChartsChart3dRobotSetOrientation");
-  hebiChartsChart3dRobotSetOrientation(ptr_, qw, qx, qy, qz);
+inline void Chart3dModel::setPositions(const double* positions, size_t length) {
+  static auto hebiChartsChart3dModelSetPositions = DynamicLookup::instance().getFunc<void(*)(NativeChart3dModelPtr, const double*, size_t)>("hebiChartsChart3dModelSetPositions");
+  hebiChartsChart3dModelSetPositions(ptr_, positions, length);
 }
-inline void Chart3dRobot::setTranslation(double x, double y, double z) {
-  static auto hebiChartsChart3dRobotSetTranslation = DynamicLookup::instance().getFunc<void(*)(NativeChart3dModelPtr, double, double, double)>("hebiChartsChart3dRobotSetTranslation");
-  hebiChartsChart3dRobotSetTranslation(ptr_, x, y, z);
+inline void Chart3dModel::setOrientation(double qw, double qx, double qy, double qz) {
+  static auto hebiChartsChart3dModelSetOrientation = DynamicLookup::instance().getFunc<void(*)(NativeChart3dModelPtr, double, double, double, double)>("hebiChartsChart3dModelSetOrientation");
+  hebiChartsChart3dModelSetOrientation(ptr_, qw, qx, qy, qz);
 }
-inline void Chart3dRobot::cleanup() {
+inline void Chart3dModel::setTranslation(double x, double y, double z) {
+  static auto hebiChartsChart3dModelSetTranslation = DynamicLookup::instance().getFunc<void(*)(NativeChart3dModelPtr, double, double, double)>("hebiChartsChart3dModelSetTranslation");
+  hebiChartsChart3dModelSetTranslation(ptr_, x, y, z);
+}
+inline void Chart3dModel::setTransform4x4(const std::vector<double>& matrix) {
+   setTransform4x4(matrix.data(), matrix.size());
+}
+inline void Chart3dModel::setTransform4x4(const double* matrix, size_t length) {
+  static auto hebiChartsChart3dModelSetTransform4x4 = DynamicLookup::instance().getFunc<void(*)(NativeChart3dModelPtr, const double*, size_t)>("hebiChartsChart3dModelSetTransform4x4");
+  hebiChartsChart3dModelSetTransform4x4(ptr_, matrix, length);
+}
+inline void Chart3dModel::cleanup() {
   if (ptr_ != nullptr) {
-    static auto hebiChartsChart3dRobotRelease = DynamicLookup::instance().getFunc<void(*)(NativeChart3dModelPtr)>("hebiChartsChart3dRobotRelease");
-    hebiChartsChart3dRobotRelease(ptr_);
+    static auto hebiChartsChart3dModelRelease = DynamicLookup::instance().getFunc<void(*)(NativeChart3dModelPtr)>("hebiChartsChart3dModelRelease");
+    hebiChartsChart3dModelRelease(ptr_);
   }
 }
-inline Chart3dRobot::Chart3dRobot(Chart3dRobot&& from) noexcept : ptr_(from.ptr_) {
+inline Chart3dModel::Chart3dModel(Chart3dModel&& from) noexcept : ptr_(from.ptr_) {
   from.ptr_ = nullptr;
 };
-inline Chart3dRobot& Chart3dRobot::operator=(Chart3dRobot&& from) noexcept {
+inline Chart3dModel& Chart3dModel::operator=(Chart3dModel&& from) noexcept {
   cleanup();
   ptr_ = from.ptr_;
   from.ptr_ = nullptr;
   return *this;
 };
-inline Chart3dRobot::~Chart3dRobot() {
+inline Chart3dModel::~Chart3dModel() {
   cleanup();
 }
 
@@ -368,6 +367,13 @@ inline void Chart3dTriad::setOrientation(double qw, double qx, double qy, double
 inline void Chart3dTriad::setTranslation(double x, double y, double z) {
   static auto hebiChartsChart3dTriadSetTranslation = DynamicLookup::instance().getFunc<void(*)(NativeChart3dTriadPtr, double, double, double)>("hebiChartsChart3dTriadSetTranslation");
   hebiChartsChart3dTriadSetTranslation(ptr_, x, y, z);
+}
+inline void Chart3dTriad::setTransform4x4(const std::vector<double>& matrix) {
+   setTransform4x4(matrix.data(), matrix.size());
+}
+inline void Chart3dTriad::setTransform4x4(const double* matrix, size_t length) {
+  static auto hebiChartsChart3dTriadSetTransform4x4 = DynamicLookup::instance().getFunc<void(*)(NativeChart3dTriadPtr, const double*, size_t)>("hebiChartsChart3dTriadSetTransform4x4");
+  hebiChartsChart3dTriadSetTransform4x4(ptr_, matrix, length);
 }
 inline void Chart3dTriad::cleanup() {
   if (ptr_ != nullptr) {
@@ -389,19 +395,19 @@ inline Chart3dTriad::~Chart3dTriad() {
 }
 
 // Axis
+inline void Axis::setName(const std::string& name) {
+   setName(name.c_str());
+}
 inline void Axis::setName(const char* name) {
   static auto hebiChartsAxisSetName = DynamicLookup::instance().getFunc<void(*)(NativeChartAxisPtr, const char*)>("hebiChartsAxisSetName");
   hebiChartsAxisSetName(ptr_, name);
 }
-inline void Axis::setName(const std::string& name) {
-  setName(name.c_str());
+inline void Axis::setUnit(const std::string& unit) {
+   setUnit(unit.c_str());
 }
 inline void Axis::setUnit(const char* unit) {
   static auto hebiChartsAxisSetUnit = DynamicLookup::instance().getFunc<void(*)(NativeChartAxisPtr, const char*)>("hebiChartsAxisSetUnit");
   hebiChartsAxisSetUnit(ptr_, unit);
-}
-inline void Axis::setUnit(const std::string& unit) {
-  setUnit(unit.c_str());
 }
 inline void Axis::setLimits(double min, double max) {
   static auto hebiChartsAxisSetLimits = DynamicLookup::instance().getFunc<void(*)(NativeChartAxisPtr, double, double)>("hebiChartsAxisSetLimits");
@@ -427,19 +433,23 @@ inline Axis::~Axis() {
 }
 
 // Dataset
+inline void Dataset::setName(const std::string& name) {
+  setName(name.c_str());
+}
 inline void Dataset::setName(const char* name) {
   static auto hebiChartsDatasetSetName = DynamicLookup::instance().getFunc<void(*)(NativeChartDatasetPtr, const char*)>("hebiChartsDatasetSetName");
   hebiChartsDatasetSetName(ptr_, name);
 }
-inline void Dataset::setName(const std::string& name) {
-  setName(name.c_str());
+inline void Dataset::setData(const std::vector<double>& x, const std::vector<double>& y) {
+  setData(x.data(), y.data(), (std::min)(x.size(), y.size()));
 }
 inline void Dataset::setData(const double* x, const double* y, size_t length) {
-  static auto hebiChartsDatasetSetData = DynamicLookup::instance().getFunc<void(*)(NativeChartDatasetPtr, const double*, const double*, int)>("hebiChartsDatasetSetData");
-  hebiChartsDatasetSetData(ptr_, x, y, static_cast<int>(length));
+  static auto hebiChartsDatasetSetData = DynamicLookup::instance().getFunc<void(*)(NativeChartDatasetPtr, const double*, const double*, size_t)>("hebiChartsDatasetSetData");
+  hebiChartsDatasetSetData(ptr_, x, y, length);
 }
-inline void Dataset::setData(const std::vector<double>& x, const std::vector<double>& y) {
-  setData(x.data(), y.data(), std::min(x.size(), y.size()));
+inline void Dataset::addPoint(double x, double y) {
+  static auto hebiChartsDatasetAddPoint = DynamicLookup::instance().getFunc<void(*)(NativeChartDatasetPtr, double, double)>("hebiChartsDatasetAddPoint");
+  hebiChartsDatasetAddPoint(ptr_, x, y);
 }
 inline void Dataset::setColor(Color color) {
   static auto hebiChartsDatasetSetColor = DynamicLookup::instance().getFunc<void(*)(NativeChartDatasetPtr, Color)>("hebiChartsDatasetSetColor");
@@ -448,17 +458,6 @@ inline void Dataset::setColor(Color color) {
 inline void Dataset::setLineStyle(LineStyle lineStyle) {
   static auto hebiChartsDatasetSetLineStyle = DynamicLookup::instance().getFunc<void(*)(NativeChartDatasetPtr, LineStyle)>("hebiChartsDatasetSetLineStyle");
   hebiChartsDatasetSetLineStyle(ptr_, lineStyle);
-}
-inline void Dataset::addDataPoint(double x, double y) {
-  static auto hebiChartsDatasetAddDataPoint = DynamicLookup::instance().getFunc<void(*)(NativeChartDatasetPtr, double, double)>("hebiChartsDatasetAddDataPoint");
-  hebiChartsDatasetAddDataPoint(ptr_, x, y);
-}
-inline void Dataset::addStyleClass(const char* style) {
-  static auto hebiChartsDatasetAddStyleClass = DynamicLookup::instance().getFunc<void(*)(NativeChartDatasetPtr, const char*)>("hebiChartsDatasetAddStyleClass");
-  hebiChartsDatasetAddStyleClass(ptr_, style);
-}
-inline void Dataset::addStyleClass(const std::string& style) {
-  addStyleClass(style.c_str());
 }
 inline void Dataset::cleanup() {
   if (ptr_ != nullptr) {
@@ -480,26 +479,6 @@ inline Dataset::~Dataset() {
 }
 
 // Framework
-
-inline bool framework::isLoaded() {
-  return DynamicLookup::instance().isLoaded();
-}
-
-inline framework::Version framework::getHeaderVersion() {
-  return {0, 1, 0};
-}
-
-inline framework::Version framework::getLibraryVersion() {
-  framework::Version v(0,0,0);
-  static auto hebiChartsGetBuildVersion = DynamicLookup::instance().getFunc<void(*)(int*, int*, int*)>("hebiChartsGetBuildVersion");
-  hebiChartsGetBuildVersion(&v.major_, &v.minor_, &v.patch_);
-  return v;
-}
-
-inline int framework::getBuildNumber() {
-  static auto hebiChartsFrameworkGetBuildNumber = DynamicLookup::instance().getFunc<int(*)()>("hebiChartsFrameworkGetBuildNumber");
-  return hebiChartsFrameworkGetBuildNumber();
-}
 inline bool framework::setTheme(Theme theme) {
   static auto hebiChartsFrameworkSetTheme = DynamicLookup::instance().getFunc<bool(*)(Theme)>("hebiChartsFrameworkSetTheme");
   return hebiChartsFrameworkSetTheme(theme);
@@ -507,10 +486,6 @@ inline bool framework::setTheme(Theme theme) {
 inline void framework::setAutoCloseWindows(bool autoClose) {
   static auto hebiChartsFrameworkSetAutoCloseWindows = DynamicLookup::instance().getFunc<void(*)(bool)>("hebiChartsFrameworkSetAutoCloseWindows");
   hebiChartsFrameworkSetAutoCloseWindows(autoClose);
-}
-inline void framework::setWaitForAsyncCallFinish(bool emulateSyncCalls) {
-  static auto hebiChartsFrameworkSetWaitForAsyncCallFinish = DynamicLookup::instance().getFunc<void(*)(bool)>("hebiChartsFrameworkSetWaitForAsyncCallFinish");
-  hebiChartsFrameworkSetWaitForAsyncCallFinish(emulateSyncCalls);
 }
 inline void framework::waitUntilWindowsClosed() {
   static auto hebiChartsFrameworkWaitUntilWindowsClosed = DynamicLookup::instance().getFunc<void(*)()>("hebiChartsFrameworkWaitUntilWindowsClosed");
@@ -526,6 +501,33 @@ inline int runApplication(hebiCharts_main_func_t callback, int argc, char** argv
   static auto hebiChartsRunApplication = DynamicLookup::instance().getFunc<int(*)(hebiCharts_main_func_t, int, char**)>("hebiChartsRunApplication");
   return hebiChartsRunApplication(callback, argc, argv);
 }
+
+// Library Information
+namespace lib {
+
+struct Version {
+  Version(int major, int minor, int patch, int build) : major_(major), minor_(minor), patch_(patch), build_(build) {}
+  int major_{};
+  int minor_{};
+  int patch_{};
+  int build_{};
+};
+
+inline Version getHeaderVersion() {
+  return {0, 1, 0, 49};
+}
+
+inline Version getLibraryVersion() {
+  Version v(0,0,0,0);
+  static auto hebiChartsGetLibraryVersion = DynamicLookup::instance().getFunc<void(*)(int*, int*, int*, int*)>("hebiChartsGetLibraryVersion");
+  hebiChartsGetLibraryVersion(&v.major_, &v.minor_, &v.patch_, &v.build_);
+  return v;
+}
+
+inline bool isAvailable() { return DynamicLookup::instance().isLoaded(); }
+
+} // namespace lib
+
 
 template<typename FuncType> FuncType DynamicLookup::getFunc(const char *func) const {
   assert(lib_ != nullptr && "Fatal error -- cannot call hebi::charts functions on unloaded library");
@@ -563,10 +565,10 @@ DynamicLookup:: DynamicLookup(const std::string &path) {
 
   // Check version compatibility. Note that we haven't finished the constructor, so we can't
   // just use the API method as it would cause a recursive call stack.
-  framework::Version header_version = framework::getHeaderVersion();
-  framework::Version lib_version(-1,0,0);
-  auto hebiChartsGetBuildVersion = getFunc<void(*)(int*, int*, int*)>("hebiChartsGetBuildVersion");
-  hebiChartsGetBuildVersion(&lib_version.major_, &lib_version.minor_, &lib_version.patch_);
+  lib::Version header_version = lib::getHeaderVersion();
+  lib::Version lib_version(-1,0,0,0);
+  auto hebiChartsGetLibraryVersion = getFunc<void(*)(int*, int*, int*, int*)>("hebiChartsGetLibraryVersion");
+  hebiChartsGetLibraryVersion(&lib_version.major_, &lib_version.minor_, &lib_version.patch_, &lib_version.build_);
 
   bool is_compatible = (lib_version.major_ == header_version.major_ &&
                         lib_version.minor_ >= header_version.minor_ &&
@@ -582,6 +584,7 @@ DynamicLookup:: DynamicLookup(const std::string &path) {
 #endif
     lib_ = nullptr;
   }
+
 }
 
 } // namespace hebi
