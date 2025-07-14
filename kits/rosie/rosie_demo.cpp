@@ -276,7 +276,7 @@ int main() {
       std::cout << "Could not read or send gripper gains\n";
   }
 
-  return;
+  return 1;
   // Start background logging
   if(enable_logging) {
     arm->group().startLog("logs");
