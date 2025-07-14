@@ -180,10 +180,9 @@ int main() {
 
   // Create the MobileIO object
   std::unique_ptr<util::MobileIO> mobile_io = util::MobileIO::create("HEBI", "mobileIO");
-  if (!mobile_io)
+  while (!mobile_io)
   {
     std::cout << "couldn't find mobile IO device!\n";
-    return 1;
   }
 
   // Clear any garbage on screen
