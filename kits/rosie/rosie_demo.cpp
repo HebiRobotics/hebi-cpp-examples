@@ -260,14 +260,23 @@ int main() {
   auto gripper = hebi::arm::Gripper::create(robot_family, "gripperSpool", gripper_close_effort, gripper_open_effort); 
   std::string gripper_gains_file = example_config->getGains("gripper");
   printf("Gripper gains file: %s\n", gripper_gains_file.c_str());
+  gripper_gains_file = "home/hebi/KHEBI/hebi-cpp-examples/build/kits/arms/config/gains/A-2255-01.xml";
   if (!gripper || !gripper->loadGains(example_config_path + "//" + gripper_gains_file))
   {
 	std::cout << "Could not load config file: " << example_config_path << "\n";
     std::cout << "Could not load gains file: " << gripper_gains_file << "\n";
     std::cout << "Could not read or send gripper gains\n";
-    return 1;
   }
 
+  gripper_gains_file = "../arms/config/gains/A-2255-01.xml";
+  if (!gripper || !gripper->loadGains(example_config_path + "//" + gripper_gains_file))
+  {
+      std::cout << "Could not load config file: " << example_config_path << "\n";
+      std::cout << "Could not load gains file: " << gripper_gains_file << "\n";
+      std::cout << "Could not read or send gripper gains\n";
+  }
+
+  return;
   // Start background logging
   if(enable_logging) {
     arm->group().startLog("logs");
