@@ -171,6 +171,7 @@ int main() {
   while (!arm) {
     std::cerr << "Failed to create arm, retrying..." << std::endl;
     arm = arm::Arm::create(*example_config);
+    return 1;
   }
   std::cout << "Arm connected." << std::endl;
 
