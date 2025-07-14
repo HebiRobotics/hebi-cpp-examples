@@ -261,35 +261,12 @@ int main() {
   auto gripper = hebi::arm::Gripper::create(robot_family, "gripperSpool", gripper_close_effort, gripper_open_effort); 
   std::string gripper_gains_file = example_config->getGains("gripper");
   printf("Gripper gains file: %s\n", gripper_gains_file.c_str());
-  if (!gripper->loadGains(gripper_gains_file))
+  if (!gripper || !gripper->loadGains(gripper_gains_file))
   {
-	std::cout << "1 Could not load config file: " << example_config_path << "\n";
-    std::cout << "1 Could not load gains file: " << gripper_gains_file << "\n";
-    std::cout << "1 Could not read or send gripper gains\n";
+    std::cout << "Could not read or send gripper gains\n";
+    return 1;
   }
 
-  gripper_gains_file = "home/hebi/KHEBI/hebi-cpp-examples/build/kits/arms/config/gains/A-2255-01.xml";
-  if (!gripper->loadGains(gripper_gains_file))
-  {
-      std::cout << "2 Could not load config file: " << example_config_path << "\n";
-      std::cout << "2 Could not load gains file: " << gripper_gains_file << "\n";
-      std::cout << "2 Could not read or send gripper gains\n";
-  }
-
-  gripper_gains_file = "../../arms/config/gains/A-2255-01.xml";
-  if (!gripper->loadGains(example_config_path + "//" + gripper_gains_file))
-  {
-      std::cout << "3 Could not load config file: " << example_config_path << "\n";
-      std::cout << "3 Could not load gains file: " << gripper_gains_file << "\n";
-      std::cout << "3 Could not read or send gripper gains\n";
-  }
-
-  if (!gripper)
-  {
-      std::cout << "Could not create a gripper\n";
-  }
-
-  return 1;
   // Start background logging
   if(enable_logging) {
     arm->group().startLog("logs");
