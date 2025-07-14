@@ -28,7 +28,6 @@
 1. Create and edit a new systemd service (rosie.service) :  
   `sudo nano /etc/systemd/system/rosie.service`  
 2. Copy the following contents to specify how the executable should be run on startup:  
-		
   `[Unit]`  
   `Description=HEBI Rosie C++ Demo`  
   `After=network-online.target`  
