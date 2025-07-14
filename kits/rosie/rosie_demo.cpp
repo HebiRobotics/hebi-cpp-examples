@@ -140,16 +140,24 @@ int main() {
 
   // Config file path
   // Note -- this is currently for an R-series Rosie
-  const std::string example_config_file = "config/rosie-r.cfg.yaml";
+  const std::string example_config_file = "rosie-r.cfg.yaml";
+  std::string example_config_path;
   std::vector<std::string> errors;
-  
+
+  if (!example_config_file.empty()) {
+    example_config_path = "config/" + example_config_file;
+  }
+  else {
+    example_config_path = "config/rosie-r.cfg.yaml";
+  }
+
   // Load the config
-  const auto example_config = RobotConfig::loadConfig(example_config_file, errors);
+  const auto example_config = RobotConfig::loadConfig(example_config_path, errors);
   for (const auto& error : errors) {
     std::cerr << error << std::endl;
   }
   if (!example_config) {
-    std::cerr << "Failed to load configuration from: " << example_config_file << std::endl;
+    std::cerr << "Failed to load configuration from: " << example_config_path << std::endl;
     return -1;
   }
 
@@ -250,7 +258,8 @@ int main() {
     return 1;
 
   auto gripper = hebi::arm::Gripper::create(robot_family, "gripperSpool", gripper_close_effort, gripper_open_effort); 
-  if (!gripper || !gripper->loadGains("gains/gripper_gains.xml"))
+  std::string gripper_gains_file = example_config->getGains("gripper");
+  if (!gripper || !gripper->loadGains(example_config_path + "//" + gripper_gains_file))
   {
     std::cout << "Could not read or send gripper gains\n";
     return 1;
