@@ -146,6 +146,7 @@ int main() {
 
   if (!example_config_file.empty()) {
     example_config_path = "config/" + example_config_file;
+	printf("Using config file: %s\n", example_config_path.c_str());
   }
   else {
     example_config_path = "config/rosie-r.cfg.yaml";

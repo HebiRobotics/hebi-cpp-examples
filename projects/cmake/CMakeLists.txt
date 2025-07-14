@@ -227,7 +227,7 @@ foreach(EXAMPLE ${ROSIE_SOURCES})
   get_filename_component(EX_NAME ${EXAMPLE} NAME_WE)
   
   hebi_add_target(${EX_NAME} ${EXAMPLE})
-  hebi_copy_target_resources(${EX_NAME} "kits/rosie/hrdf" "hrdf")
+  hebi_copy_target_resources(${EX_NAME} "kits/rosie/config" "config")
   hebi_copy_target_resources(${EX_NAME} "kits/rosie/gains" "gains")
 
 endforeach()
