@@ -31,7 +31,11 @@ find_package(Python 3.6 COMPONENTS Interpreter Development.Module Development.Em
 
 # Due to an issue in Windows and mac with some versions of numpy/distutils/etc, need
 # to manually add this here:
-set(NUMPY_INCLUDE_DIR ${Python_SITELIB}/numpy/core/include)
+execute_process(
+  COMMAND python3 -c "import numpy; print(numpy.get_include())"
+  OUTPUT_VARIABLE NUMPY_INCLUDE_DIR
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
 
 # Helper function for adding target with HEBI library/dependency references
 function(hebi_add_target TARGET_NAME TARGET_SOURCES)
