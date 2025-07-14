@@ -181,7 +181,7 @@ int main() {
   std::unique_ptr<util::MobileIO> mobile_io = util::MobileIO::create("HEBI", "mobileIO");
   if (!mobile_io)
   {
-    std::cout << "couldn't find mobile IO device!\n";
+    std::cout << "Couldn't find mobile IO device!\n";
     return 1;
   }
 
@@ -190,15 +190,16 @@ int main() {
 
   // Setup instructions for display
   std::string instructions;
-  instructions = ("B1: Home  B2: Track\n"
-                  "A6: Grip  B8: Quit\n"
-                  "A3: XYZ   B3: Compliant\n");
+  instructions = ("B1: Home        B2: Track\n"
+                  "B3: Compliant   B8: Quit\n"
+                  "A3: XYZ         A6: Grip  \n");
 
   // Display instructions on screen
   mobile_io->appendText(instructions);
 
   mobile_io->setButtonLabel(1, "Home");
   mobile_io->setButtonLabel(2, "Track");
+  mobile_io->setButtonLabel(3, "Compliant");
   mobile_io->setButtonLabel(8, "Quit");
   mobile_io->setAxisLabel(2, "Base Turn");
   mobile_io->setAxisLabel(3, "Arm Translate");
