@@ -262,7 +262,8 @@ int main() {
   printf("Gripper gains file: %s\n", gripper_gains_file.c_str());
   if (!gripper || !gripper->loadGains(example_config_path + "//" + gripper_gains_file))
   {
-    std::cout << "Could not create gripper or load gains from: " << gripper_gains_file << "\n";
+	std::cout << "Could not load config file: " << example_config_path << "\n";
+    std::cout << "Could not load gains file: " << gripper_gains_file << "\n";
     std::cout << "Could not read or send gripper gains\n";
     return 1;
   }
