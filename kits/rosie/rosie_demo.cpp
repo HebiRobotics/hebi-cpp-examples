@@ -260,8 +260,10 @@ int main() {
 
   auto gripper = hebi::arm::Gripper::create(robot_family, "gripperSpool", gripper_close_effort, gripper_open_effort); 
   std::string gripper_gains_file = example_config->getGains("gripper");
+  printf("Gripper gains file: %s\n", gripper_gains_file.c_str());
   if (!gripper || !gripper->loadGains(example_config_path + "//" + gripper_gains_file))
   {
+    std::cout << "Could not create gripper or load gains from: " << gripper_gains_file << "\n";
     std::cout << "Could not read or send gripper gains\n";
     return 1;
   }
