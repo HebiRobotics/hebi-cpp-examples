@@ -344,7 +344,7 @@ int main(int argc, char** argv) {
 
       // Button B2 - Toggle AR Control
       if (mobile_io->getButtonDiff(2) == util::MobileIO::ButtonState::ToOn) {
-        if (!ar_mode) { // -> AR mode
+        if (arm->atGoal() && !ar_mode) { // -> AR mode
           xyz_phone_init << mobile_io->getLastFeedback().mobile().arPosition().get().getX(),
                             mobile_io->getLastFeedback().mobile().arPosition().get().getY(),
                             mobile_io->getLastFeedback().mobile().arPosition().get().getZ();
