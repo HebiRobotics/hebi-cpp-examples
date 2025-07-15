@@ -70,60 +70,60 @@ int run(int, char**) {
     return 1;
   }
 
-  std::vector<double> buttons;
-  buttons.resize(8, 0);// we know we have 8 pins
-  std::vector<double> sliders;
-  sliders.resize(8, 0);// we know we have 8 pins
-  std::vector<std::string> x_labels = {"1", "2", "3", "4", "5", "6", "7", "8"};
-  std::vector<double> x_ticks = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0};
-
   hebi::charts::Chart chart;
   chart.setTitle("Mobile I/O Input Feedback");
   chart.getAxisY().setLimits(-1, 1);
-  chart.getAxisX().setName("Digital Inputs and Analog Inputs");
+  chart.getAxisX().setName("timestep");
   chart.getAxisY().setName("[-1 to 1]");
-  // TODO:
-  //chart.getAxisX().setNames(x_labels);
-  //chart.getAxisX().setTicks(x_ticks);
 
-  auto button_chart_data = chart.addBars("X/Y/Z", x_ticks, buttons);
-  auto slider_chart_data = chart.addBars("X/Y/Z", x_ticks, sliders);
+  std::array<hebi::charts::Dataset, 8> button_chart_data = {
+    chart.addLine("Button 1", {}, {}),
+    chart.addLine("Button 2", {}, {}),
+    chart.addLine("Button 3", {}, {}),
+    chart.addLine("Button 4", {}, {}),
+    chart.addLine("Button 5", {}, {}),
+    chart.addLine("Button 6", {}, {}),
+    chart.addLine("Button 7", {}, {}),
+    chart.addLine("Button 8", {}, {})
+  };
+  std::array<hebi::charts::Dataset, 8> slider_chart_data = {
+    chart.addLine("Slider 1", {}, {}),
+    chart.addLine("Slider 2", {}, {}),
+    chart.addLine("Slider 3", {}, {}),
+    chart.addLine("Slider 4", {}, {}),
+    chart.addLine("Slider 5", {}, {}),
+    chart.addLine("Slider 6", {}, {}),
+    chart.addLine("Slider 7", {}, {}),
+    chart.addLine("Slider 8", {}, {})
+  };
   chart.show();
   for (size_t i = 0; i < 50; ++i)
   {
     if (group->getNextFeedback(group_fbk))
     {
       // Obtain feedback for a singular module from the groupFeedback object
-      auto& buttons_data = group_fbk[0].io();
+      auto& io_data = group_fbk[0].io();
 
       // Digital Feedback (Buttons) 
       // We can safely assume that all buttons return an int value
       // Store as double for interop with the plotting library
-      buttons = {static_cast<double>(buttons_data.b().getInt(1)),
-                  static_cast<double>(buttons_data.b().getInt(2)),
-                  static_cast<double>(buttons_data.b().getInt(3)),
-                  static_cast<double>(buttons_data.b().getInt(4)),
-                  static_cast<double>(buttons_data.b().getInt(5)),
-                  static_cast<double>(buttons_data.b().getInt(6)),
-                  static_cast<double>(buttons_data.b().getInt(7)),
-                  static_cast<double>(buttons_data.b().getInt(8))};
+      // Note -- here and below we check pins i+1 because the pins are numbered 1-8, not 0-7
+      for (size_t j = 0; j < 8; ++j)
+        button_chart_data[j].addPoint(i, static_cast<double>(io_data.b().getInt(j + 1)));
 
       // Analog Feedback (Sliders) 
       // We expect float values, but may recieve an int in certain cases.
       // As such, we convert any ints we encounter back to float
-      for (size_t i = 0; i < 8; ++i)
+      for (size_t j = 0; j < 8; ++j)
       {
-        // we check pins i+1 because the pins are numbered 1-8, not 0-7
-        if (buttons_data.a().hasFloat(i+1)) {
-          sliders[i] = buttons_data.a().getFloat(i+1);
+        double slider_value = 0;
+        if (io_data.a().hasFloat(j + 1)) {
+          slider_value = io_data.a().getFloat(j + 1);
         } else {
-          sliders[i] = static_cast<double>(buttons_data.a().getInt(i+1));
+          slider_value = static_cast<double>(io_data.a().getInt(j + 1));
         }
+        slider_chart_data[j].addPoint(i, slider_value);
       }
-
-      // Now we plot the collected feedback
-      button_chart_data.setData(x_ticks, buttons);
-      slider_chart_data.setData(x_ticks, sliders);
     }
   }
 

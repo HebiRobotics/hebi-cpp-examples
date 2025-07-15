@@ -32,18 +32,14 @@ int run(int, char**)
   GroupFeedback group_fbk(group->size());
 
   if (hebi::charts::lib::isAvailable()) {
-    std::vector<double> y;
-    y.resize(3, 0);
-    std::vector<std::string> x_labels = {"X","Y","Z"};
-    std::vector<double> x_ticks = {0.0,1.0,2.0};
-    
     hebi::charts::Chart chart;
+    chart.setTitle("Gyro Feedback");
+    chart.getAxisX().setName("timestep");
+    chart.getAxisY().setName("rad/s");
     chart.getAxisY().setLimits(-3.14, 3.14);
-    // TODDO:
-    //chart->getAxisX()->setNames("X", "Y", "Z");
-    //plt::xticks(x_ticks,x_labels);
-
-    auto chart_data = chart.addBars("X/Y/Z", x_ticks, y);
+    auto x_data = chart.addLine("X", {}, {});
+    auto y_data = chart.addLine("Y", {}, {});
+    auto z_data = chart.addLine("Z", {}, {});
     chart.show();
     for (size_t i = 0; i < 50; ++i)
     { 
@@ -52,13 +48,11 @@ int run(int, char**)
         // Note -- can also retrieve individual module feedback; see API docs.
         // E.g., `group_fbk[0]` is the feedback from the first module.
         auto gyro = group_fbk.getGyro();
-        y = { gyro(0,0), gyro(0,1), gyro(0,2) };
-      
-        //plot the feedback
-        chart_data.setData(x_ticks, y);
+        x_data.addPoint(i, gyro(0, 0));
+        y_data.addPoint(i, gyro(0, 1));
+        z_data.addPoint(i, gyro(0, 2));
       }
     }
-
     hebi::charts::framework::waitUntilWindowsClosed();
   }
 
