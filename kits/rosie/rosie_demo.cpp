@@ -132,32 +132,34 @@ private:
   Eigen::Vector2d omni_base_traj_time_;
 };
 
-int main() {
+int main(int argc, char** argv) {
 
   //////////////////////////
   ///// Config Setup ///////
   //////////////////////////
 
   // Config file path
-  // Note -- this is currently for an R-series Rosie
-  const std::string example_config_file = "config/rosie-r.cfg.yaml";
-  std::string example_config_path;
-  std::vector<std::string> errors;
 
-  if (!example_config_file.empty()) {
-      example_config_path = "config/" + example_config_file;
-  }
-  else {
-      example_config_path = "config/rosie-r.cfg.yaml";
+  std::string example_config_path;
+  if (argc == 1) {
+    // Default to an R-series Rosie
+    example_config_path = "config/rosie-r.cfg.yaml";
+  } else if (argc == 2) {
+    // Use argument passed in if given for config
+    example_config_path = "config/" + std::string(argv[1]);
+  } else {
+    std::cout << "Run ./rosie_demo <optional config file name>\n";
+    return 1;
   }
   
   // Load the config
-  const auto example_config = RobotConfig::loadConfig(example_config_file, errors);
+  std::vector<std::string> errors;
+  const auto example_config = RobotConfig::loadConfig(example_config_path, errors);
   for (const auto& error : errors) {
     std::cerr << error << std::endl;
   }
   if (!example_config) {
-    std::cerr << "Failed to load configuration from: " << example_config_file << std::endl;
+    std::cerr << "Failed to load configuration from: " << example_config_path << std::endl;
     return -1;
   }
 

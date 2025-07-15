@@ -31,11 +31,7 @@ find_package(Python 3.6 COMPONENTS Interpreter Development.Module Development.Em
 
 # Due to an issue in Windows and mac with some versions of numpy/distutils/etc, need
 # to manually add this here:
-execute_process(
-  COMMAND python3 -c "import numpy; print(numpy.get_include())"
-  OUTPUT_VARIABLE NUMPY_INCLUDE_DIR
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
+set(NUMPY_INCLUDE_DIR ${Python_SITELIB}/numpy/core/include)
 
 # Helper function for adding target with HEBI library/dependency references
 function(hebi_add_target TARGET_NAME TARGET_SOURCES)
@@ -215,6 +211,9 @@ foreach(EXAMPLE ${ARM_SOURCES})
   
   hebi_add_target(${EX_NAME} ${EXAMPLE})
 
+  # Copy the HRDF files for kits into the build directory
+  hebi_copy_target_resources(${EX_NAME} "kits/arms/config" "config")
+
 endforeach()
 
 # Rosie kit example
@@ -231,6 +230,6 @@ foreach(EXAMPLE ${ROSIE_SOURCES})
   hebi_copy_target_resources(${EX_NAME} "kits/rosie/config" "config")
   hebi_copy_target_resources(${EX_NAME} "kits/rosie/gains" "gains")
   # Note -- need the arm config files here, too!
-  hebi_copy_target_resources(${EX_NAME} "kits/arms/config" "../../kits/arms/config")
+  hebi_copy_target_resources(${EX_NAME} "kits/arms/config" "../arms/config")
 
 endforeach()

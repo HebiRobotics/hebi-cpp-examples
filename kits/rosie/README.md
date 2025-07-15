@@ -14,7 +14,7 @@
   `cd build`  
 5. Configure the build environment using cmake and compile the code:  
   `cmake ../projects/cmake`  
-  `make`  
+  `make rosie_demo`
 6. Power On and Configure the Mobile IO Device  
   `Family = HEBI`  
   `Name = mobileIO`  
