@@ -342,7 +342,7 @@ int main(int argc, char** argv) {
         arm->setGoal(arm::Goal::createFromPosition(soft_start_time, target_joints));
       }
 
-      // Button B2 - Toggle AR Control
+	  // Button B2 - Toggle AR Control (enabled only after homing is complete)
       if (mobile_io->getButtonDiff(2) == util::MobileIO::ButtonState::ToOn) {
         if (arm->atGoal() && !ar_mode) { // -> AR mode
           xyz_phone_init << mobile_io->getLastFeedback().mobile().arPosition().get().getX(),
