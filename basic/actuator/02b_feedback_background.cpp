@@ -27,30 +27,26 @@ int run(int, char**)
   group->setFeedbackFrequencyHz(5);
 
   if (hebi::charts::lib::isAvailable()) {
-    std::vector<double> y;
-    y.resize(3, 0);
-    std::vector<std::string> x_labels = {"X","Y","Z"};
-    std::vector<double> x_ticks = {0.0,1.0,2.0};
-  
     hebi::charts::Chart chart;
+    chart.setTitle("Gyro Feedback");
+    chart.getAxisX().setName("time (s)");
+    chart.getAxisY().setName("rad/s");
     chart.getAxisY().setLimits(-3.14, 3.14);
-    // TODDO:
-    //chart->getAxisX()->setNames("X", "Y", "Z");
-    //plt::xticks(x_ticks,x_labels);
-
-    auto chart_data = chart.addBars("X/Y/Z", x_ticks, y);
+    auto x_data = chart.addLine("X", {}, {});
+    auto y_data = chart.addLine("Y", {}, {});
+    auto z_data = chart.addLine("Z", {}, {});
     chart.show();
     // Add a callback to react to feedback received on a background thread
     // Note: We use a C++11 "lambda function" here to pass in a function pointer,
     // but you can also pass in a C-style function pointer with the signature:
     //   void func(const hebi::GroupFeedback& group_fbk);
-    group->addFeedbackHandler([&x_ticks, &y, &chart_data](const GroupFeedback& group_fbk)
+    group->addFeedbackHandler([&x_data, &y_data, &z_data](const GroupFeedback& group_fbk)
     {
+      double t = group_fbk.getTime();
       auto gyro = group_fbk.getGyro();
-      y = { gyro(0,0), gyro(0,1), gyro(0,2) };
-
-      //plot the feedback
-      chart_data.setData(x_ticks, y);
+      x_data.addPoint(t, gyro(0, 0));
+      y_data.addPoint(t, gyro(0, 1));
+      z_data.addPoint(t, gyro(0, 2));
     });
 
     // Wait for 10 seconds, and then stop.

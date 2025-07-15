@@ -58,21 +58,22 @@ int run(int, char**) {
   }
 
   if (hebi::charts::lib::isAvailable()) {
-    std::vector<double> pin_values; // we know we have 8 pins
-    pin_values.resize(8, 0);
-    std::vector<std::string> x_labels = {"1", "2", "3", "4", "5", "6", "7", "8"};
-    std::vector<double> x_ticks = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0};
-
     hebi::charts::Chart chart;
     chart.setTitle("IO Board Feedback from IO pins");
-    chart.getAxisY().setLimits(-1, 1);
-    chart.getAxisX().setName("Pin Number");
-    chart.getAxisY().setName("[-1 to 1]");
-    // TODO:
-    //chart.getAxisX().setNames(x_labels);
-    //chart.getAxisX().setTicks(x_ticks);
+    chart.getAxisY().setLimits(0, 5);
+    chart.getAxisX().setName("timestep");
+    chart.getAxisY().setName("[0 to 5]");
 
-    auto chart_data = chart.addBars("Pins", x_ticks, pin_values);
+    std::array<hebi::charts::Dataset, 8> pin_chart_data = {
+      chart.addLine("Pin 1", {}, {}),
+      chart.addLine("Pin 2", {}, {}),
+      chart.addLine("Pin 3", {}, {}),
+      chart.addLine("Pin 4", {}, {}),
+      chart.addLine("Pin 5", {}, {}),
+      chart.addLine("Pin 6", {}, {}),
+      chart.addLine("Pin 7", {}, {}),
+      chart.addLine("Pin 8", {}, {}),
+    };
     chart.show();
     for (size_t i = 0; i < 50; ++i)
     {
@@ -83,18 +84,15 @@ int run(int, char**) {
 
         // Analog Feedback
         // In this case, we gather only the values for A pins
-        for (size_t i = 0; i < 8; ++i)
+        for (size_t pin = 0; pin < 8; ++pin)
         {
           // we check pins i+1 because the pins are numbered 1-8
-          if (pin_data.a().hasFloat(i+1)) {
-            pin_values[i] = pin_data.a().getFloat(i+1);
+          if (pin_data.a().hasFloat(pin+1)) {
+            pin_chart_data[pin].addPoint(i, pin_data.a().getFloat(pin+1));
           } else {
-            pin_values[i] = (float) pin_data.a().getInt(i+1);
+            pin_chart_data[pin].addPoint(i, static_cast<double>(pin_data.a().getInt(pin+1)));
           }
         }
-
-        // Now we plot the collected feedback
-        chart_data.setData(x_ticks, pin_values);
       }
     }
 

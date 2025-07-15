@@ -58,21 +58,15 @@ int run(int, char**) {
   }
 
   if (hebi::charts::lib::isAvailable()) {
-    std::vector<double> gyro_data;
-    gyro_data.resize(3,0);
-    std::vector<std::string> x_labels = {"X", "Y", "Z"};
-    std::vector<double> x_ticks = {0.0, 1.0, 2.0};
-
     hebi::charts::Chart chart;
     chart.setTitle("IO Board Gyro Feedback");
+    chart.getAxisX().setName("timestep");
+    chart.getAxisY().setName("rad/s");
     chart.getAxisY().setLimits(-3.14, 3.14);
-    chart.getAxisX().setName("Axis");
-    chart.getAxisY().setName("Angular Velocity (rad/s)");
-    // TODO:
-    //chart.getAxisX().setNames(x_labels);
-    //chart.getAxisX().setTicks(x_ticks);
 
-    auto chart_data = chart.addBars("X/Y/Z", x_ticks, gyro_data);
+    auto x_data = chart.addLine("X", {}, {});
+    auto y_data = chart.addLine("Y", {}, {});
+    auto z_data = chart.addLine("Z", {}, {});
     chart.show();
     for (size_t i = 0; i < 50; ++i)
     {
@@ -80,10 +74,9 @@ int run(int, char**) {
       {
         // Obtain gryo feedback from the groupFeedback object
         auto gyro = group_fbk.getGyro();
-        gyro_data = {gyro(0,0), gyro(0,1), gyro(0,2)};
-
-        // Now we plot the collected feedback
-        chart_data.setData(x_ticks, gyro_data);
+        x_data.addPoint(i, gyro(0, 0));
+        y_data.addPoint(i, gyro(0, 1));
+        z_data.addPoint(i, gyro(0, 2));
       }
     }
     hebi::charts::framework::waitUntilWindowsClosed();

@@ -46,28 +46,22 @@ int run(int, char**) {
   //      void func(const hebi::GroupFeedback& group_fbk);
   std::vector<double> y;
   if (hebi::charts::lib::isAvailable()) {
-    std::vector<double> y;
-    y.resize(3,0);
-    std::vector<std::string> x_labels = {"X", "Y", "Z"};
-    std::vector<double> x_ticks = {0.0, 1.0, 2.0};
-
     hebi::charts::Chart chart;
     chart.setTitle("Mobile I/O Gyro Feedback");
+    chart.getAxisX().setName("time (s)");
+    chart.getAxisY().setName("rad/s");
     chart.getAxisY().setLimits(-3.14, 3.14);
-    chart.getAxisX().setName("Axis");
-    chart.getAxisY().setName("Angular Velocity (rad/s)");
-    // TODO:
-    //chart.getAxisX().setNames(x_labels);
-    //chart.getAxisX().setTicks(x_ticks);
 
-    auto chart_data = chart.addBars("X/Y/Z", x_ticks, y);
-    group->addFeedbackHandler([&y, &x_ticks, &chart_data](const GroupFeedback& group_fbk) 
+    auto x_data = chart.addLine("X", {}, {});
+    auto y_data = chart.addLine("Y", {}, {});
+    auto z_data = chart.addLine("Z", {}, {});
+    group->addFeedbackHandler([&x_data, &y_data, &z_data](const GroupFeedback& group_fbk) 
     {
+      double t = group_fbk.getTime();
       auto gyro = group_fbk.getGyro();
-      y = {gyro(0,0), gyro(0,1), gyro(0,2)};
-
-      // Plot the feedback
-      chart_data.setData(x_ticks, y);
+      x_data.addPoint(t, gyro(0, 0));
+      y_data.addPoint(t, gyro(0, 1));
+      z_data.addPoint(t, gyro(0, 2));
     });
 
     // Wait 10 seconds, and then stop and clear threads
