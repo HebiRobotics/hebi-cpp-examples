@@ -181,6 +181,16 @@ int main(int argc, char** argv) {
 
   // Create the MobileIO object
   std::unique_ptr<util::MobileIO> mobile_io = util::MobileIO::create("HEBI", "mobileIO");
+
+  int tries = 5;
+  while (!mobile_io && tries > 0)
+  {
+    std::cerr << "Failed to connect to mobile IO device, retrying...\n";
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    mobile_io = util::MobileIO::create("HEBI", "mobileIO");
+	--tries;
+  }
+
   if (!mobile_io)
   {
     std::cout << "Couldn't find mobile IO device!\n";
