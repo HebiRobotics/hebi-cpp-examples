@@ -99,9 +99,10 @@ public:
 
   }
 
+  hebi::GroupCommand base_command;
+
 private:
   hebi::Group& group_;
-  hebi::GroupCommand base_command;
   hebi::GroupFeedback base_feedback;
   std::shared_ptr<trajectory::Trajectory> trajectory;
   hebi::Color color;
