@@ -7,6 +7,8 @@
 #include "trajectory.hpp"
 #include "util/mobile_io.hpp"
 #include "util/vector_utils.h"
+#include <chrono>
+#include <thread>
 
 // Common includes
 #include <iostream>
@@ -181,6 +183,16 @@ int main(int argc, char** argv) {
 
   // Create the MobileIO object
   std::unique_ptr<util::MobileIO> mobile_io = util::MobileIO::create("HEBI", "mobileIO");
+
+  int tries = 5;
+  while (!mobile_io && tries > 0)
+  {
+    std::cerr << "Failed to connect to mobile IO device, retrying...\n";
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    mobile_io = util::MobileIO::create("HEBI", "mobileIO");
+    --tries;
+  }
+
   if (!mobile_io)
   {
     std::cout << "Couldn't find mobile IO device!\n";
@@ -342,9 +354,9 @@ int main(int argc, char** argv) {
         arm->setGoal(arm::Goal::createFromPosition(soft_start_time, target_joints));
       }
 
-      // Button B2 - Toggle AR Control
+      // Button B2 - Toggle AR Control (enabled only after homing is complete)
       if (mobile_io->getButtonDiff(2) == util::MobileIO::ButtonState::ToOn) {
-        if (!ar_mode) { // -> AR mode
+        if (arm->atGoal() && !ar_mode) { // -> AR mode
           xyz_phone_init << mobile_io->getLastFeedback().mobile().arPosition().get().getX(),
                             mobile_io->getLastFeedback().mobile().arPosition().get().getY(),
                             mobile_io->getLastFeedback().mobile().arPosition().get().getZ();
