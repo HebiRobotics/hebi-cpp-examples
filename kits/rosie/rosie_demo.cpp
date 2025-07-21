@@ -50,7 +50,7 @@ private:
     OmniBase& base_;
 };
 
-void setLedColor(ArmMobileIOControl& controller, Color color) {
+void setLedColor(ArmMobileIOControl& controller, const Color& color) {
     auto group_size = controller.arm_->pendingCommand().size();
     for(int i = 0; i < group_size; i++)
         controller.arm_->pendingCommand()[i].led().set(color);
@@ -75,12 +75,12 @@ std::function<void(ArmMobileIOControl&, ArmControlState)> updateMobileIO(util::M
 
         case ArmControlState::DISCONNECTED:
             setLedColor(controller, Color{ 0, 0, 255 });
-            setMobileIOInstructions(mio, "Robot Disconnected", Color{ 0, 0, 255 });
+			setMobileIOInstructions(mio, "Robot Disconnected", Color{ 0, 0, 255 }); //blue
             break;
 
         case ArmControlState::EXIT:
             std::cout << "TRANSITIONING TO EXIT" << std::endl;
-            setLedColor(controller, Color{ 255, 0, 0 });
+			setLedColor(controller, Color{ 255, 0, 0 }); //red
 
             mio.resetUI();
             setMobileIOInstructions(mio, "Demo Stopped.", Color{ 255, 0, 0 }); //red
