@@ -288,12 +288,12 @@ int main(int argc, char** argv) {
         arm->group().startLog("logs", std::string(buffer));
     }
 
+    ChassisVelocity base_inputs;
+    ArmMobileIOInputs arm_inputs;
+
     while (base_control.running_ && (!arm_control || arm_control->running())) {
         auto now = std::chrono::system_clock::now();
         std::time_t t = std::chrono::system_clock::to_time_t(now);
-
-        ChassisVelocity base_inputs;
-        ArmMobileIOInputs arm_inputs;
 
         bool quit = parse_mobile_feedback(base_inputs, arm_inputs);
         base_control.update(t, &base_inputs);
