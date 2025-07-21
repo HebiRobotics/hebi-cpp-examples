@@ -32,7 +32,7 @@ public:
     trajectory_(nullptr),
     vels_base_to_wheel_(buildJacobian(BASE_RADIUS, WHEEL_RADIUS)) {}
 
-  bool update(double t_now) {
+  bool update(const double t_now) {
     if (!group_.getNextFeedback(base_feedback_))
       return false;
 
@@ -40,7 +40,7 @@ public:
       Eigen::VectorXd p, v, a;
       trajectory_->getState(t_now, &p, &v, &a);
 
-      double theta = p[2];
+     const double theta = p[2];
 
       Eigen::Matrix3d world_to_local_rot = Eigen::Matrix3d::Zero();
       world_to_local_rot(0, 0) = std::cos(theta);
@@ -98,7 +98,7 @@ private:
   std::shared_ptr<trajectory::Trajectory> trajectory_;
   Eigen::Matrix3d vels_base_to_wheel_;
 
-  Eigen::Matrix3d buildJacobian(double base_radius, double wheel_radius) {
+  Eigen::Matrix3d buildJacobian(const double base_radius, const double wheel_radius) {
     Eigen::Matrix3d jacobian = Eigen::Matrix3d::Zero();
 
     jacobian(0, 0) = -std::sqrt(3.0) / 2.0;
@@ -116,13 +116,12 @@ private:
   }
 };
 
-class ChassisVelocity {
-public:
+struct ChassisVelocity {
   float x_;
   float y_;
   float rz_;
 
-  ChassisVelocity(float x = 0.0f, float y = 0.0f, float rz = 0.0f) : x_(x), y_(y), rz_(rz) {}
+  ChassisVelocity(const float x = 0.0f, const float y = 0.0f, const float rz = 0.0f) : x_(x), y_(y), rz_(rz) {}
 
   std::string getInfo() const
   {
@@ -133,9 +132,8 @@ public:
 
 enum class ArmControlState { STARTUP, HOMING, TELEOP, DISCONNECTED, EXIT };
 
-class ArmMobileIOInputs {
-public:
-  hebi::Vector3f phone_pos{0.0f, 0.0f, 0.0f};
+struct ArmMobileIOInputs {
+  hebi::Vector3f phone_pos;
   Eigen::Matrix3d phone_rot;
   double ar_scaling;
   bool lock_toggle;
@@ -147,9 +145,9 @@ public:
   ArmMobileIOInputs(
       const hebi::Vector3f& pos = hebi::Vector3f(0.0f, 0.0f, 0.0f), 
       const Eigen::Matrix3d& rot = Eigen::Matrix3d::Identity(), 
-      double scaling = 1.0f, 
+      const double scaling = 1.0f, 
       bool lockToggle = false, 
-      bool isLocked = true, 
+      bool isLocked = true,
       bool gripperClosed = false, 
       bool isHome = false) :
     phone_pos(pos),
@@ -160,7 +158,6 @@ public:
     gripper_closed(gripperClosed),
     home(isHome) {}
 };
-
 
 class ArmMobileIOControl
 {
@@ -189,14 +186,14 @@ public:
   hebi::Vector3f phone_xyz_home_{ 0.0, 0.0, 0.0 };
   Eigen::Matrix3d phone_rot_home_;
 
-  ArmMobileIOControl(std::shared_ptr<arm::Arm> a, std::shared_ptr<arm::Gripper> g, double homing_time, double traj_duration, Eigen::Vector3d xyz_scale) : arm_(std::move(a)), gripper_(std::move(g)), homing_time_(homing_time), traj_duration_(traj_duration), xyz_scale_(xyz_scale) {
+  ArmMobileIOControl(std::shared_ptr<arm::Arm> arm, std::shared_ptr<arm::Gripper> gripper, double homing_time, double traj_duration, Eigen::Vector3d xyz_scale) : arm_(arm), gripper_(gripper), homing_time_(homing_time), traj_duration_(traj_duration), xyz_scale_(xyz_scale) {
     
     arm_seed_ik_ << 0.3, 1.2, 2.2, 2.9, -1.57, 0;
     Eigen::AngleAxisd rotZ(M_PI / 2, Eigen::Vector3d::UnitZ());
     Eigen::AngleAxisd rotX(M_PI, Eigen::Vector3d::UnitX());
     arm_rot_home_ = (rotZ * rotX).toRotationMatrix();
 
-    arm_home_ = a->solveIK(arm_seed_ik_, arm_xyz_home_, arm_rot_home_);
+    arm_home_ = arm_->solveIK(arm_seed_ik_, arm_xyz_home_, arm_rot_home_);
     last_locked_xyz_ = arm_xyz_home_;
     last_locked_rot_ = arm_rot_home_;
     last_locked_seed_ = arm_home_;
@@ -204,22 +201,21 @@ public:
     auto now = std::chrono::system_clock::now();
     std::time_t time_now = std::chrono::system_clock::to_time_t(now);
     mobile_last_fbk_t_ = time_now;
-
   }
 
   bool running() const { return state_ != ArmControlState::EXIT; }
 
-  void send() {
+  void send() const {
     arm_->send();
     if (gripper_) 
       gripper_->send();
   }
 
-  void home(double duration) {
+  void home(const double duration) const {
     arm_->setGoal(arm::Goal::createFromPosition(duration, arm_home_));
   }
 
-  void transition_to(double t_now, ArmControlState new_state) {
+  void transition_to(const double t_now, ArmControlState new_state) {
     if (new_state == state_) 
       return;
 
@@ -252,7 +248,7 @@ public:
     state_ = new_state;
   }
 
-  arm::Goal* compute_arm_goal(const ArmMobileIOInputs& arm_input) {
+  arm::Goal compute_arm_goal(const ArmMobileIOInputs& arm_input) {
       Eigen::Vector3d phone_offset(
           arm_input.phone_pos.getX() - phone_xyz_home_.getX(),
           arm_input.phone_pos.getY() - phone_xyz_home_.getY(),
@@ -264,13 +260,13 @@ public:
 
       if (arm_input.ar_scaling == 0.0)
           phone_xyz_home_ = arm_input.phone_pos;
-      auto joint_target = arm_->solveIK(last_locked_seed_, arm_xyz_target, arm_rot_target);
-      auto goal = arm::Goal::createFromPosition(traj_duration_, joint_target);
+      const auto joint_target = arm_->solveIK(last_locked_seed_, arm_xyz_target, arm_rot_target);
+      const arm::Goal goal = arm::Goal::createFromPosition(traj_duration_, joint_target);
 
-      return &goal;
+      return goal;
   }
 
-  void update(double t_now, const std::shared_ptr<ArmMobileIOInputs> arm_input) {
+  void update(const double t_now, const ArmMobileIOInputs* arm_input) {
       arm_->update();
 
       if (state_ == ArmControlState::EXIT)
@@ -323,9 +319,8 @@ public:
               locked_ = arm_input->locked;
 
           if (!locked_) {
-              auto arm_goal = compute_arm_goal(*arm_input);
-              if(!arm_goal)
-                arm_->setGoal(*arm_goal);
+              const arm::Goal arm_goal = compute_arm_goal(*arm_input);
+              arm_->setGoal(arm_goal);
           }
           else {
               phone_xyz_home_ = arm_input->phone_pos;
@@ -356,8 +351,7 @@ public:
   }
 };
 
-
-std::unique_ptr<OmniBase> setupBase(const Lookup& lookup, const std::string& base_family) {
+OmniBase setupBase(const Lookup& lookup, const std::string& base_family) {
   const std::vector<std::string> wheel_names = { "W1", "W2", "W3" };
 
   auto wheel_group = lookup.getGroupFromNames({ base_family }, wheel_names);
@@ -365,7 +359,7 @@ std::unique_ptr<OmniBase> setupBase(const Lookup& lookup, const std::string& bas
     throw std::runtime_error("Could not find wheel modules: \"W1\", \"W2\", \"W3\" in family '" + base_family + "'");
   }
 
-  return std::make_unique<OmniBase>(*wheel_group);
+  return OmniBase(*wheel_group);
 }
 
 void setMobileIOInstructions(util::MobileIO& mobile_io, const std::string& message, const Color* color) {
