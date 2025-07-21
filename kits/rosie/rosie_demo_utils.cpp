@@ -24,16 +24,16 @@ public:
     static constexpr double WHEEL_RADIUS = 0.0762; // meters
     static constexpr double BASE_RADIUS = 0.220; // meters
 
-    OmniBase(Group& group) : 
+    OmniBase(std::shared_ptr<Group> group) : 
         group_(group),
-        base_command_(group.size()),
-        base_feedback_(group.size()),
+        base_command_(group->size()),
+        base_feedback_(group->size()),
         color_(0, 0, 0), 
         trajectory_(nullptr),
         vels_base_to_wheel_(buildJacobian(BASE_RADIUS, WHEEL_RADIUS)) {}
 
     bool update(const double t_now) {
-        if (!group_.getNextFeedback(base_feedback_))
+        if (!group_->getNextFeedback(base_feedback_))
             return false;
 
         if (trajectory_) {
@@ -58,7 +58,7 @@ public:
     }
 
     void send() const {
-        group_.sendCommand(base_command_);
+        group_->sendCommand(base_command_);
     }
 
     void buildSmoothVelocityTrajectory(const double dx, const double dy, const double dtheta, const double t_now) {
@@ -68,8 +68,8 @@ public:
         std::cout << "Is error 1?\n";
         if (trajectory_) {
             std::cout << "Is error 2?\n";
-            std::cout << "group size " << group_.size() << std::endl;
-            Eigen::VectorXd pos(group_.size()), vel(group_.size()), acc(group_.size());
+            std::cout << "group size " << group_->size() << std::endl;
+            Eigen::VectorXd pos(group_->size()), vel(group_->size()), acc(group_->size());
             std::cout << "Position:\n" << pos << std::endl;
             std::cout << "Velocity:\n" << vel << std::endl;
             std::cout << "Acceleration:\n" << acc << std::endl;
@@ -105,7 +105,7 @@ public:
         std::cout << "Is error 9?\n";
     }
 
-    Group& group_;
+    std::shared_ptr<Group> group_;
     GroupCommand base_command_;
 
 private:
@@ -383,7 +383,7 @@ OmniBase setupBase(const Lookup& lookup, const std::string& base_family) {
         throw std::runtime_error("Could not find wheel modules: \"W1\", \"W2\", \"W3\" in family '" + base_family + "'");
     }
 
-    auto base = OmniBase(*wheel_group);
+    auto base = OmniBase(wheel_group);
 
     return base;
 }
