@@ -78,7 +78,7 @@ public:
         velocities.col(2) = target_vel;
         velocities.col(3) = Eigen::Vector3d::Zero();
 
-        buildVelocityTrajectory(times.array() + t_now, velocities);
+        buildVelocityTrajectory((times.array() + t_now).matrix(), velocities);
     }
 
     void buildVelocityTrajectory(const Eigen::VectorXd& times, const Eigen::MatrixXd& velocities) {
