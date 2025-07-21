@@ -378,8 +378,7 @@ OmniBase setupBase(const Lookup& lookup, const std::string& base_family) {
     const std::vector<std::string> wheel_names = { "W1", "W2", "W3" };
 
     auto wheel_group = lookup.getGroupFromNames({ base_family }, wheel_names);
-    wheel_group->size();
-    std::cout << "Wheel group size\n";
+    std::cout << "Wheel group size\n" << wheel_group->size() <<std::endl;
     if (!wheel_group) {
         throw std::runtime_error("Could not find wheel modules: \"W1\", \"W2\", \"W3\" in family '" + base_family + "'");
     }
