@@ -279,7 +279,7 @@ int main(int argc, char** argv) {
         base_control.on_shutdown_ = on_shutdown;
     }
 
-    bool enable_logging = true;
+    bool enable_logging = false;
     if (enable_logging) {
         std::cout << "Hey 1\n";
         auto now = std::chrono::system_clock::now();
