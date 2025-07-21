@@ -335,10 +335,12 @@ public:
                 if (arm_input->gripper_closed && !gripper_closed) {
                     std::cout << "Gripper Close";
                     gripper_->close();
+                    return;
                 }
                 else if (!arm_input->gripper_closed && gripper_closed) {
                     std::cout << "Gripper Open";
                     gripper_->open();
+                    return;
                 }
             }
             break;
@@ -356,7 +358,6 @@ OmniBase setupBase(const Lookup& lookup, const std::string& base_family) {
     const std::vector<std::string> wheel_names = { "W1", "W2", "W3" };
 
     auto wheel_group = lookup.getGroupFromNames({ base_family }, wheel_names);
-    std::cout << "Wheel group size\n" << wheel_group->size() <<std::endl;
     if (!wheel_group) {
         throw std::runtime_error("Could not find wheel modules: \"W1\", \"W2\", \"W3\" in family '" + base_family + "'");
     }
