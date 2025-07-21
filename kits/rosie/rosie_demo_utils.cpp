@@ -339,7 +339,7 @@ public:
             }
 
             if (gripper_) {
-                auto gripper_closed = gripper_->getState() == 1.0;
+                auto gripper_closed = gripper_->getState() > 0.5;
                 std::cout << "Inside arm update - TELEOP gripper" << std::endl;
 				std::cout << "Gripper state: " << gripper_->getState() << std::endl;
                 if (arm_input->gripper_closed && !gripper_closed) {
