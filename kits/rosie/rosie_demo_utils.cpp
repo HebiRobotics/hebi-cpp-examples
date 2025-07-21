@@ -36,13 +36,10 @@ public:
         if (!group_->getNextFeedback(base_feedback_))
             return false;
 
-        std::cout << "Hey 12.1\n";
         if (trajectory_) {
-            std::cout << "Hey 12.2\n";
             Eigen::VectorXd p(group_->size()), v(group_->size()), a(group_->size());
             double x = 10.5;
             trajectory_->getState(x, &p, &v, &a);
-            std::cout << "Hey 12.3\n";
 
             const double theta = p[2];
 
@@ -210,16 +207,9 @@ public:
     bool running() const { return state_ != ArmControlState::EXIT; }
 
     void send() const {
-
-        std::cout << "Hey 4.3\n";
         arm_->send();
-        std::cout << "Hey 4.4\n";
-        if (gripper_) {
-
-            std::cout << "Hey 4.5\n";
+        if (gripper_)
             gripper_->send();
-            std::cout << "Hey 4.6\n";
-        }
     }
 
     void home(const double duration) const {
