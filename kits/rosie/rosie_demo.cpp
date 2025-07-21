@@ -295,39 +295,39 @@ int main(int argc, char** argv) {
     }
 
     std::cout << "Hey 2\n";
-    //while (base_control.running_ && (!arm_control || arm_control->running())) {
-    //    auto now = std::chrono::system_clock::now();
-    //    std::time_t t = std::chrono::system_clock::to_time_t(now);
+    while (base_control.running_ && (!arm_control || arm_control->running())) {
+        auto now = std::chrono::system_clock::now();
+        std::time_t t = std::chrono::system_clock::to_time_t(now);
 
-    //    ChassisVelocity base_inputs;
-    //    ArmMobileIOInputs arm_inputs;
+        ChassisVelocity base_inputs;
+        ArmMobileIOInputs arm_inputs;
 
-    //    bool quit = parse_mobile_feedback(base_inputs, arm_inputs);
-    //    base_control.update(t, &base_inputs);
+        bool quit = parse_mobile_feedback(base_inputs, arm_inputs);
+        base_control.update(t, &base_inputs);
 
-    //    std::cout << "Hey 3\n";
-    //    if (arm_control)
-    //        arm_control->update(t, &arm_inputs);
+        //std::cout << "Hey 3\n";
+        //if (arm_control)
+        //    arm_control->update(t, &arm_inputs);
 
-    //    if (quit) {
-    //        base_control.stop();
-    //        if (arm_control)
-    //            arm_control->transition_to(t, ArmControlState::EXIT);
-    //        std::cout << "Hey 4\n";
-    //    }
+        //if (quit) {
+        //    base_control.stop();
+        //    if (arm_control)
+        //        arm_control->transition_to(t, ArmControlState::EXIT);
+        //    std::cout << "Hey 4\n";
+        //}
 
-    //    std::cout << "Hey 4.0\n";
-    //    base_control.send();
-    //    std::cout << "Hey 4.1\n";
-    //    if (arm_control) {
+        //std::cout << "Hey 4.0\n";
+        //base_control.send();
+        //std::cout << "Hey 4.1\n";
+        //if (arm_control) {
 
-    //        std::cout << "Hey 4.2\n";
-    //        arm_control->send();
-    //        std::cout << "Hey 4\n";
-    //    }
+        //    std::cout << "Hey 4.2\n";
+        //    arm_control->send();
+        //    std::cout << "Hey 4\n";
+        //}
 
-    //    std::cout << "Hey 5\n";
-    //}
+        //std::cout << "Hey 5\n";
+    }
 
     //if (enable_logging) {
     //    std::cout << "Hey 6\n";
