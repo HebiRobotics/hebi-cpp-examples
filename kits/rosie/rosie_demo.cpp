@@ -310,8 +310,6 @@ int main(int argc, char** argv) {
         base_control.send();
         if (arm_control)
             arm_control->send();
-
-        std::this_thread::sleep_for(std::chrono::seconds(3));
     }
 
     if (enable_logging) {
