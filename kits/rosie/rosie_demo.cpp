@@ -280,17 +280,17 @@ int main(int argc, char** argv) {
         base_control.on_shutdown_ = on_shutdown;
     }
 
-    bool enable_logging = false;
+    bool enable_logging = true;
     if (enable_logging) {
-        auto now = std::chrono::system_clock::now();
-        std::time_t time_now = std::chrono::system_clock::to_time_t(now);
-        std::tm* tm_ptr = std::localtime(&time_now);
+        //auto now = std::chrono::system_clock::now();
+        //std::time_t time_now = std::chrono::system_clock::to_time_t(now);
+        //std::tm* tm_ptr = std::localtime(&time_now);
 
-        char buffer[100];
-        std::strftime(buffer, sizeof(buffer), "base_%Y-%m-%d-%H:%M:%S", tm_ptr);
+        //char buffer[100];
+        //std::strftime(buffer, sizeof(buffer), "base_%Y-%m-%d-%H:%M:%S", tm_ptr);
 
-        base.group_->startLog("logs", std::string(buffer));
-        arm->group().startLog("logs", std::string(buffer));
+        base.group_->startLog("logs", "kcheck_base");
+        arm->group().startLog("logs", "kbase_arm");
     }
 
     ChassisVelocity base_inputs;
