@@ -218,7 +218,7 @@ endforeach()
 
 # Rosie kit example
 SET(ROSIE_SOURCES
-  ${ROOT_DIR}/kits/rosie/rosie_demo.cpp)
+  ${ROOT_DIR}/kits/rosie/rosie_demo.cpp
   ${ROOT_DIR}/kits/rosie/rosie_demo_utils.cpp)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY kits/rosie)

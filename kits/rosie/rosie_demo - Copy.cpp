@@ -243,56 +243,6 @@ int main(int argc, char** argv) {
   ////////////////////
   // Get groups and set the Gains
   ////////////////////
-     
-
-
-  std::pair<std::unique_ptr<arm::Arm>, std::unique_ptr<arm::Gripper>> setupArm(const std::unique_ptr<RobotConfig>& cfg, const Lookup& lookup) {
-
-      std::unique_ptr<arm::Gripper> gripper = nullptr;
-      std::unique_ptr<arm::Arm> arm = arm::Arm::create(*cfg, lookup);
-
-      while (!arm) {
-          std::cerr << "Failed to create arm, retrying..." << std::endl;
-          arm = arm::Arm::create(*cfg);
-      }
-      std::cout << "Arm connected." << std::endl;
-
-      const auto user_data = cfg->getUserData();
-      const bool has_gripper = user_data.getBool("has_gripper");
-      if (has_gripper)
-      {
-          std::string family = cfg->getFamilies()[0];
-          auto gripper_group = lookup.getGroupFromNames({ family }, { "gripperSpool" });
-          int tries = 3;
-
-          while (gripper_group && tries > 0)
-          {
-              std::cout << "Looking for gripper module " << family << "/gripperSpool\n";
-              std::this_thread::sleep_for(std::chrono::seconds(1));
-
-              auto gripper_group = lookup.getGroupFromNames({ family }, { "gripperSpool" });
-              tries -= 1;
-          }
-
-          if (!gripper_group)
-              return std::make_pair(arm, gripper);
-
-          const double gripper_open_effort = user_data.getFloat("gripper_open_effort");
-          const double gripper_close_effort = user_data.getFloat("gripper_close_effort");
-
-          auto gripper = arm::Gripper::create(family, "gripperSpool", gripper_close_effort, gripper_open_effort);
-          std::string gripper_gains_file = cfg->getGains("gripper");
-
-          if (!gripper_gains_file.empty())
-              gripper->loadGains(gripper_gains_file);
-
-          gripper->open();
-      }
-
-      return std::make_pair(arm, gripper);
-  }
-
-
 
 
   Lookup lookup;

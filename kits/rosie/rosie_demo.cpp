@@ -9,67 +9,54 @@
 #include "util/vector_utils.h"
 #include "rosie_demo_utils.cpp"
 #include <Eigen/Dense>
+#include <thread>
+#include <chrono>
+#include <ctime>
 
 // Common includes
 #include <iostream>
 
 using namespace hebi;
-
 double ar_scaling = 1.0;
 
-class ArmMobileIOInputs {
-public:
-    hebi::Vector3f phone_pos;
-    Eigen::Matrix3d phone_rot;
-    double ar_scaling;
-    bool lock_toggle;
-    bool locked;
-    bool gripper_closed;
-    bool home;
 
-    // Optional constructor if you want to set values on creation
-    ArmMobileIOInputs(
-        const hebi::Vector3f& pos = hebi::Vector3f(0.0f, 0.0f, 0.0f),
-        const Eigen::Matrix3d& rot = Eigen::Matrix3d::Identity(),
-        double scaling = 1.0f,
-        bool lockToggle = false,
-        bool isLocked = true,
-        bool gripperClosed = false,
-        bool isHome = false
-    )
-        : phone_pos(pos),
-        phone_rot(rot),
-        ar_scaling(scaling),
-        lock_toggle(lockToggle),
-        locked(isLocked),
-        gripper_closed(gripperClosed),
-        home(isHome)
-    { }
-};
+std::function<void(ArmMobileIOControl&, ArmControlState)> updateMobileIO(util::MobileIO& mio) {
+    return [&mio](ArmMobileIOControl& controller, ArmControlState new_state) {
+        if (controller.state_ == new_state)
+            return;
 
+        switch (new_state) {
 
-class ChassisVelocity {
-public:
-  float x_;
-  float y_;
-  float rz_;
+        case ArmControlState::HOMING:
+            //controller.arm_->pendingCommand()[0].led().set(Color{255, 0, 255}   ); //magenta
+            setMobileIOInstructions(mio, "Robot Homing Sequence\nPlease wait...", &Color{ 255, 0, 255 }); //magenta
+            break;
 
-  ChassisVelocity(float x = 0.0f, float y = 0.0f, float rz = 0.0f) : x_(x), y_(y), rz_(rz) {}
+        case ArmControlState::TELEOP:
+            controller.arm_->pendingCommand()[0].led().set(Color{ 0, 0, 0 }); //transparent
+            setMobileIOInstructions(mio, "Robot Ready to Control", &Color{ 0, 255, 0 }); //green 
+            break;
 
-  std::string getInfo() const
-  {
-    std::string info = "ChassisVelocity : x=" + std::to_string(x_) + ", y=" + std::to_string(y_) + ", rz=" + std::to_string(rz_);
-    return info;
-  }
-};
+        case ArmControlState::DISCONNECTED:
+            controller.arm_->pendingCommand()[0].led().set(Color{ 0, 0, 255 }); //blue
+            break;
 
-enum class ArmControlState { STARTUP, HOMING, TELEOP, DISCONNECTED, EXIT };
+        case ArmControlState::EXIT:
+            std::cout << "TRANSITIONING TO EXIT" << std::endl;
+            controller.arm_->pendingCommand()[0].led().set(Color{ 0, 0, 0 }); //transparent
+
+            mio.resetUI();
+            setMobileIOInstructions(mio, "Demo Stopped.", &Color{ 255, 0, 0 }); //red
+            break;
+        }
+    };
+}
+
 
 class RosieControl {
-  public:
+public:
     RosieControl(std::shared_ptr<OmniBase> base)
-        : base_(base), running_(true), on_shutdown_([](){}) {
-    }
+        : base_(base), running_(true), on_shutdown_([](){}) {}
 
     void update(double t_now, std::shared_ptr<ChassisVelocity> base_inputs)
     {
@@ -85,18 +72,18 @@ class RosieControl {
     
     void stop() {
         running_ = false;
-		base_->base_command.setVelocity(Eigen::Vector3d::Zero());
+		base_->base_command_.setVelocity(Eigen::Vector3d::Zero());
 		on_shutdown_();
     }
 
-  bool running_;
-  std::function<void()> on_shutdown_;
+    bool running_;
+    std::function<void()> on_shutdown_;
 
 private:
-  std::shared_ptr<OmniBase> base_;
+    std::shared_ptr<OmniBase> base_;
 };
 
-void setupMobileIO(util::MobileIO& m) {
+std::function<bool(ChassisVelocity&, ArmMobileIOInputs&)> setupMobileIO(util::MobileIO& m) {
   //Sets up mobileIO interface.
   // Return a function that parses mobileIO feedback into the format expected by the Demo
 
@@ -134,75 +121,204 @@ void setupMobileIO(util::MobileIO& m) {
     m.setButtonMode(arm_lock, util::MobileIO::ButtonMode::Toggle);
     m.setButtonMode(gripper_close, util::MobileIO::ButtonMode::Toggle);
 
+    //m.set_button_output(arm_lock, 1)
+    //m.set_button_output(gripper_close, 1)
+
+    auto parseMobilIOFeedback = [&](ChassisVelocity& chassis_velocity_out, ArmMobileIOInputs& arm_inputs_out) {
+
+        if (!m.update(0.0))
+            return false;
+
+        if (m.getButton(quit_demo_btn))
+            return true;
+
+        if (m.getButton(reset_pose_btn))
+        {
+            chassis_velocity_out = ChassisVelocity();
+            arm_inputs_out = ArmMobileIOInputs();
+            arm_inputs_out.home = true;
+            return false;
+        }
+
+        chassis_velocity_out = ChassisVelocity(
+            pow(m.getAxis(forward_joy), 3),
+            pow(-m.getAxis(side_joy), 3),
+            pow(-m.getAxis(turn_joy), 3) * 2);
+
+        auto wxyz = m.getArOrientation();
+        Eigen::Quaterniond q(wxyz.getW(), wxyz.getX(), wxyz.getY(), wxyz.getZ());
+        Eigen::Matrix3d rotation = q.toRotationMatrix();
+
+        if (!rotation.allFinite()) {
+            std::cerr << "Error getting orientation as matrix: " << wxyz.getW() << ", " << wxyz.getX() << ", "
+                << wxyz.getY() << ", " << wxyz.getZ() << "\n";
+            rotation = Eigen::Matrix3d::Identity();
+        }
+
+        if (m.getButtonDiff(arm_lock) != util::MobileIO::ButtonState::Unchanged)
+        {
+            if (!m.getButton(arm_lock))
+                m.setButtonLabel(arm_lock, "Arm \U0001F512", false);
+            else
+                m.setButtonLabel(arm_lock, "Arm \U0001F513", false);
+        }
+
+        bool locked = m.getButton(arm_lock);
+        if (locked) {
+            m.setAxisValue(ar_xyz_scale_slider, (2 * ar_scaling) - 1.0);
+        }
+        else {
+            ar_scaling = (m.getAxis(ar_xyz_scale_slider) + 1.0) / 2.0;
+            if (ar_scaling < 0.1)
+                ar_scaling = 0.0;
+        }
+
+        arm_inputs_out = ArmMobileIOInputs(
+            m.getArPosition(),
+            rotation,
+            ar_scaling,
+            (m.getButtonDiff(arm_lock) != util::MobileIO::ButtonState::Unchanged),
+            !locked,
+            m.getButton(gripper_close)
+        );
+
+        return false;
+	};
+
+	return parseMobilIOFeedback;
 }
 
-bool parseMobilIOFeedback(util::MobileIO& m, ChassisVelocity& chassis_velocity, ArmMobileIOInputs& arm_inputs ) {
-    // ?? Timeout is 0 seconds??
-      // Button/Axis mappings
-    int reset_pose_btn = 1;
-    int quit_demo_btn = 8;
+int main(int argc, char** argv) {
 
-    int side_joy = 1;
-    int forward_joy = 2;
-    int ar_xyz_scale_slider = 4;
-    int turn_joy = 7;
-
-    int arm_lock = 3;
-    int gripper_close = 4;
-
-    if (!m.update(0.0))
-        return false;
-
-    if (m.getButton(quit_demo_btn))
-        return true;
-
-    if (m.getButton(reset_pose_btn))
-    {
-        chassis_velocity = ChassisVelocity();
-        //arm_inputs = ArmMobileIOInputs();
-        return false;
+    std::string example_config_path;
+    if (argc == 1) {
+        example_config_path = "config/rosie-r.cfg.yaml";
+    }
+    else if (argc == 2) {
+        example_config_path = "config/" + std::string(argv[1]);
+    }
+    else {
+        std::cout << "Run ./rosie_demo <optional config file name>\n";
+        return 1;
     }
 
-    chassis_velocity = ChassisVelocity(
-        pow(m.getAxis(forward_joy), 3),
-        pow(-m.getAxis(side_joy), 3),
-        pow(-m.getAxis(turn_joy), 3) * 2);
+    std::vector<std::string> errors;
+    const auto example_config = RobotConfig::loadConfig(example_config_path, errors);
+    for (const auto& error : errors) {
+        std::cerr << error << std::endl;
+    }
+    if (!example_config) {
+        std::cerr << "Failed to load configuration from: " << example_config_path << std::endl;
+        return -1;
+    }
 
-  auto wxyz = m.getArOrientation();
-  Eigen::Quaterniond q(wxyz.getW(), wxyz.getX(), wxyz.getY(), wxyz.getZ());
-  Eigen::Matrix3d rotation = q.toRotationMatrix();
+    Lookup lookup;
+    const std::string family = example_config->getFamilies()[0];
 
-  if(!rotation.allFinite()) {
-    std::cerr << "Error getting orientation as matrix: " << wxyz.getW() << ", " << wxyz.getX() << ", "
-              << wxyz.getY() << ", " << wxyz.getZ() << "\n" ;
-    rotation = Eigen::Matrix3d::Identity();
-  }
+    std::unique_ptr<util::MobileIO> mobile_io = util::MobileIO::create(family, "mobileIO", lookup);
+    int mobileio_tries = 5;
+    while (!mobile_io && mobileio_tries > 0) {
+        std::cout << "Waiting for mobileIO device to come online..." << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        mobile_io = util::MobileIO::create(family, "mobileIO", lookup);
+        --mobileio_tries;
+    }
 
-  if (m.getButtonDiff(arm_lock) != util::MobileIO::ButtonState::Unchanged)
-  {
-      if(!m.getButton(arm_lock))
-          m.setButtonLabel(arm_lock, "Arm \U0001F512", false);
-      else
-		  m.setButtonLabel(arm_lock, "Arm \U0001F513", false);
-  }
+    if (!mobile_io)
+    {
+        std::cout << "Couldn't find mobile IO device!\n";
+        return 1;
+    }
+    
+    std::cout << "MobileIO device successfully connected\n";
+    auto parse_mobile_feedback = setupMobileIO(*mobile_io);
 
-  auto locked = m.getButton(arm_lock);
-  if(locked) {
-    m.setAxisValue(ar_xyz_scale_slider, (2 * ar_scaling) - 1.0);
-  } else {
-    ar_scaling = (m.getAxis(ar_xyz_scale_slider) + 1.0) / 2.0;
-    if (ar_scaling < 0.1)
-      ar_scaling = 0.0;
-  }
- 
-  arm_inputs = ArmMobileIOInputs(
-      m.getArPosition(),
-      rotation,
-      ar_scaling,
-      (m.getButtonDiff(arm_lock) != util::MobileIO::ButtonState::Unchanged),
-      !locked,
-      m.getButton(gripper_close)
-  );
+    std::shared_ptr<OmniBase> base = setupBase(lookup, family);
+    auto base_control = RosieControl(base);
 
-  return false;
+    int gripper_tries = 3;
+    std::shared_ptr<arm::Arm> arm;
+    std::shared_ptr<arm::Gripper> gripper;
+    setupArm(example_config, lookup, arm, gripper);
+
+    while (!arm && gripper_tries > 0) {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        --gripper_tries;
+        setupArm(example_config, lookup, arm, gripper);
+    }
+
+    if (!arm) {
+        std::cerr << "Could not find arm! Continuing without..." << std::endl;
+        ArmMobileIOControl* arm_control = nullptr;
+    }
+    else {
+        while (!arm->update()) {
+            std::cout << "Waiting for feedback from arm..." << std::endl;
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
+
+        const auto user_data = example_config->getUserData();
+        const double soft_start_time = user_data.getFloat("homing_duration");
+        const Eigen::Vector3d xyz_scale = util::stdToEigenXd(user_data.getFloatList("xyz_scale"));
+        const double delay_time = user_data.getFloat("delay_time");
+
+        auto arm_control = new ArmMobileIOControl(arm, gripper, soft_start_time, delay_time, xyz_scale);
+
+        if(arm_control)
+            arm_control->transition_handlers_.push_back(updateMobileIO(*mobile_io));
+        else {
+            setMobileIOInstructions(*mobile_io, "Robot Ready to Control", &Color{ 0, 255, 0 });
+            auto on_shutdown = [&]() {
+                if (mobile_io)
+                    setMobileIOInstructions(*mobile_io, "Demo Stopped.", &Color{ 255, 0, 0 });
+            };
+            base_control.on_shutdown_ = on_shutdown;
+        }
+
+        bool enable_logging = true;
+        if (enable_logging) {
+
+            auto now = std::chrono::system_clock::now();
+            std::time_t time_now = std::chrono::system_clock::to_time_t(now);
+            std::tm* tm_ptr = std::localtime(&time_now);
+
+            char buffer[100];
+            std::strftime(buffer, sizeof(buffer), "base_%Y-%m-%d-%H:%M:%S", tm_ptr);
+
+            base->group_.startLog("logs", std::string(buffer));
+            if(arm)
+              arm->group().startLog("logs", std::string(buffer));
+        }
+
+        while (base_control.running_ && (!arm_control || arm_control->running())) {
+            auto now = std::chrono::system_clock::now();
+            std::time_t t = std::chrono::system_clock::to_time_t(now);
+
+            ChassisVelocity base_inputs;
+            ArmMobileIOInputs arm_inputs;
+
+            bool quit = parse_mobile_feedback(base_inputs, arm_inputs);
+            base_control.update(t, std::make_shared<ChassisVelocity>(base_inputs));
+
+            if (arm_control)
+                arm_control->update(t, std::make_shared<ArmMobileIOInputs>(arm_inputs));
+
+            if (quit) {
+                base_control.stop();
+                if (arm_control)
+                    arm_control->transition_to(t, ArmControlState::EXIT);
+            }
+
+            base_control.send();
+            if (arm_control)
+                arm_control->send();
+        }
+
+        if (enable_logging) {
+            base->group_.stopLog();
+            if (arm)
+                arm->group().stopLog();
+        }
+    }
+    return 0;
 }
