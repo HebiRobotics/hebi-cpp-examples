@@ -68,25 +68,25 @@ namespace {
 
 struct DynamicLookup {
 public:
-  static DynamicLookup &instance() {
+  static DynamicLookup& instance() {
 #ifdef WIN32
     static DynamicLookup lib("hebi_charts.dll");
 #elif __APPLE__
     static DynamicLookup lib("libhebi_charts.dylib");
 #else
-    static DynamicLookup lib("libhebi_charts.so");
+    static DynamicLookup lib("./libhebi_charts.so", "libhebi_charts.so");
 #endif
     return lib;
   }
 
   bool isLoaded() const { return lib_ != nullptr; };
 
-  template<typename FuncType> FuncType getFunc(const char *func) const;
-  DynamicLookup(const DynamicLookup &) = delete;
-  DynamicLookup &operator = (const DynamicLookup &) = delete;
+  template<typename FuncType> FuncType getFunc(const char* func) const;
+  DynamicLookup(const DynamicLookup&) = delete;
+  DynamicLookup &operator = (const DynamicLookup&) = delete;
 
 private:
-  explicit DynamicLookup(const std::string &path);
+  explicit DynamicLookup(const std::string& path, const std::string& alt_path);
   void* lib_{};
   std::string path_{};
 };
@@ -596,7 +596,7 @@ inline bool isAvailable() { return DynamicLookup::instance().isLoaded(); }
 } // namespace lib
 
 
-template<typename FuncType> FuncType DynamicLookup::getFunc(const char *func) const {
+template<typename FuncType> FuncType DynamicLookup::getFunc(const char* func) const {
   assert(lib_ != nullptr && "Fatal error -- cannot call hebi::charts functions on unloaded library");
   if (!lib_) {
     std::cerr << "Fatal error -- cannot call hebi::charts functions on unloaded library\n";
@@ -614,7 +614,7 @@ template<typename FuncType> FuncType DynamicLookup::getFunc(const char *func) co
   return reinterpret_cast<FuncType>(symbol);
 }
 
-DynamicLookup:: DynamicLookup(const std::string &path) {
+DynamicLookup:: DynamicLookup(const std::string& path, const std::string& alt_path) {
   path_ = path;
 #ifdef WIN32
   // convert to wide string to support non-ascii paths
@@ -622,8 +622,17 @@ DynamicLookup:: DynamicLookup(const std::string &path) {
   std::wstring wstrTo(size_needed, 0);
   MultiByteToWideChar(CP_UTF8, 0, path.c_str(), (int)path.size(), &wstrTo[0], size_needed);
   lib_ = ::LoadLibraryW(wstrTo.c_str());
+  if (!lib_ && !alt_path.empty()) {
+    size_needed = MultiByteToWideChar(CP_UTF8, 0, alt_path.c_str(), (int)alt_path.size(), NULL, 0);
+    wstrTo = std::wstring(size_needed, 0);
+    MultiByteToWideChar(CP_UTF8, 0, alt_path.c_str(), (int)alt_path.size(), &wstrTo[0], size_needed);
+    lib_ = ::LoadLibraryW(wstrTo.c_str());
+  }
 #else
   lib_ = dlopen(path.c_str(), RTLD_LAZY);
+  if (!lib_ && !alt_path.empty()) {
+    lib_ = dlopen(alt_path.c_str(), RTLD_LAZY);
+  }
 #endif
   if (!lib_) {
     std::cerr << "hebi::charts library not found! Include \""<< path <<"\" in library search path.\n";
