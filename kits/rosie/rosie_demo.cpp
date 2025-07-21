@@ -302,8 +302,8 @@ int main(int argc, char** argv) {
         ChassisVelocity base_inputs;
         ArmMobileIOInputs arm_inputs;
 
-        bool quit = parse_mobile_feedback(base_inputs, arm_inputs);
-        base_control.update(t, &base_inputs);
+        //bool quit = parse_mobile_feedback(base_inputs, arm_inputs);
+        //base_control.update(t, &base_inputs);
 
         //std::cout << "Hey 3\n";
         //if (arm_control)
