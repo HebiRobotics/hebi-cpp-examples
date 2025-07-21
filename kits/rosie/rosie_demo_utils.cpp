@@ -69,44 +69,28 @@ public:
         Eigen::Vector4d times{0, 0.15, 0.9, 1.2};
 
         Eigen::Vector3d cmd_vels = Eigen::Vector3d::Zero();
-        std::cout << "group size " << group_->size() << std::endl;
-        std::cout << "Is error 1?\n";
         if (trajectory_) {
-            std::cout << "Is error 2?\n";
             Eigen::VectorXd pos(group_->size()), vel(group_->size()), acc(group_->size());
-            std::cout << "Position:\n" << pos << std::endl;
-            std::cout << "Velocity:\n" << vel << std::endl;
-            std::cout << "Acceleration:\n" << acc << std::endl;
-            std::cout << "Is error 2.1?\n";
             trajectory_->getState(t_now, &pos, &vel, &acc);
-            std::cout << "Is error 2.2?\n";
             cmd_vels = vel;
-            std::cout << "Is error 3?\n";
         }
 
-        std::cout << "Is error 4?\n";
         Eigen::Vector3d target_vel(dx, dy, dtheta);
         Eigen::MatrixXd velocities(3, 4);
         velocities.col(0) = cmd_vels;
         velocities.col(1) = target_vel;
         velocities.col(2) = target_vel;
         velocities.col(3) = Eigen::Vector3d::Zero();
-        std::cout << "Is error 5?\n";
 
         buildVelocityTrajectory(times.array() + t_now, velocities);
-        std::cout << "Is error 10?\n";
     }
 
     void buildVelocityTrajectory(const Eigen::VectorXd& times, const Eigen::MatrixXd& velocities) {
-        std::cout << "Is error 6?\n";
         Eigen::MatrixXd p = Eigen::MatrixXd::Constant(3, 4, std::nan(""));
         p.col(0) = Eigen::Vector3d::Zero();
-        std::cout << "Is error 7?\n";
 
         Eigen::MatrixXd a = Eigen::MatrixXd::Zero(3, 4);
-        std::cout << "Is error 8?\n";
         trajectory_ = trajectory::Trajectory::createUnconstrainedQp(times, p, &velocities, &a);
-        std::cout << "Is error 9?\n";
     }
 
     std::shared_ptr<Group> group_;

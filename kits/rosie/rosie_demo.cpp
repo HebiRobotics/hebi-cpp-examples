@@ -26,16 +26,11 @@ public:
 
     void update(const double t_now, const ChassisVelocity* base_inputs)
     {
-        std::cout << "Hey 9.1\n";
         base_.update(t_now);
-        std::cout << "Hey 9.2\n";
-        if (!base_inputs) {
-            std::cout << "Hey 9.3\n";
+        if (!base_inputs)
             return;
-        }
-        std::cout << "Hey 9.4\n";
+
 		base_.buildSmoothVelocityTrajectory(base_inputs->x_, base_inputs->y_, base_inputs->rz_, t_now);
-        std::cout << "Hey 9.5\n";
     }
 
     void send() const {
@@ -302,13 +297,10 @@ int main(int argc, char** argv) {
         ArmMobileIOInputs arm_inputs;
 
         bool quit = parse_mobile_feedback(base_inputs, arm_inputs);
-        std::cout << "Hey 1\n";
         base_control.update(t, &base_inputs);
-        std::cout << "Hey 2\n";
 
         std::this_thread::sleep_for(std::chrono::seconds(10));
 
-        std::cout << "Hey 3\n";
         if (arm_control)
             arm_control->update(t, &arm_inputs);
 
@@ -316,25 +308,15 @@ int main(int argc, char** argv) {
             base_control.stop();
             if (arm_control)
                 arm_control->transition_to(t, ArmControlState::EXIT);
-            std::cout << "Hey 4\n";
         }
 
-        std::cout << "Hey 4.0\n";
         base_control.send();
-        std::cout << "Hey 4.1\n";
-        if (arm_control) {
-
-            std::cout << "Hey 4.2\n";
+        if (arm_control)
             arm_control->send();
-            std::cout << "Hey 4\n";
-        }
-
-        std::cout << "Hey 5\n";
     }
 
     if (enable_logging) {
-        std::cout << "Hey 6\n";
-        base.group_.stopLog();
+        base.group_->stopLog();
         if (arm)
             arm->group().stopLog();
     }
