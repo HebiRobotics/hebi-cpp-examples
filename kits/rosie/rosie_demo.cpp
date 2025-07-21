@@ -282,13 +282,6 @@ int main(int argc, char** argv) {
 
     bool enable_logging = true;
     if (enable_logging) {
-        //auto now = std::chrono::system_clock::now();
-        //std::time_t time_now = std::chrono::system_clock::to_time_t(now);
-        //std::tm* tm_ptr = std::localtime(&time_now);
-
-        //char buffer[100];
-        //std::strftime(buffer, sizeof(buffer), "base_%Y-%m-%d-%H:%M:%S", tm_ptr);
-
         base.group_->startLog("logs");
         arm->group().startLog("logs");
     }
