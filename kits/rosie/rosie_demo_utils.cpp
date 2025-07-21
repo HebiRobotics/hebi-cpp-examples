@@ -138,7 +138,7 @@ struct ArmMobileIOInputs {
     double ar_scaling;
     bool lock_toggle;
     bool locked;
-    bool gripper_closed;
+    bool gripper_closed{ true };
     bool home;
 
     // Optional constructor if you want to set values on creation
