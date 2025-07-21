@@ -26,6 +26,7 @@ public:
 
     void update(const double t_now, const ChassisVelocity* base_inputs)
     {
+		std::cout << "Inside base update" << std::endl;
         base_.update(t_now);
         if (!base_inputs)
             return;
@@ -136,8 +137,6 @@ std::function<bool(ChassisVelocity&, ArmMobileIOInputs&)> setupMobileIO(util::Mo
 
         if (mio.getButton(reset_pose_btn))
         {
-            chassis_velocity_out = ChassisVelocity();
-            arm_inputs_out = ArmMobileIOInputs();
             arm_inputs_out.home = true;
             return false;
         }

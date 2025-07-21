@@ -269,12 +269,14 @@ public:
 
     void update(const double t_now, const ArmMobileIOInputs* arm_input) {
         arm_->update();
+        std::cout << "Inside arm update" << std::endl;
 
         if (state_ == ArmControlState::EXIT)
              return;
 
         if (!arm_input)
         {
+            std::cout << "Inside arm update - No arm" << std::endl;
             if (state_ != ArmControlState::DISCONNECTED && t_now - mobile_last_fbk_t_ > 1.0) {
                 std::cout << namespace_ << " mobileIO timeout, disabling motion\n";
                 transition_to(t_now, ArmControlState::DISCONNECTED);
@@ -288,6 +290,7 @@ public:
         switch (state_) {
 
         case ArmControlState::DISCONNECTED:
+            std::cout << "Inside arm update - DISCONNECTED" << std::endl;
             mobile_last_fbk_t_ = t_now;
             std::cout << namespace_ << " Controller reconnected, demo continued\n";
             locked_ = true;
@@ -295,10 +298,12 @@ public:
             break;
 
         case ArmControlState::STARTUP:
+            std::cout << "Inside arm update - STARTUP" << std::endl;
             transition_to(t_now, ArmControlState::HOMING);
             break;
 
         case ArmControlState::HOMING:
+            std::cout << "Inside arm update - HOMING" << std::endl;
             if (arm_->atGoal()) {
                 phone_xyz_home_ = arm_input->phone_pos;
                 phone_rot_home_ = arm_input->phone_rot;
@@ -310,6 +315,7 @@ public:
             break;
 
         case ArmControlState::TELEOP:
+            std::cout << "Inside arm update - TELEOP" << std::endl;
 
             if (arm_input->home) {
                  transition_to(t_now, ArmControlState::HOMING);
@@ -320,10 +326,12 @@ public:
                 locked_ = arm_input->locked;
 
             if (!locked_) {
+                std::cout << "Inside arm update - TELEOP not locked" << std::endl;
                 const arm::Goal arm_goal = compute_arm_goal(*arm_input);
                 arm_->setGoal(arm_goal);
             }
             else {
+                std::cout << "Inside arm update - TELEOP locked" << std::endl;
                 phone_xyz_home_ = arm_input->phone_pos;
                 phone_rot_home_ = arm_input->phone_rot;
                 last_locked_seed_ = last_pos;
@@ -332,6 +340,8 @@ public:
 
             if (gripper_) {
                 auto gripper_closed = gripper_->getState() == 1.0;
+                std::cout << "Inside arm update - TELEOP gripper" << std::endl;
+				std::cout << "Gripper state: " << gripper_->getState() << std::endl;
                 if (arm_input->gripper_closed && !gripper_closed) {
                     std::cout << "Gripper Close" << std::endl;
                     gripper_->close();
