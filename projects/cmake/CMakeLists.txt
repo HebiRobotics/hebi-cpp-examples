@@ -8,7 +8,7 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "")
   set(CMAKE_BUILD_TYPE Debug)
 endif()
 
-option(USE_HEBI_CHARTS OFF)
+option(USE_HEBI_CHARTS "Download and use the HEBI charts library?" ON)
 
 set(ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../..)
 set(HEBI_CHARTS_DIR ${ROOT_DIR}/hebi-charts)
