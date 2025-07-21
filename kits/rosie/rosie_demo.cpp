@@ -294,6 +294,7 @@ int main(int argc, char** argv) {
     while (base_control.running_ && (!arm_control || arm_control->running())) {
         auto now = std::chrono::system_clock::now();
         std::time_t t = std::chrono::system_clock::to_time_t(now);
+		std::cout << "Current time: " << std::ctime(&t) << std::flush;
 
         bool quit = parse_mobile_feedback(base_inputs, arm_inputs);
         base_control.update(t, &base_inputs);
