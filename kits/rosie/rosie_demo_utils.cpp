@@ -38,8 +38,7 @@ public:
 
         if (trajectory_) {
             Eigen::VectorXd p(group_->size()), v(group_->size()), a(group_->size());
-            double x = 10.5;
-            trajectory_->getState(x, &p, &v, &a);
+            trajectory_->getState(t_now, &p, &v, &a);
 
             const double theta = p[2];
 
@@ -430,7 +429,7 @@ void setupArm(const std::unique_ptr<RobotConfig>& example_config, const Lookup& 
 	    gripper_out = arm::Gripper::create(gripper_group, gripper_open_effort, gripper_close_effort);
             const std::string gripper_gains_file = example_config->getGains("gripper");
 
-        if (!gripper_out && !gripper_out->loadGains(gripper_gains_file))
+        if (!gripper_out || !gripper_out->loadGains(gripper_gains_file))
             throw std::runtime_error("Could not read or send gripper gains\n");
 
         gripper_out->open();
