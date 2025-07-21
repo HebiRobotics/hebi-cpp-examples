@@ -290,20 +290,19 @@ int main(int argc, char** argv) {
 
     ChassisVelocity base_inputs;
     ArmMobileIOInputs arm_inputs;
+    auto start = std::chrono::system_clock::now();
 
     while (base_control.running_ && (!arm_control || arm_control->running())) {
         auto now = std::chrono::system_clock::now();
-        std::time_t t = std::chrono::system_clock::to_time_t(now);
-		std::cout << "Current time in timet: " << std::ctime(&t) << std::flush;
-        double dt = t;
-		std::cout << "Current time in double: " << dt << std::endl;
+        //std::time_t t = std::chrono::system_clock::to_time_t(now);
+        std::chrono::duration<double> t(std::chrono::system_clock::now() - start);
 
         bool quit = parse_mobile_feedback(base_inputs, arm_inputs);
 
-        base_control.update(t, &base_inputs);
+        base_control.update(t.count(), &base_inputs);
 
         if (arm_control)
-            arm_control->update(t, &arm_inputs);
+            arm_control->update(t.count(), &arm_inputs);
 
         if (quit) {
             base_control.stop();
