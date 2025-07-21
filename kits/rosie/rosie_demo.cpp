@@ -277,7 +277,7 @@ int main(int argc, char** argv) {
 
     bool enable_logging = true;
     if (enable_logging) {
-
+        std::cout << "Hey 1\n";
         auto now = std::chrono::system_clock::now();
         std::time_t time_now = std::chrono::system_clock::to_time_t(now);
         std::tm* tm_ptr = std::localtime(&time_now);
@@ -287,8 +287,10 @@ int main(int argc, char** argv) {
 
         base.group_.startLog("logs", std::string(buffer));
         arm->group().startLog("logs", std::string(buffer));
+        std::cout << "Hey 1.1\n";
     }
 
+    std::cout << "Hey 2\n";
     while (base_control.running_ && (!arm_control || arm_control->running())) {
         auto now = std::chrono::system_clock::now();
         std::time_t t = std::chrono::system_clock::to_time_t(now);
@@ -299,6 +301,7 @@ int main(int argc, char** argv) {
         bool quit = parse_mobile_feedback(base_inputs, arm_inputs);
         base_control.update(t, &base_inputs);
 
+        std::cout << "Hey 3\n";
         if (arm_control)
             arm_control->update(t, &arm_inputs);
 
@@ -306,14 +309,18 @@ int main(int argc, char** argv) {
             base_control.stop();
             if (arm_control)
                 arm_control->transition_to(t, ArmControlState::EXIT);
+            std::cout << "Hey 4\n";
         }
 
         base_control.send();
         if (arm_control)
             arm_control->send();
+
+        std::cout << "Hey 5\n";
     }
 
     if (enable_logging) {
+        std::cout << "Hey 6\n";
         base.group_.stopLog();
         if (arm)
             arm->group().stopLog();
