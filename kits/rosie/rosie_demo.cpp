@@ -58,22 +58,23 @@ std::function<void(ArmMobileIOControl&, ArmControlState)> updateMobileIO(util::M
         switch (new_state) {
 
         case ArmControlState::HOMING:
-            //controller.arm_->pendingCommand()[0].led().set(Color{255, 0, 255}   ); //magenta
+            controller.arm_->pendingCommand()[0].led().set(Color{255, 0, 255}); //magenta
             setMobileIOInstructions(mio, "Robot Homing Sequence\nPlease wait...", Color{ 255, 0, 255 }); //magenta
             break;
 
         case ArmControlState::TELEOP:
-            controller.arm_->pendingCommand()[0].led().set(Color{ 0, 0, 0 }); //transparent
+            controller.arm_->pendingCommand()[0].led().set(Color{ 0, 255, 0 }); //green
             setMobileIOInstructions(mio, "Robot Ready to Control", Color{ 0, 255, 0 }); //green 
             break;
 
         case ArmControlState::DISCONNECTED:
             controller.arm_->pendingCommand()[0].led().set(Color{ 0, 0, 255 }); //blue
+            setMobileIOInstructions(mio, "Robot Disconnected", Color{ 0, 0, 255 });
             break;
 
         case ArmControlState::EXIT:
             std::cout << "TRANSITIONING TO EXIT" << std::endl;
-            controller.arm_->pendingCommand()[0].led().set(Color{ 0, 0, 0 }); //transparent
+            controller.arm_->pendingCommand()[0].led().set(Color{ 255, 0, 0 }); //transparent
 
             mio.resetUI();
             setMobileIOInstructions(mio, "Demo Stopped.", Color{ 255, 0, 0 }); //red
