@@ -86,7 +86,7 @@ public:
   DynamicLookup &operator = (const DynamicLookup&) = delete;
 
 private:
-  explicit DynamicLookup(const std::string& path, const std::string& alt_path);
+  explicit DynamicLookup(const std::string& path, const std::string& alt_path = "");
   void* lib_{};
   std::string path_{};
 };
