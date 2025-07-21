@@ -58,12 +58,12 @@ std::function<void(ArmMobileIOControl&, ArmControlState)> updateMobileIO(util::M
 
         case ArmControlState::HOMING:
             //controller.arm_->pendingCommand()[0].led().set(Color{255, 0, 255}   ); //magenta
-            setMobileIOInstructions(mio, "Robot Homing Sequence\nPlease wait...", &Color{ 255, 0, 255 }); //magenta
+            setMobileIOInstructions(mio, "Robot Homing Sequence\nPlease wait...", Color{ 255, 0, 255 }); //magenta
             break;
 
         case ArmControlState::TELEOP:
             controller.arm_->pendingCommand()[0].led().set(Color{ 0, 0, 0 }); //transparent
-            setMobileIOInstructions(mio, "Robot Ready to Control", &Color{ 0, 255, 0 }); //green 
+            setMobileIOInstructions(mio, "Robot Ready to Control", Color{ 0, 255, 0 }); //green 
             break;
 
         case ArmControlState::DISCONNECTED:
@@ -75,7 +75,7 @@ std::function<void(ArmMobileIOControl&, ArmControlState)> updateMobileIO(util::M
             controller.arm_->pendingCommand()[0].led().set(Color{ 0, 0, 0 }); //transparent
 
             mio.resetUI();
-            setMobileIOInstructions(mio, "Demo Stopped.", &Color{ 255, 0, 0 }); //red
+            setMobileIOInstructions(mio, "Demo Stopped.", Color{ 255, 0, 0 }); //red
             break;
 
         default:
@@ -263,14 +263,14 @@ int main(int argc, char** argv) {
     const Eigen::Vector3d xyz_scale = util::stdToEigenXd(user_data.getFloatList("xyz_scale"));
     const double delay_time = user_data.getFloat("delay_time");
 
-    std::unique_ptr<ArmMobileIOControl> arm_control = std::make_unique<ArmMobileIOControl>(arm, gripper, soft_start_time, delay_time, xyz_scale);
+    std::unique_ptr<ArmMobileIOControl> arm_control (new ArmMobileIOControl(arm, gripper, soft_start_time, delay_time, xyz_scale));
 
     if (arm_control)
         arm_control->transition_handlers_.push_back(updateMobileIO(*mobile_io));
     else {
-        setMobileIOInstructions(*mobile_io, "Robot Ready to Control", &Color{ 0, 255, 0 });
+        setMobileIOInstructions(*mobile_io, "Robot Ready to Control", Color{ 0, 255, 0 });
         auto on_shutdown = [&]() {
-             setMobileIOInstructions(*mobile_io, "Demo Stopped.", &Color{ 255, 0, 0 });
+             setMobileIOInstructions(*mobile_io, "Demo Stopped.", Color{ 255, 0, 0 });
         };
         base_control.on_shutdown_ = on_shutdown;
     }

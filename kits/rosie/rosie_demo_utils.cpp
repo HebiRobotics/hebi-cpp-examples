@@ -361,11 +361,9 @@ OmniBase setupBase(const Lookup& lookup, const std::string& base_family) {
     return OmniBase(*wheel_group);
 }
 
-void setMobileIOInstructions(util::MobileIO& mobile_io, const std::string& message, const Color* color) {
+void setMobileIOInstructions(util::MobileIO& mobile_io, const std::string& message, const Color& color = Color{0,0,0}) {
 
-    if (color)
-        mobile_io.setLedColor(color->getRed(), color->getGreen(), color->getBlue(), false);
-
+    mobile_io.setLedColor(color.getRed(), color.getGreen(), color.getBlue(), false);
     mobile_io.clearText(false);
     mobile_io.appendText(message, false);
 
