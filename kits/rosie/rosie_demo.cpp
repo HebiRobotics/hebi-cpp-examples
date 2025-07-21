@@ -316,9 +316,15 @@ int main(int argc, char** argv) {
             std::cout << "Hey 4\n";
         }
 
+        std::cout << "Hey 4.0\n";
         base_control.send();
-        if (arm_control)
+        std::cout << "Hey 4.1\n";
+        if (arm_control) {
+
+            std::cout << "Hey 4.2\n";
             arm_control->send();
+            std::cout << "Hey 4\n";
+        }
 
         std::cout << "Hey 5\n";
     }

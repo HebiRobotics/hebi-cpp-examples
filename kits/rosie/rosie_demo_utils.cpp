@@ -206,9 +206,16 @@ public:
     bool running() const { return state_ != ArmControlState::EXIT; }
 
     void send() const {
+
+        std::cout << "Hey 4.3\n";
         arm_->send();
-        if (gripper_) 
+        std::cout << "Hey 4.4\n";
+        if (gripper_) {
+
+            std::cout << "Hey 4.5\n";
             gripper_->send();
+            std::cout << "Hey 4.6\n";
+        }
     }
 
     void home(const double duration) const {
