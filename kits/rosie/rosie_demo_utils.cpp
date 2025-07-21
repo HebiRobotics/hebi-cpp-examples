@@ -117,9 +117,9 @@ private:
 };
 
 struct ChassisVelocity {
-    float x_;
-    float y_;
-    float rz_;
+    float x_{ 0.0f };
+    float y_{ 0.0f };
+    float rz_{ 0.0f };
 
     ChassisVelocity(const float x = 0.0f, const float y = 0.0f, const float rz = 0.0f) : x_(x), y_(y), rz_(rz) {}
 
@@ -135,11 +135,11 @@ enum class ArmControlState { STARTUP, HOMING, TELEOP, DISCONNECTED, EXIT };
 struct ArmMobileIOInputs {
     hebi::Vector3f phone_pos;
     Eigen::Matrix3d phone_rot;
-    double ar_scaling;
-    bool lock_toggle;
-    bool locked;
-    bool gripper_closed;
-    bool home;
+    double ar_scaling{ 1.0f };
+    bool lock_toggle{ false };
+    bool locked{ true };
+    bool gripper_closed{ false };
+    bool home{ false };
 
     // Optional constructor if you want to set values on creation
     ArmMobileIOInputs(
@@ -162,23 +162,23 @@ struct ArmMobileIOInputs {
 class ArmMobileIOControl
 {
 public:
-    std::string namespace_ = "";
-    ArmControlState state_ = ArmControlState::STARTUP;
+    std::string namespace_{ "" };
+    ArmControlState state_{ ArmControlState::STARTUP };
     std::shared_ptr<arm::Arm> arm_ = nullptr;
     std::shared_ptr<arm::Gripper> gripper_ = nullptr;
-    Eigen::Vector3d arm_xyz_home_ = { 0.5, 0.0, 0.0 };
+    Eigen::Vector3d arm_xyz_home_{ 0.5, 0.0, 0.0 };
     Eigen::Matrix3d arm_rot_home_;
-    double homing_time_ = 5.0;
-    double traj_duration_ = 1.0;
+    double homing_time_{ 5.0 };
+    double traj_duration_{ 1.0 };
     Eigen::VectorXd arm_seed_ik_;
     Eigen::VectorXd arm_home_;
 
-    Eigen::Vector3d xyz_scale_ = { 1.0, 1.0, 1.0 };
+    Eigen::Vector3d xyz_scale_{ 1.0, 1.0, 1.0 };
     Eigen::Vector3d last_locked_xyz_;
     Eigen::Matrix3d last_locked_rot_;
     Eigen::VectorXd last_locked_seed_;
 
-    bool locked_ = true;
+    bool locked_{ true };
     double mobile_last_fbk_t_;
 
     std::vector<std::function<void(ArmMobileIOControl&, ArmControlState)>> transition_handlers_;
@@ -338,18 +338,14 @@ public:
             }
 
             if (gripper_) {
-                auto gripper_closed = gripper_->getState() > 0.5;
-                std::cout << "Inside arm update - TELEOP gripper" << std::endl;
-				std::cout << "Gripper state: " << gripper_->getState() << std::endl;
+                auto gripper_closed = gripper_->getState() == 1.0;
                 if (arm_input->gripper_closed && !gripper_closed) {
                     std::cout << "Gripper Close" << std::endl;
                     gripper_->close();
-                    return;
                 }
                 else if (!arm_input->gripper_closed && gripper_closed) {
                     std::cout << "Gripper Open" << std::endl;
                     gripper_->open();
-                    return;
                 }
             }
             break;

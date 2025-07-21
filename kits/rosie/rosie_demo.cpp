@@ -44,7 +44,7 @@ public:
 		on_shutdown_();
     }
 
-    bool running_;
+    bool running_{ false };
     std::function<void()> on_shutdown_;
 
 private:
