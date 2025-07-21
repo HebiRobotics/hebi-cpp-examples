@@ -307,7 +307,7 @@ int main(int argc, char** argv) {
         if (quit) {
             base_control.stop();
             if (arm_control)
-                arm_control->transition_to(t, ArmControlState::EXIT);
+                arm_control->transition_to(t.count(), ArmControlState::EXIT);
         }
 
         base_control.send();
