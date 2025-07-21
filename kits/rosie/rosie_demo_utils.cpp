@@ -38,8 +38,8 @@ public:
 
         std::cout << "Hey 12.1\n";
         if (trajectory_) {
-            Eigen::VectorXd p, v, a;
             std::cout << "Hey 12.2\n";
+            Eigen::VectorXd p(group_->size()), v(group_->size()), a(group_->size());
             double x = 10.5;
             trajectory_->getState(x, &p, &v, &a);
             std::cout << "Hey 12.3\n";
