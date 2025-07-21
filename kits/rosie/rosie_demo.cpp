@@ -50,7 +50,7 @@ private:
     OmniBase& base_;
 };
 
-void setLedColor(ArmMobileIOControl& controller, Color& color) {
+void setLedColor(ArmMobileIOControl& controller, Color color) {
     auto group_size = controller.arm_->pendingCommand().size();
     for(int i = 0; i < group_size; i++)
         controller.arm_->pendingCommand()[i].led().set(color);
