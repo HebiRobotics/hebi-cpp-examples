@@ -290,7 +290,7 @@ int main(int argc, char** argv) {
         //std::strftime(buffer, sizeof(buffer), "base_%Y-%m-%d-%H:%M:%S", tm_ptr);
 
         base.group_->startLog("logs");
-        arm->group().startLog("logs", "kbase_arm");
+        arm->group().startLog("logs");
     }
 
     ChassisVelocity base_inputs;
