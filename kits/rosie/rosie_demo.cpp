@@ -102,8 +102,8 @@ std::function<bool(ChassisVelocity&, ArmMobileIOInputs&)> setupMobileIO(util::Mo
 
     mio.resetUI();
 
-    mio.setButtonLabel(reset_pose_btn, "\u27F2", false);
-    mio.setButtonLabel(quit_demo_btn, "\u274C", false);
+    mio.setButtonLabel(reset_pose_btn, "Home \u27F2", false);
+    mio.setButtonLabel(quit_demo_btn, "Quit \u274C", false);
 
     mio.setAxisLabel(side_joy, "", false);
     mio.setAxisLabel(forward_joy, "Translate", false);

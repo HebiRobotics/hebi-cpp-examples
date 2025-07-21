@@ -333,12 +333,12 @@ public:
             if (gripper_) {
                 auto gripper_closed = gripper_->getState() == 1.0;
                 if (arm_input->gripper_closed && !gripper_closed) {
-                    std::cout << "Gripper Close";
+                    std::cout << "Gripper Close" << std::endl;
                     gripper_->close();
                     return;
                 }
                 else if (!arm_input->gripper_closed && gripper_closed) {
-                    std::cout << "Gripper Open";
+                    std::cout << "Gripper Open" << std::endl;
                     gripper_->open();
                     return;
                 }
