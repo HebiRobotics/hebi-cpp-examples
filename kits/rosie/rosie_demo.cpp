@@ -246,6 +246,7 @@ int main(int argc, char** argv) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
         --gripper_tries;
         setupArm(example_config, lookup, arm, gripper);
+        std::cout << "Hey 0.4\n";
     }
 
     if (!arm) {
@@ -258,12 +259,15 @@ int main(int argc, char** argv) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
+    std::cout << "Hey 0.5\n";
     const auto user_data = example_config->getUserData();
     const double soft_start_time = user_data.getFloat("homing_duration");
     const Eigen::Vector3d xyz_scale = util::stdToEigenXd(user_data.getFloatList("xyz_scale"));
     const double delay_time = user_data.getFloat("delay_time");
 
     std::unique_ptr<ArmMobileIOControl> arm_control (new ArmMobileIOControl(arm, gripper, soft_start_time, delay_time, xyz_scale));
+
+    std::cout << "Hey 0.6\n";
 
     if (arm_control)
         arm_control->transition_handlers_.push_back(updateMobileIO(*mobile_io));

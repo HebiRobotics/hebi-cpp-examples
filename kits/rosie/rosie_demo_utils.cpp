@@ -380,6 +380,7 @@ void setupArm(const std::unique_ptr<RobotConfig>& example_config, const Lookup& 
     }
     std::cout << "Arm connected." << std::endl;
 
+    std::cout << "Hey 0\n";
     bool has_gripper = false;
     const auto user_data = example_config->getUserData();
 
@@ -388,12 +389,14 @@ void setupArm(const std::unique_ptr<RobotConfig>& example_config, const Lookup& 
 
     if (arm_out && has_gripper)
     {
+        std::cout << "Hey 0.1\n";
         const std::string family = example_config->getFamilies()[0];
         auto gripper_group = lookup.getGroupFromNames({ family }, { "gripperSpool" });
 
         int tries = 3;
         while (!gripper_group && tries > 0)
         {
+            std::cout << "Hey 0.2\n";
             std::cerr << "Looking for gripper module " << family << "/gripperSpool ...\n";
             std::this_thread::sleep_for(std::chrono::seconds(1));
             gripper_group = lookup.getGroupFromNames({ family }, { "gripperSpool" });
@@ -419,5 +422,6 @@ void setupArm(const std::unique_ptr<RobotConfig>& example_config, const Lookup& 
             throw std::runtime_error("Could not read or send gripper gains\n");
 
         gripper_out->open();
+        std::cout << "Hey 0.3\n";
     }
 }
