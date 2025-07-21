@@ -311,7 +311,7 @@ int main(int argc, char** argv) {
         if (arm_control)
             arm_control->send();
 
-		this::this_thread::sleep_for(std::chrono::seconds(2));
+        std::this_thread::sleep_for(std::chrono::seconds(3));
     }
 
     if (enable_logging) {
