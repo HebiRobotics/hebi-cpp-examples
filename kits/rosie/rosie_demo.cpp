@@ -306,6 +306,8 @@ int main(int argc, char** argv) {
         base_control.update(t, &base_inputs);
         std::cout << "Hey 2\n";
 
+        std::this_thread::sleep_for(std::chrono::seconds(10));
+
         //std::cout << "Hey 3\n";
         //if (arm_control)
         //    arm_control->update(t, &arm_inputs);
