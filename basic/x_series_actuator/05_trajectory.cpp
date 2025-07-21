@@ -151,10 +151,10 @@ int run(int, char**)
       //these are calls to the function f_x which takes a vector of doubles, x, and a lambda, f, and returns a vector f(x)
       std::vector<double> p = f_x(x,[&, i](double t) {Eigen::VectorXd pos(num_joints); trajectory->getState(t,&pos,nullptr,nullptr); return pos[i]; });
       std::vector<double> v = f_x(x,[&, i](double t) {Eigen::VectorXd vel(num_joints); trajectory->getState(t,nullptr,&vel,nullptr); return vel[i]; });
-      auto line = chart.addLine("", x, p);
+      auto line = chart.addLine("position", x, p);
       line.setColor(hebi::charts::Color::Blue);
       line.setLineStyle(hebi::charts::LineStyle::Solid);
-      auto line2 = chart.addLine("", x, v);
+      auto line2 = chart.addLine("velocity", x, v);
       line2.setColor(hebi::charts::Color::Red);
       line2.setLineStyle(hebi::charts::LineStyle::Dashed);
       chart.show();
