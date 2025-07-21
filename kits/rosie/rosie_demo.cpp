@@ -252,7 +252,6 @@ int main(int argc, char** argv) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
         --gripper_tries;
         setupArm(example_config, lookup, arm, gripper);
-        std::cout << "Hey 0.4\n";
     }
 
     if (!arm) {
@@ -265,15 +264,12 @@ int main(int argc, char** argv) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
-    std::cout << "Hey 0.5\n";
     const auto user_data = example_config->getUserData();
     const double soft_start_time = user_data.getFloat("homing_duration");
     const Eigen::Vector3d xyz_scale = util::stdToEigenXd(user_data.getFloatList("xyz_scale"));
     const double delay_time = user_data.getFloat("delay_time");
 
     std::unique_ptr<ArmMobileIOControl> arm_control (new ArmMobileIOControl(arm, gripper, soft_start_time, delay_time, xyz_scale));
-
-    std::cout << "Hey 0.6\n";
 
     if (arm_control)
         arm_control->transition_handlers_.push_back(updateMobileIO(*mobile_io));
@@ -287,7 +283,6 @@ int main(int argc, char** argv) {
 
     bool enable_logging = false;
     if (enable_logging) {
-        std::cout << "Hey 1\n";
         auto now = std::chrono::system_clock::now();
         std::time_t time_now = std::chrono::system_clock::to_time_t(now);
         std::tm* tm_ptr = std::localtime(&time_now);
@@ -297,10 +292,8 @@ int main(int argc, char** argv) {
 
         base.group_->startLog("logs", std::string(buffer));
         arm->group().startLog("logs", std::string(buffer));
-        std::cout << "Hey 1.1\n";
     }
 
-    std::cout << "Hey 2\n";
     while (base_control.running_ && (!arm_control || arm_control->running())) {
         auto now = std::chrono::system_clock::now();
         std::time_t t = std::chrono::system_clock::to_time_t(now);
@@ -309,7 +302,9 @@ int main(int argc, char** argv) {
         ArmMobileIOInputs arm_inputs;
 
         bool quit = parse_mobile_feedback(base_inputs, arm_inputs);
+        std::cout << "Hey 1\n";
         base_control.update(t, &base_inputs);
+        std::cout << "Hey 2\n";
 
         //std::cout << "Hey 3\n";
         //if (arm_control)

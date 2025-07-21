@@ -36,9 +36,12 @@ public:
         if (!group_->getNextFeedback(base_feedback_))
             return false;
 
+        std::cout << "Hey 12.1\n";
         if (trajectory_) {
             Eigen::VectorXd p, v, a;
+            std::cout << "Hey 12.2\n";
             trajectory_->getState(t_now, &p, &v, &a);
+            std::cout << "Hey 12.3\n";
 
             const double theta = p[2];
 
