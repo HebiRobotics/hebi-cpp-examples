@@ -60,11 +60,15 @@ std::function<void(ArmMobileIOControl&, ArmControlState)> updateMobileIO(util::M
         case ArmControlState::HOMING:
             controller.arm_->pendingCommand()[0].led().set(Color{255, 0, 255}); //magenta
             setMobileIOInstructions(mio, "Robot Homing Sequence\nPlease wait...", Color{ 255, 0, 255 }); //magenta
+            mio.setButtonLabel(3, "", false);  // remove label
+            mio.setButtonMode(3, util::MobileIO::ButtonMode::Momentary); // make it non-toggle
             break;
 
         case ArmControlState::TELEOP:
             controller.arm_->pendingCommand()[0].led().set(Color{ 0, 255, 0 }); //green
             setMobileIOInstructions(mio, "Robot Ready to Control", Color{ 0, 255, 0 }); //green 
+            mio.setButtonLabel(3, "Arm \U0001F512", false);  // lock symbol
+            mio.setButtonMode(3, util::MobileIO::ButtonMode::Toggle);
             break;
 
         case ArmControlState::DISCONNECTED:
@@ -86,7 +90,7 @@ std::function<void(ArmMobileIOControl&, ArmControlState)> updateMobileIO(util::M
     };
 }
 
-std::function<bool(ChassisVelocity&, ArmMobileIOInputs&, ArmControlState state)> setupMobileIO(util::MobileIO& mio) {
+std::function<bool(ChassisVelocity&, ArmMobileIOInputs&)> setupMobileIO(util::MobileIO& mio) {
   //Sets up mobileIO interface.
   // Return a function that parses mobileIO feedback into the format expected by the Demo
 
@@ -127,7 +131,7 @@ std::function<bool(ChassisVelocity&, ArmMobileIOInputs&, ArmControlState state)>
     //mio.set_button_output(arm_lock, 1)
     //mio.set_button_output(gripper_close, 1)
 
-    auto parseMobilIOFeedback = [&](ChassisVelocity& chassis_velocity_out, ArmMobileIOInputs& arm_inputs_out, ArmControlState state) {
+    auto parseMobilIOFeedback = [&](ChassisVelocity& chassis_velocity_out, ArmMobileIOInputs& arm_inputs_out) {
         if (!mio.update(0.0))
             return false;
 
@@ -155,7 +159,7 @@ std::function<bool(ChassisVelocity&, ArmMobileIOInputs&, ArmControlState state)>
             rotation = Eigen::Matrix3d::Identity();
         }
 
-        if (mio.getButtonDiff(arm_lock) != util::MobileIO::ButtonState::Unchanged && (state != ArmControlState::HOMING))
+        if (mio.getButtonDiff(arm_lock) != util::MobileIO::ButtonState::Unchanged)
         {
             if (!mio.getButton(arm_lock))
                 mio.setButtonLabel(arm_lock, "Arm \U0001F512", false);
@@ -294,7 +298,7 @@ int main(int argc, char** argv) {
     while (base_control.running_ && (!arm_control || arm_control->running())) {
 
         std::chrono::duration<double> t(std::chrono::system_clock::now() - start);
-        bool quit = parse_mobile_feedback(base_inputs, arm_inputs, arm_control->state_);
+        bool quit = parse_mobile_feedback(base_inputs, arm_inputs);
         base_control.update(t.count(), &base_inputs);
 
         if (arm_control)
