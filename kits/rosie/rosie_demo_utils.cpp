@@ -69,7 +69,6 @@ public:
         if (trajectory_) {
             std::cout << "Is error 2?\n";
             std::cout << "group size " << group_.size() << std::endl;
-            std::cout << group_.
             Eigen::VectorXd pos(group_.size()), vel(group_.size()), acc(group_.size());
             std::cout << "Position:\n" << pos << std::endl;
             std::cout << "Velocity:\n" << vel << std::endl;
