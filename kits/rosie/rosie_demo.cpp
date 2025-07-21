@@ -50,6 +50,12 @@ private:
     OmniBase& base_;
 };
 
+void setLedColor(ArmMobileIOControl& controller, Color& color) {
+    auto group_size = controller.arm_->pendingCommand().size();
+    for(int i = 0; i < group_size; i++)
+        controller.arm_->pendingCommand()[i].led().set(color);
+}
+
 std::function<void(ArmMobileIOControl&, ArmControlState)> updateMobileIO(util::MobileIO& mio) {
     return [&mio](ArmMobileIOControl& controller, ArmControlState new_state) {
         if (controller.state_ == new_state)
@@ -58,27 +64,23 @@ std::function<void(ArmMobileIOControl&, ArmControlState)> updateMobileIO(util::M
         switch (new_state) {
 
         case ArmControlState::HOMING:
-            controller.arm_->pendingCommand()[0].led().set(Color{255, 0, 255}); //magenta
+            setLedColor(controller, Color{ 255, 0, 255 });
             setMobileIOInstructions(mio, "Robot Homing Sequence\nPlease wait...", Color{ 255, 0, 255 }); //magenta
-            mio.setButtonLabel(3, "", false);  // remove label
-            mio.setButtonMode(3, util::MobileIO::ButtonMode::Momentary); // make it non-toggle
             break;
 
         case ArmControlState::TELEOP:
-            controller.arm_->pendingCommand()[0].led().set(Color{ 0, 255, 0 }); //green
-            setMobileIOInstructions(mio, "Robot Ready to Control", Color{ 0, 255, 0 }); //green 
-            mio.setButtonLabel(3, "Arm \U0001F512", false);  // lock symbol
-            mio.setButtonMode(3, util::MobileIO::ButtonMode::Toggle);
+            setLedColor(controller, Color{ 0, 255, 0 });
+            setMobileIOInstructions(mio, "Robot Ready to Control", Color{ 0, 255, 0 }); //green
             break;
 
         case ArmControlState::DISCONNECTED:
-            controller.arm_->pendingCommand()[0].led().set(Color{ 0, 0, 255 }); //blue
+            setLedColor(controller, Color{ 0, 0, 255 });
             setMobileIOInstructions(mio, "Robot Disconnected", Color{ 0, 0, 255 });
             break;
 
         case ArmControlState::EXIT:
             std::cout << "TRANSITIONING TO EXIT" << std::endl;
-            controller.arm_->pendingCommand()[0].led().set(Color{ 255, 0, 0 }); //transparent
+            setLedColor(controller, Color{ 255, 0, 0 });
 
             mio.resetUI();
             setMobileIOInstructions(mio, "Demo Stopped.", Color{ 255, 0, 0 }); //red
