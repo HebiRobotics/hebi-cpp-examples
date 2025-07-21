@@ -26,7 +26,6 @@ public:
 
     void update(const double t_now, const ChassisVelocity* base_inputs)
     {
-		std::cout << "Inside base update" << std::endl;
         base_.update(t_now);
         if (!base_inputs)
             return;
@@ -86,7 +85,7 @@ std::function<void(ArmMobileIOControl&, ArmControlState)> updateMobileIO(util::M
     };
 }
 
-std::function<bool(ChassisVelocity&, ArmMobileIOInputs&)> setupMobileIO(util::MobileIO& mio) {
+std::function<bool(ChassisVelocity&, ArmMobileIOInputs&, ArmControlState state)> setupMobileIO(util::MobileIO& mio) {
   //Sets up mobileIO interface.
   // Return a function that parses mobileIO feedback into the format expected by the Demo
 
@@ -127,8 +126,7 @@ std::function<bool(ChassisVelocity&, ArmMobileIOInputs&)> setupMobileIO(util::Mo
     //mio.set_button_output(arm_lock, 1)
     //mio.set_button_output(gripper_close, 1)
 
-    auto parseMobilIOFeedback = [&](ChassisVelocity& chassis_velocity_out, ArmMobileIOInputs& arm_inputs_out) {
-
+    auto parseMobilIOFeedback = [&](ChassisVelocity& chassis_velocity_out, ArmMobileIOInputs& arm_inputs_out, ArmControlState state) {
         if (!mio.update(0.0))
             return false;
 
@@ -156,7 +154,7 @@ std::function<bool(ChassisVelocity&, ArmMobileIOInputs&)> setupMobileIO(util::Mo
             rotation = Eigen::Matrix3d::Identity();
         }
 
-        if (mio.getButtonDiff(arm_lock) != util::MobileIO::ButtonState::Unchanged)
+        if (mio.getButtonDiff(arm_lock) != util::MobileIO::ButtonState::Unchanged && (state != ArmControlState::HOMING))
         {
             if (!mio.getButton(arm_lock))
                 mio.setButtonLabel(arm_lock, "Arm \U0001F512", false);
@@ -293,12 +291,9 @@ int main(int argc, char** argv) {
     auto start = std::chrono::system_clock::now();
 
     while (base_control.running_ && (!arm_control || arm_control->running())) {
-        auto now = std::chrono::system_clock::now();
-        //std::time_t t = std::chrono::system_clock::to_time_t(now);
+
         std::chrono::duration<double> t(std::chrono::system_clock::now() - start);
-
-        bool quit = parse_mobile_feedback(base_inputs, arm_inputs);
-
+        bool quit = parse_mobile_feedback(base_inputs, arm_inputs, arm_control->state_);
         base_control.update(t.count(), &base_inputs);
 
         if (arm_control)
