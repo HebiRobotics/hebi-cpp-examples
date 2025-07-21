@@ -187,6 +187,7 @@ public:
     Eigen::Matrix3d phone_rot_home_;
 
     ArmMobileIOControl(std::shared_ptr<arm::Arm> arm, std::shared_ptr<arm::Gripper> gripper, double homing_time, double traj_duration, Eigen::Vector3d xyz_scale) : arm_(arm), gripper_(gripper), homing_time_(homing_time), traj_duration_(traj_duration), xyz_scale_(xyz_scale) {
+        arm_seed_ik_.resize(6); 
         arm_seed_ik_ << 0.3, 1.2, 2.2, 2.9, -1.57, 0;
         Eigen::AngleAxisd rotZ(M_PI / 2, Eigen::Vector3d::UnitZ());
         Eigen::AngleAxisd rotX(M_PI, Eigen::Vector3d::UnitX());
