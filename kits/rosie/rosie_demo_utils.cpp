@@ -69,6 +69,7 @@ public:
         if (trajectory_) {
             std::cout << "Is error 2?\n";
             std::cout << "group size " << group_.size() << std::endl;
+            std::cout << group_.
             Eigen::VectorXd pos(group_.size()), vel(group_.size()), acc(group_.size());
             std::cout << "Position:\n" << pos << std::endl;
             std::cout << "Velocity:\n" << vel << std::endl;
@@ -378,6 +379,8 @@ OmniBase setupBase(const Lookup& lookup, const std::string& base_family) {
     const std::vector<std::string> wheel_names = { "W1", "W2", "W3" };
 
     auto wheel_group = lookup.getGroupFromNames({ base_family }, wheel_names);
+    wheel_group->size();
+    std::cout << "Wheel group size\n";
     if (!wheel_group) {
         throw std::runtime_error("Could not find wheel modules: \"W1\", \"W2\", \"W3\" in family '" + base_family + "'");
     }
