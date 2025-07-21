@@ -327,7 +327,7 @@ int main(int argc, char** argv) {
     //    }
 
     //    std::cout << "Hey 5\n";
-    //}
+    }
 
     //if (enable_logging) {
     //    std::cout << "Hey 6\n";
