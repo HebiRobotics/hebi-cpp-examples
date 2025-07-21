@@ -299,8 +299,6 @@ int main(int argc, char** argv) {
         bool quit = parse_mobile_feedback(base_inputs, arm_inputs);
         base_control.update(t, &base_inputs);
 
-        std::this_thread::sleep_for(std::chrono::seconds(10));
-
         if (arm_control)
             arm_control->update(t, &arm_inputs);
 
