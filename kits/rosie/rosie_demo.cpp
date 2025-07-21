@@ -26,10 +26,16 @@ public:
 
     void update(const double t_now, const ChassisVelocity* base_inputs)
     {
+        std::cout << "Hey 9.1\n";
         base_.update(t_now);
-		if (!base_inputs)
+        std::cout << "Hey 9.2\n";
+        if (!base_inputs) {
+            std::cout << "Hey 9.3\n";
             return;
+        }
+        std::cout << "Hey 9.4\n";
 		base_.buildSmoothVelocityTrajectory(base_inputs->x_, base_inputs->y_, base_inputs->rz_, t_now);
+        std::cout << "Hey 9.5\n";
     }
 
     void send() const {
@@ -304,7 +310,7 @@ int main(int argc, char** argv) {
 
         bool quit = parse_mobile_feedback(base_inputs, arm_inputs);
         std::cout << quit << std::endl;
-        //base_control.update(t, &base_inputs);
+        base_control.update(t, &base_inputs);
 
         //std::cout << "Hey 3\n";
         //if (arm_control)
