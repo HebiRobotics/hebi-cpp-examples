@@ -289,7 +289,7 @@ int main(int argc, char** argv) {
         //char buffer[100];
         //std::strftime(buffer, sizeof(buffer), "base_%Y-%m-%d-%H:%M:%S", tm_ptr);
 
-        base.group_->startLog("logs", "kcheck_base");
+        base.group_->startLog("logs");
         arm->group().startLog("logs", "kbase_arm");
     }
 
