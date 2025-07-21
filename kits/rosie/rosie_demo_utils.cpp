@@ -383,7 +383,9 @@ OmniBase setupBase(const Lookup& lookup, const std::string& base_family) {
         throw std::runtime_error("Could not find wheel modules: \"W1\", \"W2\", \"W3\" in family '" + base_family + "'");
     }
 
-    return OmniBase(*wheel_group);
+    auto base = OmniBase(*wheel_group);
+
+    return base;
 }
 
 void setMobileIOInstructions(util::MobileIO& mobile_io, const std::string& message, const Color& color = Color{0,0,0}) {
