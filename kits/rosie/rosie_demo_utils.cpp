@@ -68,8 +68,14 @@ public:
         std::cout << "Is error 1?\n";
         if (trajectory_) {
             std::cout << "Is error 2?\n";
+            std::cout << group_.size();
             Eigen::VectorXd pos(group_.size()), vel(group_.size()), acc(group_.size());
+            std::cout << "Position:\n" << pos << std::endl;
+            std::cout << "Velocity:\n" << vel << std::endl;
+            std::cout << "Acceleration:\n" << acc << std::endl;
+            std::cout << "Is error 2.1?\n";
             trajectory_->getState(t_now, &pos, &vel, &acc);
+            std::cout << "Is error 2.2?\n";
             cmd_vels = vel;
             std::cout << "Is error 3?\n";
         }
