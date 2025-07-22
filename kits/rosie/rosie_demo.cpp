@@ -324,7 +324,7 @@ int main(int argc, char** argv) {
         base_control.update(t.count(), &base_inputs);
 
         if (arm_control)
-            arm_control->update(t.count(), &arm_inputs, *mobile_io);
+            arm_control->update(t.count(), &arm_inputs);
 
         if (quit) {
             base_control.stop();

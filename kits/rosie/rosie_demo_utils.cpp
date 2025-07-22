@@ -276,7 +276,7 @@ public:
     }
 
 	// Updates the arm state based on the current time, mobile IO inputs, and sends commands to the arm
-    void update(const double t_now, const ArmMobileIOInputs* arm_input, util::MobileIO& mio) {
+    void update(const double t_now, const ArmMobileIOInputs* arm_input) {
         arm_->update();
 
         if (state_ == ArmControlState::EXIT)
