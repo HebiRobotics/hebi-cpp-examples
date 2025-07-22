@@ -20,6 +20,7 @@
 using namespace hebi;
 double ar_scaling = 1.0;
 
+// RosieControl controls the base of the robot and builds a trajectory for the base movement
 class RosieControl {
 public:
     RosieControl(OmniBase& base)
@@ -299,7 +300,7 @@ int main(int argc, char** argv) {
         base_control.update(t.count(), &base_inputs);
 
         if (arm_control)
-            arm_control->update(t.count(), &arm_inputs);
+            arm_control->update(t.count(), &arm_inputs, *mobile_io);
 
         if (quit) {
             base_control.stop();
