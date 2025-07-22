@@ -298,8 +298,6 @@ public:
             break;
 
         case ArmControlState::HOMING:
-            mio.setButtonMode(3, util::MobileIO::ButtonMode::Momentary);
-            mio.setButtonMode(4, util::MobileIO::ButtonMode::Momentary);
             if (arm_->atGoal()) {
                 phone_xyz_home_ = arm_input->phone_pos;
                 phone_rot_home_ = arm_input->phone_rot;
@@ -308,8 +306,6 @@ public:
                 arm_->FK(last_pos, last_locked_xyz_, last_locked_rot_);
                 transition_to(t_now, ArmControlState::TELEOP);
             }
-            mio.setButtonMode(3, util::MobileIO::ButtonMode::Toggle);
-            mio.setButtonMode(4, util::MobileIO::ButtonMode::Toggle);
             break;
 
         case ArmControlState::TELEOP:
