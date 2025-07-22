@@ -12,6 +12,7 @@
 #include <thread>
 #include <chrono>
 #include <ctime>
+#include <cstdlib>
 
 // Common includes
 #include <iostream>
@@ -282,8 +283,9 @@ int main(int argc, char** argv) {
 
     bool enable_logging = true;
     if (enable_logging) {
-        base.group_->startLog("logs");
-        arm->group().startLog("logs");
+        //system("mkdir logs");
+        base.group_->startLog("./logs");
+        arm->group().startLog("./logs");
     }
 
     ChassisVelocity base_inputs;
