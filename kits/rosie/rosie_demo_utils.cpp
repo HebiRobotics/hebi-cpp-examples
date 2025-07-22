@@ -19,11 +19,13 @@
 
 using namespace hebi;
 
+// This class represents a base with three omni wheels for movement in 2D space
 class OmniBase {
 public:
     static constexpr double WHEEL_RADIUS = 0.0762; // meters
     static constexpr double BASE_RADIUS = 0.220; // meters
 
+    // Create omnibase and initialize the command
     OmniBase(std::shared_ptr<Group> group) : 
         group_(group),
         base_command_(group->size()),
@@ -32,6 +34,7 @@ public:
         trajectory_(nullptr),
         vels_base_to_wheel_(buildJacobian(BASE_RADIUS, WHEEL_RADIUS)) {}
 
+    // Evaluate Trajectory State and update commands
     bool update(const double t_now) {
         if (!group_->getNextFeedback(base_feedback_))
             return false;
@@ -53,7 +56,6 @@ public:
             base_command_.setVelocity(vels_base_to_wheel_ * v_local);
 	        base_command_[0].led().set(color_);
         }
-
         return true;
     }
 
@@ -61,6 +63,7 @@ public:
         group_->sendCommand(base_command_);
     }
 
+	// Builds a smooth trajectory for the base to move to a target velocity
     void buildSmoothVelocityTrajectory(const double dx, const double dy, const double dtheta, const double t_now) {
         Eigen::Vector4d times{0, 0.15, 0.9, 1.2};
 
@@ -116,6 +119,7 @@ private:
     }
 };
 
+// This struct represents the velocity of the chassis in 2D space with rotation around the Z-axis
 struct ChassisVelocity {
     float x_{ 0.0f };
     float y_{ 0.0f };
@@ -132,6 +136,7 @@ struct ChassisVelocity {
 
 enum class ArmControlState { STARTUP, HOMING, TELEOP, DISCONNECTED, EXIT };
 
+// This struct holds the inputs from the mobile IO device for controlling the arm
 struct ArmMobileIOInputs {
     hebi::Vector3f phone_pos;
     Eigen::Matrix3d phone_rot;
@@ -159,6 +164,7 @@ struct ArmMobileIOInputs {
         home(isHome) {}
 };
 
+// This class manages the control of the arm and mobile IO device, handling transitions between states and sending commands to the arm
 class ArmMobileIOControl
 {
 public:
@@ -248,6 +254,7 @@ public:
         state_ = new_state;
     }
 
+	// Computes the arm goal based on the current mobile IO inputs and the last locked position and rotation
     arm::Goal compute_arm_goal(const ArmMobileIOInputs& arm_input) {
         Eigen::Vector3d phone_offset(
             arm_input.phone_pos.getX() - phone_xyz_home_.getX(),
@@ -258,6 +265,8 @@ public:
         auto arm_xyz_target = last_locked_xyz_ + arm_input.ar_scaling * xyz_scale_.cwiseProduct(rot_mat.transpose() * phone_offset);
         Eigen::Matrix3d arm_rot_target = rot_mat.transpose() * arm_input.phone_rot * last_locked_rot_;
 
+
+        // if ar scaling is 0, move the home AR pose to current pose this keeps the arm from driving to some weird offset when scaling is turned back up by the user in the future
         if (arm_input.ar_scaling == 0.0)
             phone_xyz_home_ = arm_input.phone_pos;
         const auto joint_target = arm_->solveIK(last_locked_seed_, arm_xyz_target, arm_rot_target);
@@ -266,6 +275,7 @@ public:
         return goal;
     }
 
+	// Updates the arm state based on the current time, mobile IO inputs, and sends commands to the arm
     void update(const double t_now, const ArmMobileIOInputs* arm_input, util::MobileIO& mio) {
         arm_->update();
 
@@ -281,7 +291,11 @@ public:
             return;
         }
 
+        // Reset the timeout
         mobile_last_fbk_t_ = t_now;
+
+
+        // Transition to teleop if mobileIO is reconnected
         auto last_pos = arm_->lastFeedback().getPosition();
 
         switch (state_) {
@@ -289,14 +303,18 @@ public:
         case ArmControlState::DISCONNECTED:
             mobile_last_fbk_t_ = t_now;
             std::cout << namespace_ << " Controller reconnected, demo continued\n";
+
+            /// Lock arm when reconnected
             locked_ = true;
             transition_to(t_now, ArmControlState::TELEOP);
             break;
 
+        // After startup, transition to homing
         case ArmControlState::STARTUP:
             transition_to(t_now, ArmControlState::HOMING);
             break;
 
+        // If homing is complete, transition to teleop
         case ArmControlState::HOMING:
             if (arm_->atGoal()) {
                 phone_xyz_home_ = arm_input->phone_pos;
@@ -308,6 +326,7 @@ public:
             }
             break;
 
+        // In teleop mode, update the arm based on mobile IO inputs
         case ArmControlState::TELEOP:
             if (arm_input->home) {
                  transition_to(t_now, ArmControlState::HOMING);
@@ -350,9 +369,11 @@ public:
     }
 };
 
+// Setup the OmniBase with the given lookup and base family
 OmniBase setupBase(const Lookup& lookup, const std::string& base_family) {
     const std::vector<std::string> wheel_names = { "W1", "W2", "W3" };
 
+    // Create base group
     auto wheel_group = lookup.getGroupFromNames({ base_family }, wheel_names);
     if (!wheel_group) {
         throw std::runtime_error("Could not find wheel modules: \"W1\", \"W2\", \"W3\" in family '" + base_family + "'");
@@ -363,6 +384,7 @@ OmniBase setupBase(const Lookup& lookup, const std::string& base_family) {
     return base;
 }
 
+// Set the message on the MobileIO device and print instructions
 void setMobileIOInstructions(util::MobileIO& mobile_io, const std::string& message, const Color& color = Color{0,0,0}) {
 
     mobile_io.setLedColor(color.getRed(), color.getGreen(), color.getBlue(), false);
@@ -372,6 +394,7 @@ void setMobileIOInstructions(util::MobileIO& mobile_io, const std::string& messa
     std::cout << message << std::endl;
 }
 
+// Setup the arm and gripper based on the configuration file
 void setupArm(const std::unique_ptr<RobotConfig>& example_config, const Lookup& lookup, std::shared_ptr<arm::Arm> &arm_out , std::shared_ptr<arm::Gripper> &gripper_out)
 {
     arm_out = arm::Arm::create(*example_config, lookup);
@@ -386,7 +409,8 @@ void setupArm(const std::unique_ptr<RobotConfig>& example_config, const Lookup& 
 
     if (user_data.hasBool("has_gripper"))
         has_gripper = user_data.getBool("has_gripper");
-
+    
+	// Setup gripper parameters if specified in the config
     if (arm_out && has_gripper)
     {
         const std::string family = example_config->getFamilies()[0];

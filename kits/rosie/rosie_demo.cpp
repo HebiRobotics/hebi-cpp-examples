@@ -94,9 +94,12 @@ std::function<void(ArmMobileIOControl&, ArmControlState)> updateMobileIO(util::M
     };
 }
 
+// Sets up mobileIO interface.
+//
+//Return a function that parses mobileIO feedback into the format
+//expected by the Demo
+
 std::function<bool(ChassisVelocity&, ArmMobileIOInputs&)> setupMobileIO(util::MobileIO& mio) {
-  //Sets up mobileIO interface.
-  // Return a function that parses mobileIO feedback into the format expected by the Demo
 
     const int reset_pose_btn = 1;
     const int arm_lock = 3;
@@ -135,6 +138,7 @@ std::function<bool(ChassisVelocity&, ArmMobileIOInputs&)> setupMobileIO(util::Mo
     //mio.set_button_output(arm_lock, 1)
     //mio.set_button_output(gripper_close, 1)
 
+	// Lambda function that will be called to parse the mobile IO feedback
     auto parseMobilIOFeedback = [&](ChassisVelocity& chassis_velocity_out, ArmMobileIOInputs& arm_inputs_out) {
         if (!mio.update(0.0))
             return false;
@@ -198,6 +202,12 @@ std::function<bool(ChassisVelocity&, ArmMobileIOInputs&)> setupMobileIO(util::Mo
 
 int main(int argc, char** argv) {
 
+
+    //////////////////////////
+    ///// Config Setup ///////
+    //////////////////////////
+
+    // Config file path
     std::string example_config_path;
     if (argc == 1) {
         example_config_path = "config/rosie-r.cfg.yaml";
@@ -210,6 +220,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    // Load the config
     std::vector<std::string> errors;
     const auto example_config = RobotConfig::loadConfig(example_config_path, errors);
     for (const auto& error : errors) {
@@ -223,6 +234,7 @@ int main(int argc, char** argv) {
     Lookup lookup;
     const std::string family = example_config->getFamilies()[0];
 
+	// mobileIO setup
     std::unique_ptr<util::MobileIO> mobile_io = util::MobileIO::create(family, "mobileIO", lookup);
     int mobileio_tries = 5;
     while (!mobile_io && mobileio_tries > 0) {
@@ -241,9 +253,17 @@ int main(int argc, char** argv) {
     std::cout << "MobileIO device successfully connected\n";
     auto parse_mobile_feedback = setupMobileIO(*mobile_io);
 
+
+	// Base setup
     OmniBase base = setupBase(lookup, family);
     auto base_control = RosieControl(base);
 
+
+    //////////////////////////
+    ///// Arm Setup //////////
+    //////////////////////////
+
+    // Create the arm and gripper object from the configuration
     int gripper_tries = 3;
     std::shared_ptr<arm::Arm> arm;
     std::shared_ptr<arm::Gripper> gripper;
@@ -281,6 +301,9 @@ int main(int argc, char** argv) {
         };
         base_control.on_shutdown_ = on_shutdown;
     }
+    ///////////////////////////
+    //// Main Control Loop ////
+    //////////////////////////
 
     bool enable_logging = true;
     if (enable_logging) {
@@ -293,6 +316,7 @@ int main(int argc, char** argv) {
     ArmMobileIOInputs arm_inputs;
     auto start = std::chrono::system_clock::now();
 
+	// Constantly update the base and arm controls
     while (base_control.running_ && (!arm_control || arm_control->running())) {
 
         std::chrono::duration<double> t(std::chrono::system_clock::now() - start);
