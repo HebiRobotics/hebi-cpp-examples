@@ -379,9 +379,7 @@ OmniBase setupBase(const Lookup& lookup, const std::string& base_family) {
         throw std::runtime_error("Could not find wheel modules: \"W1\", \"W2\", \"W3\" in family '" + base_family + "'");
     }
 
-    auto base = OmniBase(wheel_group);
-
-    return base;
+    return OmniBase(wheel_group);
 }
 
 // Set the message on the MobileIO device and print instructions
