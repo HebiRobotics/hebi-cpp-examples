@@ -54,7 +54,9 @@ public:
 
             Eigen::Vector3d v_local = world_to_local_rot * v;
             base_command_.setVelocity(vels_base_to_wheel_ * v_local);
-	        base_command_[0].led().set(color_);
+
+            for (int i = 0; i < group_->size(); ++i)
+                base_command_[i].led().set(color_);
         }
         return true;
     }
@@ -221,7 +223,7 @@ public:
         arm_->setGoal(arm::Goal::createFromPosition(duration, arm_home_));
     }
 
-    void transition_to(const double t_now, ArmControlState new_state) {
+    void transition_to(const double t_now, const ArmControlState& new_state) {
         if (new_state == state_) 
             return;
 
@@ -269,8 +271,8 @@ public:
         // if ar scaling is 0, move the home AR pose to current pose this keeps the arm from driving to some weird offset when scaling is turned back up by the user in the future
         if (arm_input.ar_scaling == 0.0)
             phone_xyz_home_ = arm_input.phone_pos;
-        const auto joint_target = arm_->solveIK(last_locked_seed_, arm_xyz_target, arm_rot_target);
-        const arm::Goal goal = arm::Goal::createFromPosition(traj_duration_, joint_target);
+        auto joint_target = arm_->solveIK(last_locked_seed_, arm_xyz_target, arm_rot_target);
+        arm::Goal goal = arm::Goal::createFromPosition(traj_duration_, joint_target);
 
         return goal;
     }
@@ -393,17 +395,17 @@ void setMobileIOInstructions(util::MobileIO& mobile_io, const std::string& messa
 }
 
 // Setup the arm and gripper based on the configuration file
-void setupArm(const std::unique_ptr<RobotConfig>& example_config, const Lookup& lookup, std::shared_ptr<arm::Arm> &arm_out , std::shared_ptr<arm::Gripper> &gripper_out)
+void setupArm(const RobotConfig& example_config, const Lookup& lookup, std::shared_ptr<arm::Arm> arm_out , std::shared_ptr<arm::Gripper> gripper_out)
 {
-    arm_out = arm::Arm::create(*example_config, lookup);
+    arm_out = arm::Arm::create(example_config, lookup);
     while (!arm_out) {
         std::cerr << "Failed to create arm, retrying..." << std::endl;
-        arm_out = arm::Arm::create(*example_config, lookup);
+        arm_out = arm::Arm::create(example_config, lookup);
     }
     std::cout << "Arm connected." << std::endl;
 
     bool has_gripper = false;
-    const auto user_data = example_config->getUserData();
+    const auto user_data = example_config.getUserData();
 
     if (user_data.hasBool("has_gripper"))
         has_gripper = user_data.getBool("has_gripper");
@@ -411,7 +413,7 @@ void setupArm(const std::unique_ptr<RobotConfig>& example_config, const Lookup& 
 	// Setup gripper parameters if specified in the config
     if (arm_out && has_gripper)
     {
-        const std::string family = example_config->getFamilies()[0];
+        const std::string family = example_config.getFamilies()[0];
         auto gripper_group = lookup.getGroupFromNames({ family }, { "gripperSpool" });
 
         int tries = 3;
@@ -436,7 +438,7 @@ void setupArm(const std::unique_ptr<RobotConfig>& example_config, const Lookup& 
             gripper_close_effort = user_data.getFloat("gripper_close_effort");
 
 	    gripper_out = arm::Gripper::create(gripper_group, gripper_open_effort, gripper_close_effort);
-            const std::string gripper_gains_file = example_config->getGains("gripper");
+            const std::string gripper_gains_file = example_config.getGains("gripper");
 
         if (!gripper_out || !gripper_out->loadGains(gripper_gains_file))
             throw std::runtime_error("Could not read or send gripper gains\n");

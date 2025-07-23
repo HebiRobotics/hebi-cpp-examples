@@ -52,7 +52,7 @@ private:
     OmniBase& base_;
 };
 
-void setLedColor(ArmMobileIOControl& controller, const Color& color) {
+void setArmLedColor(ArmMobileIOControl& controller, const Color& color) {
     auto group_size = controller.arm_->pendingCommand().size();
     for(int i = 0; i < group_size; i++)
         controller.arm_->pendingCommand()[i].led().set(color);
@@ -66,24 +66,23 @@ std::function<void(ArmMobileIOControl&, ArmControlState)> updateMobileIO(util::M
         switch (new_state) {
 
         case ArmControlState::HOMING:
-            setLedColor(controller, Color{ 255, 0, 255 });
+			setArmLedColor(controller, Color{ 255, 0, 255 }); //magenta
             setMobileIOInstructions(mio, "Robot Homing Sequence\nPlease wait...", Color{ 255, 0, 255 }); //magenta
             break;
 
         case ArmControlState::TELEOP:
-            setLedColor(controller, Color{ 0, 255, 0 });
+			setArmLedColor(controller, Color{ 0, 255, 0 }); //green
             setMobileIOInstructions(mio, "Robot Ready to Control", Color{ 0, 255, 0 }); //green
             break;
 
         case ArmControlState::DISCONNECTED:
-            setLedColor(controller, Color{ 0, 0, 255 });
+            setArmLedColor(controller, Color{ 0, 0, 255 }); //blue
 			setMobileIOInstructions(mio, "Robot Disconnected", Color{ 0, 0, 255 }); //blue
             break;
 
         case ArmControlState::EXIT:
             std::cout << "TRANSITIONING TO EXIT" << std::endl;
-			setLedColor(controller, Color{ 255, 0, 0 }); //red
-
+            setArmLedColor(controller, Color{ 255, 0, 0 }); //red
             mio.resetUI();
             setMobileIOInstructions(mio, "Demo Stopped.", Color{ 255, 0, 0 }); //red
             break;
@@ -123,9 +122,8 @@ std::function<bool(ChassisVelocity&, ArmMobileIOInputs&)> setupMobileIO(util::Mo
     mio.setAxisLabel(turn_joy, "", false);
     mio.setAxisLabel(rotate_joy, "Rotate", false);
 
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 8; i++)
       mio.setAxisSnap(i + 1, (i == 3) ? NAN : 0.0);
-    }
 
     mio.setAxisValue(ar_xyz_scale_slider, ar_scaling);
     mio.setLedColor(255, 255, 0);
@@ -267,12 +265,12 @@ int main(int argc, char** argv) {
     int gripper_tries = 3;
     std::shared_ptr<arm::Arm> arm;
     std::shared_ptr<arm::Gripper> gripper;
-    setupArm(example_config, lookup, arm, gripper);
+    setupArm(*example_config, lookup, arm, gripper);
 
     while (!arm && gripper_tries > 0) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
         --gripper_tries;
-        setupArm(example_config, lookup, arm, gripper);
+        setupArm(*example_config, lookup, arm, gripper);
     }
 
     if (!arm) {
