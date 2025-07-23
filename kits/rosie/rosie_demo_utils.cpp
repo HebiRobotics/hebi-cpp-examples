@@ -395,7 +395,7 @@ void setMobileIOInstructions(util::MobileIO& mobile_io, const std::string& messa
 }
 
 // Setup the arm and gripper based on the configuration file
-void setupArm(const RobotConfig& example_config, const Lookup& lookup, std::shared_ptr<arm::Arm> arm_out , std::shared_ptr<arm::Gripper> gripper_out)
+void setupArm(const RobotConfig& example_config, const Lookup& lookup, std::shared_ptr<arm::Arm>& arm_out , std::shared_ptr<arm::Gripper>& gripper_out)
 {
     arm_out = arm::Arm::create(example_config, lookup);
     while (!arm_out) {
