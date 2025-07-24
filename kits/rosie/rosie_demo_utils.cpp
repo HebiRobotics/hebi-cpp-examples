@@ -123,17 +123,9 @@ private:
 
 // This struct represents the velocity of the chassis in 2D space with rotation around the Z-axis
 struct ChassisVelocity {
-    float x_{ 0.0f };
-    float y_{ 0.0f };
-    float rz_{ 0.0f };
-
-    ChassisVelocity(const float x = 0.0f, const float y = 0.0f, const float rz = 0.0f) : x_(x), y_(y), rz_(rz) {}
-
-    std::string getInfo() const
-    {
-        std::string info = "ChassisVelocity : x=" + std::to_string(x_) + ", y=" + std::to_string(y_) + ", rz=" + std::to_string(rz_);
-        return info;
-    }
+    double x_{ 0.0f };
+    double y_{ 0.0f };
+    double rz_{ 0.0f };
 };
 
 enum class ArmControlState { STARTUP, HOMING, TELEOP, DISCONNECTED, EXIT };
@@ -363,6 +355,11 @@ public:
             break;
         }
 }
+    void setArmLedColor(ArmMobileIOControl& controller, const Color& color) {
+        auto group_size = controller.arm_->pendingCommand().size();
+        for (int i = 0; i < group_size; i++)
+            controller.arm_->pendingCommand()[i].led().set(color);
+    }
 
     void stop() {
         auto now = std::chrono::system_clock::now();
@@ -370,19 +367,6 @@ public:
         transition_to(time_now, ArmControlState::EXIT);
     }
 };
-
-// Setup the OmniBase with the given lookup and base family
-OmniBase setupBase(const Lookup& lookup, const std::string& base_family) {
-    const std::vector<std::string> wheel_names = { "W1", "W2", "W3" };
-
-    // Create base group
-    auto wheel_group = lookup.getGroupFromNames({ base_family }, wheel_names);
-    if (!wheel_group) {
-        throw std::runtime_error("Could not find wheel modules: \"W1\", \"W2\", \"W3\" in family '" + base_family + "'");
-    }
-
-    return OmniBase(wheel_group);
-}
 
 // Set the message on the MobileIO device and print instructions
 void setMobileIOInstructions(util::MobileIO& mobile_io, const std::string& message, const Color& color = Color{0,0,0}) {

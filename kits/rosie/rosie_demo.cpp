@@ -24,7 +24,7 @@ double ar_scaling = 1.0;
 class RosieControl {
 public:
     RosieControl(OmniBase& base)
-        : base_(base), running_(true), on_shutdown_([](){}) {}
+        : base_(base), running_(true) {}
 
     void update(const double t_now, const ChassisVelocity* base_inputs)
     {
@@ -38,25 +38,18 @@ public:
     void send() const {
         base_.send();
     }
-    
+
+    bool running() const { return running_; }
+
     void stop() {
         running_ = false;
 		base_.base_command_.setVelocity(Eigen::Vector3d::Zero());
-		on_shutdown_();
     }
-
-    bool running_{ false };
-    std::function<void()> on_shutdown_;
 
 private:
     OmniBase& base_;
+    bool running_{ false };
 };
-
-void setArmLedColor(ArmMobileIOControl& controller, const Color& color) {
-    auto group_size = controller.arm_->pendingCommand().size();
-    for(int i = 0; i < group_size; i++)
-        controller.arm_->pendingCommand()[i].led().set(color);
-}
 
 std::function<void(ArmMobileIOControl&, ArmControlState)> updateMobileIO(util::MobileIO& mio) {
     return [&mio](ArmMobileIOControl& controller, ArmControlState new_state) {
@@ -66,23 +59,23 @@ std::function<void(ArmMobileIOControl&, ArmControlState)> updateMobileIO(util::M
         switch (new_state) {
 
         case ArmControlState::HOMING:
-			setArmLedColor(controller, Color{ 255, 0, 255 }); //magenta
+            controller.setArmLedColor(controller, Color{ 255, 0, 255 }); //magenta
             setMobileIOInstructions(mio, "Robot Homing Sequence\nPlease wait...", Color{ 255, 0, 255 }); //magenta
             break;
 
         case ArmControlState::TELEOP:
-			setArmLedColor(controller, Color{ 0, 255, 0 }); //green
+            controller.setArmLedColor(controller, Color{ 0, 255, 0 }); //green
             setMobileIOInstructions(mio, "Robot Ready to Control", Color{ 0, 255, 0 }); //green
             break;
 
         case ArmControlState::DISCONNECTED:
-            setArmLedColor(controller, Color{ 0, 0, 255 }); //blue
+            controller.setArmLedColor(controller, Color{ 0, 0, 255 }); //blue
 			setMobileIOInstructions(mio, "Robot Disconnected", Color{ 0, 0, 255 }); //blue
             break;
 
         case ArmControlState::EXIT:
             std::cout << "TRANSITIONING TO EXIT" << std::endl;
-            setArmLedColor(controller, Color{ 255, 0, 0 }); //red
+            controller.setArmLedColor(controller, Color{ 255, 0, 0 }); //red
             mio.resetUI();
             setMobileIOInstructions(mio, "Demo Stopped.", Color{ 255, 0, 0 }); //red
             break;
@@ -98,7 +91,7 @@ std::function<void(ArmMobileIOControl&, ArmControlState)> updateMobileIO(util::M
 //Return a function that parses mobileIO feedback into the format
 //expected by the Demo
 
-std::function<bool(ChassisVelocity&, ArmMobileIOInputs&)> setupMobileIO(util::MobileIO& mio) {
+std::function<bool(ArmControlState, ChassisVelocity&, ArmMobileIOInputs&)> setupMobileIO(util::MobileIO& mio) {
 
     const int reset_pose_btn = 1;
     const int arm_lock = 3;
@@ -133,11 +126,11 @@ std::function<bool(ChassisVelocity&, ArmMobileIOInputs&)> setupMobileIO(util::Mo
     mio.setButtonMode(arm_lock, util::MobileIO::ButtonMode::Toggle);
     mio.setButtonMode(gripper_close, util::MobileIO::ButtonMode::Toggle);
 
-    //mio.set_button_output(arm_lock, 1)
-    //mio.set_button_output(gripper_close, 1)
+    mio.setButtonValue(arm_lock, 1);
+    mio.setButtonValue(gripper_close, 1);
 
 	// Lambda function that will be called to parse the mobile IO feedback
-    auto parseMobilIOFeedback = [&](ChassisVelocity& chassis_velocity_out, ArmMobileIOInputs& arm_inputs_out) {
+    auto parseMobileIOFeedback = [&](ArmControlState curr_state, ChassisVelocity& chassis_velocity_out, ArmMobileIOInputs& arm_inputs_out) {
         if (!mio.update(0.0))
             return false;
 
@@ -150,10 +143,10 @@ std::function<bool(ChassisVelocity&, ArmMobileIOInputs&)> setupMobileIO(util::Mo
             return false;
         }
 
-        chassis_velocity_out = ChassisVelocity(
+        chassis_velocity_out = ChassisVelocity{
             pow(mio.getAxis(forward_joy), 3),
             pow(-mio.getAxis(side_joy), 3),
-            pow(-mio.getAxis(turn_joy), 3) * 2);
+            pow(-mio.getAxis(turn_joy), 3) * 2 };
 
         auto wxyz = mio.getArOrientation();
         Eigen::Quaterniond q(wxyz.getW(), wxyz.getX(), wxyz.getY(), wxyz.getZ());
@@ -165,7 +158,10 @@ std::function<bool(ChassisVelocity&, ArmMobileIOInputs&)> setupMobileIO(util::Mo
             rotation = Eigen::Matrix3d::Identity();
         }
 
-        if (mio.getButtonDiff(arm_lock) != util::MobileIO::ButtonState::Unchanged)
+		bool last_arm_lock = mio.getButton(arm_lock);
+        if(curr_state == ArmControlState::HOMING)
+            mio.setButtonValue(arm_lock, last_arm_lock);
+        else if ((curr_state == ArmControlState::HOMING) && (mio.getButtonDiff(arm_lock) != util::MobileIO::ButtonState::Unchanged))
         {
             if (!mio.getButton(arm_lock))
                 mio.setButtonLabel(arm_lock, "Arm \U0001F512", false);
@@ -195,7 +191,7 @@ std::function<bool(ChassisVelocity&, ArmMobileIOInputs&)> setupMobileIO(util::Mo
         return false;
 	};
 
-	return parseMobilIOFeedback;
+	return parseMobileIOFeedback;
 }
 
 int main(int argc, char** argv) {
@@ -234,26 +230,34 @@ int main(int argc, char** argv) {
 
 	// mobileIO setup
     std::unique_ptr<util::MobileIO> mobile_io = util::MobileIO::create(family, "mobileIO", lookup);
+	std::shared_ptr<util::MobileIO> mobile_io_shared = std::move(mobile_io);
     int mobileio_tries = 5;
-    while (!mobile_io && mobileio_tries > 0) {
+    while (!mobile_io_shared && mobileio_tries > 0) {
         std::cout << "Waiting for mobileIO device to come online..." << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(1));
-        mobile_io = util::MobileIO::create(family, "mobileIO", lookup);
+        mobile_io_shared = util::MobileIO::create(family, "mobileIO", lookup);
         --mobileio_tries;
     }
 
-    if (!mobile_io)
+    if (!mobile_io_shared)
     {
         std::cout << "Couldn't find mobile IO device!\n";
         return 1;
     }
     
     std::cout << "MobileIO device successfully connected\n";
-    auto parse_mobile_feedback = setupMobileIO(*mobile_io);
+    auto parse_mobile_feedback = setupMobileIO(*mobile_io_shared);
 
+    // K - Add retries for base setup
 
-	// Base setup
-    OmniBase base = setupBase(lookup, family);
+    // Create base group
+    const std::vector<std::string> wheel_names = { "W1", "W2", "W3" };
+    auto wheel_group = lookup.getGroupFromNames({ family }, wheel_names);
+    if (!wheel_group) {
+        throw std::runtime_error("Could not find wheel modules: \"W1\", \"W2\", \"W3\" in family '" + family + "'");
+    }
+
+    OmniBase base = OmniBase(wheel_group);
     auto base_control = RosieControl(base);
 
 
@@ -262,21 +266,9 @@ int main(int argc, char** argv) {
     //////////////////////////
 
     // Create the arm and gripper object from the configuration
-    int gripper_tries = 3;
     std::shared_ptr<arm::Arm> arm;
     std::shared_ptr<arm::Gripper> gripper;
     setupArm(*example_config, lookup, arm, gripper);
-
-    while (!arm && gripper_tries > 0) {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-        --gripper_tries;
-        setupArm(*example_config, lookup, arm, gripper);
-    }
-
-    if (!arm) {
-        std::cerr << "Could not find arm! Continuing without..." << std::endl;
-        return 1;
-    }
 
     while (!arm->update()) {
         std::cout << "Waiting for feedback from arm..." << std::endl;
@@ -289,16 +281,8 @@ int main(int argc, char** argv) {
     const double delay_time = user_data.getFloat("delay_time");
 
     std::unique_ptr<ArmMobileIOControl> arm_control (new ArmMobileIOControl(arm, gripper, soft_start_time, delay_time, xyz_scale));
+    arm_control->transition_handlers_.push_back(updateMobileIO(*mobile_io_shared));
 
-    if (arm_control)
-        arm_control->transition_handlers_.push_back(updateMobileIO(*mobile_io));
-    else {
-        setMobileIOInstructions(*mobile_io, "Robot Ready to Control", Color{ 0, 255, 0 });
-        auto on_shutdown = [&]() {
-             setMobileIOInstructions(*mobile_io, "Demo Stopped.", Color{ 255, 0, 0 });
-        };
-        base_control.on_shutdown_ = on_shutdown;
-    }
     ///////////////////////////
     //// Main Control Loop ////
     //////////////////////////
@@ -315,10 +299,10 @@ int main(int argc, char** argv) {
     auto start = std::chrono::system_clock::now();
 
 	// Constantly update the base and arm controls
-    while (base_control.running_ && (!arm_control || arm_control->running())) {
+    while (base_control.running() && (!arm_control || arm_control->running())) {
 
         std::chrono::duration<double> t(std::chrono::system_clock::now() - start);
-        bool quit = parse_mobile_feedback(base_inputs, arm_inputs);
+        bool quit = parse_mobile_feedback(arm_control->state_, base_inputs, arm_inputs);
         base_control.update(t.count(), &base_inputs);
 
         if (arm_control)
