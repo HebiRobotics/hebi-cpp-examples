@@ -8,6 +8,8 @@
 #include "util/mobile_io.hpp"
 #include "util/vector_utils.h"
 #include "rosie_demo_utils.cpp"
+#include "kits/arms/ar_control_sm.cpp"
+#include "kits/bases/omni_base.cpp"
 #include <Eigen/Dense>
 #include <thread>
 #include <chrono>
