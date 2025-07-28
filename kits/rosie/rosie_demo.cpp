@@ -126,9 +126,6 @@ std::function<bool(ArmControlState, ChassisVelocity&, ArmMobileIOInputs&)> setup
     mio.setButtonMode(arm_lock, util::MobileIO::ButtonMode::Toggle);
     mio.setButtonMode(gripper_close, util::MobileIO::ButtonMode::Toggle);
 
-    mio.setButtonValue(arm_lock, 1);
-    mio.setButtonValue(gripper_close, 1);
-
 	// Lambda function that will be called to parse the mobile IO feedback
     auto parseMobileIOFeedback = [&](ArmControlState curr_state, ChassisVelocity& chassis_velocity_out, ArmMobileIOInputs& arm_inputs_out) {
         if (!mio.update(0.0))
@@ -158,10 +155,7 @@ std::function<bool(ArmControlState, ChassisVelocity&, ArmMobileIOInputs&)> setup
             rotation = Eigen::Matrix3d::Identity();
         }
 
-		bool last_arm_lock = mio.getButton(arm_lock);
-        if(curr_state == ArmControlState::HOMING)
-            mio.setButtonValue(arm_lock, last_arm_lock);
-        else if ((curr_state == ArmControlState::HOMING) && (mio.getButtonDiff(arm_lock) != util::MobileIO::ButtonState::Unchanged))
+        if (mio.getButtonDiff(arm_lock) != util::MobileIO::ButtonState::Unchanged)
         {
             if (!mio.getButton(arm_lock))
                 mio.setButtonLabel(arm_lock, "Arm \U0001F512", false);
