@@ -436,8 +436,10 @@ void setupArm(const RobotConfig& example_config, const Lookup& lookup, std::shar
 	    gripper_out = arm::Gripper::create(gripper_group, gripper_open_effort, gripper_close_effort);
             const std::string gripper_gains_file = example_config.getGains("gripper");
 
-        if (!gripper_out || !gripper_out->loadGains(gripper_gains_file))
-            throw std::runtime_error("Could not read or send gripper gains\n");
+        if (!gripper_out || !gripper_out->loadGains(gripper_gains_file)) {
+            std::cout << "Could not read or send gripper gains" << std::endl;
+            return;
+        }
 
         gripper_out->open();
     }
