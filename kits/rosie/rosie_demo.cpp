@@ -224,22 +224,22 @@ int main(int argc, char** argv) {
 
 	// mobileIO setup
     std::unique_ptr<util::MobileIO> mobile_io = util::MobileIO::create(family, "mobileIO", lookup);
-	std::shared_ptr<util::MobileIO> mobile_io_shared = std::move(mobile_io);
     int mobileio_tries = 5;
-    while (!mobile_io_shared && mobileio_tries > 0) {
+    while (!mobile_io && mobileio_tries > 0) {
         std::cout << "Waiting for mobileIO device to come online..." << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(1));
-        mobile_io_shared = util::MobileIO::create(family, "mobileIO", lookup);
+        mobile_io = util::MobileIO::create(family, "mobileIO", lookup);
         --mobileio_tries;
     }
 
-    if (!mobile_io_shared)
+    if (!mobile_io)
     {
         std::cout << "Couldn't find mobile IO device!\n";
         return 1;
     }
-    
+
     std::cout << "MobileIO device successfully connected\n";
+    std::shared_ptr<util::MobileIO> mobile_io_shared = std::move(mobile_io);
     auto parse_mobile_feedback = setupMobileIO(*mobile_io_shared);
 
     // K - Add retries for base setup
