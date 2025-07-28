@@ -123,9 +123,9 @@ private:
 
 // This struct represents the velocity of the chassis in 2D space with rotation around the Z-axis
 struct ChassisVelocity {
-    double x_{ 0.0f };
-    double y_{ 0.0f };
-    double rz_{ 0.0f };
+    double x_;
+    double y_;
+    double rz_;
 };
 
 enum class ArmControlState { STARTUP, HOMING, TELEOP, DISCONNECTED, EXIT };
