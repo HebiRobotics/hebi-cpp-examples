@@ -52,8 +52,9 @@ int run(int, char**) {
             << std::endl;
 
   if (hebi::charts::lib::isAvailable()) {
-    hebi::charts::Chart3d chart;
-    chart.show();
+    hebi::charts::Window window;
+    auto chart = window.addChart3d();
+    window.show();
     auto triad = chart.addTriad(0.075);
     for (size_t i = 0; i < 50; ++i)
     {

@@ -32,7 +32,8 @@ int run(int, char**)
   GroupFeedback group_fbk(group->size());
 
   if (hebi::charts::lib::isAvailable()) {
-    hebi::charts::Chart chart;
+    hebi::charts::Window window;
+    auto chart = window.addChart();
     chart.setTitle("Gyro Feedback");
     chart.getAxisX().setName("timestep");
     chart.getAxisY().setName("rad/s");
@@ -40,7 +41,7 @@ int run(int, char**)
     auto x_data = chart.addLine("X", {}, {});
     auto y_data = chart.addLine("Y", {}, {});
     auto z_data = chart.addLine("Z", {}, {});
-    chart.show();
+    window.show();
     for (size_t i = 0; i < 50; ++i)
     { 
       if (group->getNextFeedback(group_fbk))

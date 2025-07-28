@@ -52,8 +52,10 @@ int run(int, char**) {
             << std::endl;
 
   if (hebi::charts::lib::isAvailable()) {
-    hebi::charts::Chart chart_inputs;
-    hebi::charts::Chart chart_gyro;
+    hebi::charts::Window window;
+    window.setGridSize(1, 2);
+    auto chart_inputs = window.addChart(0, 0, 1, 1);
+    auto chart_gyro = window.addChart(0, 1, 1, 1);
     chart_inputs.setTitle("Mobile I/O Input Feedback");
     chart_gyro.setTitle("Mobile I/O Gyro Feedback");
     chart_inputs.getAxisY().setLimits(-1, 1);
@@ -87,8 +89,7 @@ int run(int, char**) {
     auto gyro_x_data = chart_gyro.addLine("X", {}, {});
     auto gyro_y_data = chart_gyro.addLine("Y", {}, {});
     auto gyro_z_data = chart_gyro.addLine("Z", {}, {});
-    chart_gyro.show();
-    chart_inputs.show();
+    window.show();
     for (size_t i = 0; i < 50; ++i)
     {
       if (group->getNextFeedback(group_fbk))

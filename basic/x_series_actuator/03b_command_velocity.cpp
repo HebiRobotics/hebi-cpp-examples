@@ -103,12 +103,13 @@ int run(int, char**) {
     times.push_back(fbk.getTime() - t0);
   }
   if (hebi::charts::lib::isAvailable()) {
-    hebi::charts::Chart chart;
+    hebi::charts::Window window;
+    auto chart = window.addChart();
     for(size_t i = 0; i < group->size(); i++){
       auto title = (std::string("module ") + std::to_string(i));
       chart.addLine(title, times, vel[i]);
     }
-    chart.show();
+    window.show();
 
     hebi::charts::framework::waitUntilWindowsClosed();
   }

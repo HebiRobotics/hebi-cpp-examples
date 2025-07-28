@@ -27,7 +27,8 @@ int run(int, char**)
   group->setFeedbackFrequencyHz(5);
 
   if (hebi::charts::lib::isAvailable()) {
-    hebi::charts::Chart chart;
+    hebi::charts::Window window;
+    auto chart = window.addChart();
     chart.setTitle("Gyro Feedback");
     chart.getAxisX().setName("time (s)");
     chart.getAxisY().setName("rad/s");
@@ -35,7 +36,7 @@ int run(int, char**)
     auto x_data = chart.addLine("X", {}, {});
     auto y_data = chart.addLine("Y", {}, {});
     auto z_data = chart.addLine("Z", {}, {});
-    chart.show();
+    window.show();
     // Add a callback to react to feedback received on a background thread
     // Note: We use a C++11 "lambda function" here to pass in a function pointer,
     // but you can also pass in a C-style function pointer with the signature:

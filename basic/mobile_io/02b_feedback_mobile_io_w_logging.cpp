@@ -70,7 +70,8 @@ int run(int, char**) {
     return 1;
   }
 
-  hebi::charts::Chart chart;
+  hebi::charts::Window window;
+  auto chart = window.addChart();
   chart.setTitle("Mobile I/O Input Feedback");
   chart.getAxisY().setLimits(-1, 1);
   chart.getAxisX().setName("timestep");
@@ -96,7 +97,7 @@ int run(int, char**) {
     chart.addLine("Slider 7", {}, {}),
     chart.addLine("Slider 8", {}, {})
   };
-  chart.show();
+  window.show();
   for (size_t i = 0; i < 50; ++i)
   {
     if (group->getNextFeedback(group_fbk))

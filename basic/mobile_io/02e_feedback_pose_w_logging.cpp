@@ -65,8 +65,9 @@ int run(int, char**) {
       return 1;
     }
 
-    hebi::charts::Chart3d orient_chart;
-    orient_chart.show();
+    hebi::charts::Window orient_window;
+    auto orient_chart = orient_window.addChart3d();
+    orient_window.show();
     auto triad = orient_chart.addTriad(0.075);
     for (size_t i = 0; i < 50; ++i)
     {
@@ -103,7 +104,8 @@ int run(int, char**) {
     }
 
     // Plot the logged Position data
-    hebi::charts::Chart pos_chart;
+    hebi::charts::Window pos_window;
+    auto pos_chart = pos_window.addChart();
     pos_chart.setTitle("Device Position by Axis (x/y/z)");
     pos_chart.getAxisY().setName("Position (m)");
     auto chart_x = pos_chart.addLine("X Position", times, x_pos);
@@ -112,6 +114,7 @@ int run(int, char**) {
     chart_x.setColor(hebi::charts::Color::Red);
     chart_y.setColor(hebi::charts::Color::Blue);
     chart_z.setColor(hebi::charts::Color::Magenta); // TODO: black
+    pos_window.show();
 
     hebi::charts::framework::waitUntilWindowsClosed();
   }
