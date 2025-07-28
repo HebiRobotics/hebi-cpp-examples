@@ -41,8 +41,9 @@ int run(int, char**)
   GroupFeedback group_fbk(group->size());
 
   if (hebi::charts::lib::isAvailable()) {
-    hebi::charts::Chart3d chart;
-    chart.show();
+    hebi::charts::Window window;
+    auto chart = window.addChart3d();
+    window.show();
     // Get frame count; add one for base frame added after FK call below)
     auto num_frames = model->getFrameCount(robot_model::FrameType::Output) + 1;
     std::vector<hebi::charts::Chart3dTriad> triads;

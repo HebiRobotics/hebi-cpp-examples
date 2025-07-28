@@ -212,27 +212,27 @@ int run(int, char**) {
   }
   
   if (hebi::charts::lib::isAvailable()) {
-    hebi::charts::Chart pos_chart;
+    hebi::charts::Window window;
+    window.setGridSize(1, 3);
+    auto pos_chart = window.addChart(0, 0, 1, 1);
     pos_chart.setTitle("Position");
     for(size_t i = 0; i < group->size(); i++){
       auto title = (std::string("module ") + std::to_string(i));
       pos_chart.addLine(title, times, pos[i]);
     }
-    pos_chart.show();
-    hebi::charts::Chart vel_chart;
+    auto vel_chart = window.addChart(0, 1, 1, 1);
     vel_chart.setTitle("Velocity");
     for(size_t i = 0; i < group->size(); i++){
       auto title = (std::string("module ") + std::to_string(i));
       vel_chart.addLine(title, times, vel[i]);
     }
-    vel_chart.show();
-    hebi::charts::Chart eff_chart;
+    auto eff_chart = window.addChart(0, 1, 1, 1);
     eff_chart.setTitle("Effort");
     for(size_t i = 0; i < group->size(); i++){
       auto title = (std::string("module ") + std::to_string(i));
       eff_chart.addLine(title, times, eff[i]);
     }
-    eff_chart.show();
+    window.show();
 
     hebi::charts::framework::waitUntilWindowsClosed();
   }

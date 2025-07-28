@@ -58,7 +58,8 @@ int run(int, char**) {
   }
 
   if (hebi::charts::lib::isAvailable()) {
-    hebi::charts::Chart chart;
+    hebi::charts::Window window;
+    auto chart = window.addChart();
     chart.setTitle("IO Board Feedback from IO pins");
     chart.getAxisY().setLimits(0, 5);
     chart.getAxisX().setName("timestep");
@@ -74,7 +75,7 @@ int run(int, char**) {
       chart.addLine("Pin 7", {}, {}),
       chart.addLine("Pin 8", {}, {}),
     };
-    chart.show();
+    window.show();
     for (size_t i = 0; i < 50; ++i)
     {
       if (group -> getNextFeedback(group_fbk))

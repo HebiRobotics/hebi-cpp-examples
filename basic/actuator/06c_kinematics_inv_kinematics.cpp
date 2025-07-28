@@ -113,8 +113,9 @@ int run(int, char**)
   transforms.emplace(transforms.begin(), Eigen::Matrix<double,4,4>::Identity());
 
   if (hebi::charts::lib::isAvailable()) {
-    hebi::charts::Chart3d chart;
-    chart.show();
+    hebi::charts::Window window;
+    auto chart = window.addChart3d();
+    window.show();
     for(size_t j = 0; j < transforms.size(); ++j) {
       auto triad = chart.addTriad(0.075);
       Eigen::Quaterniond q(Eigen::Matrix3d(transforms[j].topLeftCorner(3, 3)));
