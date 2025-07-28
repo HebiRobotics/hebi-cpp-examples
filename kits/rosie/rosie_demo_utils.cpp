@@ -381,12 +381,24 @@ void setMobileIOInstructions(util::MobileIO& mobile_io, const std::string& messa
 // Setup the arm and gripper based on the configuration file
 void setupArm(const RobotConfig& example_config, const Lookup& lookup, std::shared_ptr<arm::Arm>& arm_out , std::shared_ptr<arm::Gripper>& gripper_out)
 {
-    arm_out = arm::Arm::create(example_config, lookup);
-    while (!arm_out) {
-        std::cerr << "Failed to create arm, retrying..." << std::endl;
-        arm_out = arm::Arm::create(example_config, lookup);
+    int arm_tries = 5;
+    auto arm = arm::Arm::create(example_config, lookup);
+
+    while (!arm && arm_tries > 0) {
+        std::cout << "Failed to create arm, retrying..." << std::endl;
+		std::this_thread::sleep_for(std::chrono::seconds(1));
+        arm = arm::Arm::create(example_config, lookup);
+        arm_tries--;
     }
+
+    if (!arm)
+    {
+        std::cout << "Failed to create arm" << std::endl ;
+        return;
+    }
+
     std::cout << "Arm connected." << std::endl;
+	arm_out = std::move(arm);
 
     bool has_gripper = false;
     const auto user_data = example_config.getUserData();

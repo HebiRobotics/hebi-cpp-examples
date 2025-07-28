@@ -222,9 +222,14 @@ int main(int argc, char** argv) {
     Lookup lookup;
     const std::string family = example_config->getFamilies()[0];
 
-	// mobileIO setup
+
+    //////////////////////////
+    //// MobileIO Setup //////
+    //////////////////////////
+
     std::unique_ptr<util::MobileIO> mobile_io = util::MobileIO::create(family, "mobileIO", lookup);
     int mobileio_tries = 5;
+
     while (!mobile_io && mobileio_tries > 0) {
         std::cout << "Waiting for mobileIO device to come online..." << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -242,15 +247,29 @@ int main(int argc, char** argv) {
     std::shared_ptr<util::MobileIO> mobile_io_shared = std::move(mobile_io);
     auto parse_mobile_feedback = setupMobileIO(*mobile_io_shared);
 
-    // K - Add retries for base setup
 
-    // Create base group
+    //////////////////////////
+    ////// Base Setup ////////
+    //////////////////////////
+
+	int base_tries = 5;
     const std::vector<std::string> wheel_names = { "W1", "W2", "W3" };
     auto wheel_group = lookup.getGroupFromNames({ family }, wheel_names);
-    if (!wheel_group) {
-        throw std::runtime_error("Could not find wheel modules: \"W1\", \"W2\", \"W3\" in family '" + family + "'");
+
+    if (!wheel_group && base_tries > 0) {
+        std::cout << "Retrying to find wheel modules for the base..." << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        auto wheel_group = lookup.getGroupFromNames({ family }, wheel_names);
+        --base_tries;
     }
 
+    if (!wheel_group)
+    {
+        std::cout << "Couldn't find wheel modules device!\n";
+        return 1;
+    }
+
+    std::cout << "Base wheel modules connected successfully\n";
     OmniBase base = OmniBase(wheel_group);
     auto base_control = RosieControl(base);
 
@@ -276,6 +295,7 @@ int main(int argc, char** argv) {
 
     std::unique_ptr<ArmMobileIOControl> arm_control (new ArmMobileIOControl(arm, gripper, soft_start_time, delay_time, xyz_scale));
     arm_control->transition_handlers_.push_back(updateMobileIO(*mobile_io_shared));
+
 
     ///////////////////////////
     //// Main Control Loop ////
