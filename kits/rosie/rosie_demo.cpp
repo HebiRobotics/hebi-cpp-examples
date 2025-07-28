@@ -303,7 +303,6 @@ int main(int argc, char** argv) {
 
     bool enable_logging = true;
     if (enable_logging) {
-        system("mkdir logs");
         base.group_->startLog("./logs");
         arm->group().startLog("./logs");
     }

@@ -233,5 +233,6 @@ foreach(EXAMPLE ${ROSIE_SOURCES})
   hebi_copy_target_resources(${EX_NAME} "kits/rosie/gains" "gains")
   # Note -- need the arm config files here, too!
   hebi_copy_target_resources(${EX_NAME} "kits/arms/config" "../arms/config")
+  hebi_make_target_log_directory(${EX_NAME} "logs")
 
 endforeach()
