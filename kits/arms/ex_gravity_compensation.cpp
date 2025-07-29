@@ -15,7 +15,6 @@
 #include <chrono>
 
 using namespace hebi;
-using namespace experimental;
 
 int main(int argc, char* argv[])
 {

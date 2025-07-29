@@ -16,7 +16,6 @@
 #include <chrono>
 
 using namespace hebi;
-using namespace experimental; 
 
 int main(int argc, char* argv[])
 {
@@ -113,14 +112,14 @@ int main(int argc, char* argv[])
       for (int button = 1; button <= 3; button++)
       {
         if (mobile_io->getButtonDiff(button) == util::MobileIO::ButtonState::ToOn) {
-          arm -> setGoal(arm::Goal::createFromPosition(travel_time, waypoints.at(button-1)));
+          arm->setGoal(arm::Goal::createFromPosition(travel_time, waypoints.at(button-1)));
         }
       }
 
       // Button B6 - Grav Comp Mode
       if (mobile_io->getButtonDiff(6) == util::MobileIO::ButtonState::ToOn) {
         // cancel any goal that is set, returning arm into gravComp mode
-        arm -> cancelGoal();
+        arm->cancelGoal();
       }
 
       // Button B8 - End Demo

@@ -18,9 +18,6 @@
 #include <iostream>
 
 using namespace hebi;
-using namespace experimental; // For all things mobileIO 
-
-
 
 Eigen::Matrix3d makeRotationMatrix (hebi::Quaternionf phone_orientation) {
   Eigen::Quaterniond q;

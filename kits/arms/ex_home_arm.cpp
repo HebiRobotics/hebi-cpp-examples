@@ -4,6 +4,8 @@
  */
 
 #include "arm/arm.hpp"
+// Local example utils:
+#include "util/vector_utils.h"
 #include <chrono>
 
 using namespace hebi;
@@ -45,12 +47,8 @@ int main(int argc, char* argv[])
   /// Home Command Setup ///
   //////////////////////////
 
-  Eigen::VectorXd home_position(6);
-  if (example_config->getUserData().hasFloatList("home_position")) {
-    home_position = Eigen::Map<Eigen::VectorXd>(example_config->getUserData().getFloatList("home_position").data(),
-                                                example_config->getUserData().getFloatList("home_position").size());
-  }
-  else {
+  Eigen::VectorXd home_position = util::stdToEigenXd(example_config->getUserData().getFloatList("home_position"));
+  if (home_position.size() != 6) {
     std::cout << "Home Position not found in config file. Aborting!" << std::endl;
     return 0;
   }
@@ -59,7 +57,6 @@ int main(int argc, char* argv[])
   arm::Goal goal = arm::Goal::createFromPosition(home_duration, home_position);
   arm->update();
   arm->setGoal(goal);
-  arm->send();
 
   //////////////////////////
   //// Main Control Loop ///

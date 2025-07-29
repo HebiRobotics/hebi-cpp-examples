@@ -23,9 +23,6 @@
 // efforts.
 #include "util/grav_comp.hpp"
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
 #include "log_file.hpp"
 #include "util/plot_functions.h"
 
@@ -104,6 +101,7 @@ void executeTrajectory(
 
 /// The main function which actually executes to run the example
 int main() {
+  constexpr double PI = 3.14159265358979323846;
   // Get group of modules and set gains.
   std::shared_ptr<Group> group = getGroup();
   if (!group) {
@@ -129,7 +127,7 @@ int main() {
                  0.20,  0.20, -0.20, -0.20, // y [m]
                  0.10,  0.50,  0.50,  0.10; // z [m]
   Eigen::Matrix3d rotation_target =
-    Eigen::AngleAxisd(M_PI / 2.0, Eigen::Vector3d::UnitY()).toRotationMatrix();
+    Eigen::AngleAxisd(PI / 2.0, Eigen::Vector3d::UnitY()).toRotationMatrix();
 
   // Convert these to joint angle waypoints using IK solutions for each of the
   // xyz locations, as well as the desired orientation of the end effector.
@@ -137,7 +135,7 @@ int main() {
 
   // Choose an "elbow up" initial configuration for IK
   Eigen::VectorXd elbow_up_angles(6);
-  elbow_up_angles << 0, M_PI/4.0, M_PI/2.0, M_PI/4.0, -M_PI, M_PI/2.0; // [rad]
+  elbow_up_angles << 0, PI/4.0, PI/2.0, PI/4.0, -PI, PI/2.0; // [rad]
 
   Eigen::MatrixXd joint_targets(group->size(), xyz_targets.cols() + 1);
   Eigen::VectorXd ik_res_angles;
@@ -194,12 +192,9 @@ int main() {
   }
 
   //plot logged position, velocity and efforts for each module
-  std::vector<std::vector<double>> pos;
-  std::vector<std::vector<double>> vel;
-  std::vector<std::vector<double>> eff;
-  pos.resize(group->size());
-  vel.resize(group->size());
-  eff.resize(group->size());
+  std::vector<std::vector<double>> pos(group->size());
+  std::vector<std::vector<double>> vel(group->size());
+  std::vector<std::vector<double>> eff(group->size());
   GroupFeedback fbk(group->size());
   while(log_file->getNextFeedback(fbk)) {
     for(size_t i = 0; i < group->size(); i++){

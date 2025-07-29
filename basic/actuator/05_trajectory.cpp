@@ -19,17 +19,12 @@
 #include <math.h>
 #include <chrono>
 #include "util/plot_functions.h"
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
-#ifndef M_PI_2
-#define M_PI_2 1.57079632679489661923
-#endif
 
 namespace plt = matplotlibcpp;
 
 int main()
 {
+  constexpr double PI = 3.14159265358979323846;
   // Get group
   hebi::Lookup lookup;
   auto group = lookup.getGroupFromNames({"Test Family"}, {"Test Actuator" });
@@ -58,7 +53,7 @@ int main()
   // and acceleration waypoints default to zero at the endpoints and
   // unconstrained in the interior points.
   Eigen::MatrixXd positions(num_joints,3);
-  auto offset = Eigen::VectorXd::Constant(num_joints, M_PI);
+  auto offset = Eigen::VectorXd::Constant(num_joints, PI);
   auto current_pos = fbk.getPosition();
 
   positions.col(0) = current_pos;

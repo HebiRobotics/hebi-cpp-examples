@@ -10,12 +10,6 @@
 
 #include <iostream>
 #include "robot_model.hpp"
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
-#ifndef M_PI_2
-#define M_PI_2 1.57079632679489661923
-#endif
 
 using namespace hebi;
 using ActuatorType = robot_model::ActuatorType;
@@ -24,6 +18,7 @@ using LinkType = robot_model::LinkType;
 
 int main()
 {
+  constexpr double PI = 3.14159265358979323846;
   // Method #1:
   // Load the kinematics from an HRDF file
   std::unique_ptr<robot_model::RobotModel> model_from_hrdf =
@@ -45,7 +40,7 @@ int main()
   model_from_code.addActuator(ActuatorType::X5_9);
   model_from_code.addBracket(BracketType::X5HeavyLeftOutside);
   model_from_code.addActuator(ActuatorType::X5_9);
-  model_from_code.addLink(LinkType::X5, 0.325, M_PI);
+  model_from_code.addLink(LinkType::X5, 0.325, PI);
   model_from_code.addActuator(ActuatorType::X5_4);
   model_from_code.addLink(LinkType::X5, 0.325, 0);
 

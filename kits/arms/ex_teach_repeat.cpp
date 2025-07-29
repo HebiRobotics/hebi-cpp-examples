@@ -16,7 +16,6 @@
 #include <iostream>
 
 using namespace hebi;
-using namespace experimental;
 
 struct Waypoint
 {

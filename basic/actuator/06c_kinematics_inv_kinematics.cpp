@@ -7,9 +7,6 @@
 #include "group_feedback.hpp"
 #include "robot_model.hpp"
 #include "util/plot_functions.h"
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
 
 using namespace hebi;
 using ActuatorType = robot_model::ActuatorType;
@@ -18,6 +15,7 @@ using LinkType = robot_model::LinkType;
 
 int main()
 {
+  constexpr double PI = 3.14159265358979323846;
   //////////////////////////////////////
   // Set up group and robot_model
   //////////////////////////////////////
@@ -87,9 +85,9 @@ int main()
 
   // Set joint limits to force a particular solution (elbow up, in this case)
   Eigen::VectorXd min_positions(group->size());
-  min_positions << -M_PI, 0.25f, 0.25f;
+  min_positions << -PI, 0.25f, 0.25f;
   Eigen::VectorXd max_positions(group->size());
-  max_positions << M_PI, 1.0f, 1.0f;
+  max_positions << PI, 1.0f, 1.0f;
 
   //////////////////////////////////////
   // Get IK solution with multiple
