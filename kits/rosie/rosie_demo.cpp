@@ -7,9 +7,9 @@
 #include "trajectory.hpp"
 #include "util/mobile_io.hpp"
 #include "util/vector_utils.h"
-#include "rosie_demo_utils.cpp"
-#include "kits/arms/ar_control_sm.cpp"
-#include "kits/bases/omni_base.cpp"
+#include "rosie_demo_utils.hpp"
+#include "kits/arms/ar_control_sm.hpp"
+#include "kits/bases/omni_base.hpp"
 #include <Eigen/Dense>
 #include <thread>
 #include <chrono>
@@ -61,23 +61,23 @@ std::function<void(ArmMobileIOControl&, ArmControlState)> updateMobileIO(util::M
         switch (new_state) {
 
         case ArmControlState::HOMING:
-            controller.setArmLedColor(controller, Color{ 255, 0, 255 }); //magenta
+            controller.setArmLedColor(Color{ 255, 0, 255 }); //magenta
             setMobileIOInstructions(mio, "Robot Homing Sequence\nPlease wait...", Color{ 255, 0, 255 }); //magenta
             break;
 
         case ArmControlState::TELEOP:
-            controller.setArmLedColor(controller, Color{ 0, 255, 0 }); //green
+            controller.setArmLedColor(Color{ 0, 255, 0 }); //green
             setMobileIOInstructions(mio, "Robot Ready to Control", Color{ 0, 255, 0 }); //green
             break;
 
         case ArmControlState::DISCONNECTED:
-            controller.setArmLedColor(controller, Color{ 0, 0, 255 }); //blue
+            controller.setArmLedColor(Color{ 0, 0, 255 }); //blue
 			setMobileIOInstructions(mio, "Robot Disconnected", Color{ 0, 0, 255 }); //blue
             break;
 
         case ArmControlState::EXIT:
             std::cout << "TRANSITIONING TO EXIT" << std::endl;
-            controller.setArmLedColor(controller, Color{ 255, 0, 0 }); //red
+            controller.setArmLedColor(Color{ 255, 0, 0 }); //red
             mio.resetUI();
             setMobileIOInstructions(mio, "Demo Stopped.", Color{ 255, 0, 0 }); //red
             break;
