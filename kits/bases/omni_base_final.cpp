@@ -8,6 +8,9 @@
 
 using namespace hebi;
 
+constexpr double OmniBase::WHEEL_RADIUS;
+constexpr double OmniBase::BASE_RADIUS;
+
 struct OmniBase {
 
 	// Create omnibase and initialize the command
