@@ -9,7 +9,7 @@
 #include "util/vector_utils.h"
 #include "rosie_demo_utils.hpp"
 #include "kits/arms/ar_control_sm.hpp"
-#include "kits/bases/omni_base.hpp"
+#include "kits/bases/omni_base_final.cpp"
 #include <Eigen/Dense>
 #include <thread>
 #include <chrono>
@@ -30,11 +30,10 @@ public:
 
     void update(const double t_now, const ChassisVelocity* base_inputs)
     {
-        base_.update(t_now);
         if (!base_inputs)
             return;
 
-		base_.buildSmoothVelocityTrajectory(base_inputs->x_, base_inputs->y_, base_inputs->rz_, t_now);
+		base_.update(t_now, base_inputs->x_, base_inputs->y_, base_inputs->rz_);
     }
 
     void send() const {
@@ -45,7 +44,7 @@ public:
 
     void stop() {
         running_ = false;
-		base_.base_command_.setVelocity(Eigen::Vector3d::Zero());
+        base_.stop();
     }
 
 private:
@@ -272,7 +271,10 @@ int main(int argc, char** argv) {
     }
 
     std::cout << "Base wheel modules connected successfully\n";
+ 
     OmniBase base = OmniBase(wheel_group);
+    if (!base.setGains())
+        return 1;
     auto base_control = RosieControl(base);
 
 
