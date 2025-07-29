@@ -23,9 +23,6 @@
 // efforts.
 #include "util/grav_comp.hpp"
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
 #include "log_file.hpp"
 #include "util/plot_functions.h"
 
@@ -104,6 +101,7 @@ void executeTrajectory(
 
 /// The main function which actually executes to run the example
 int main() {
+  constexpr double PI = 3.14159265358979323846;
   // Get group of modules and set gains.
   std::shared_ptr<Group> group = getGroup();
   if (!group) {
@@ -133,7 +131,7 @@ int main() {
 
   // Choose an "elbow up" initial configuration for IK
   Eigen::Vector3d elbow_up_angles;
-  elbow_up_angles << 0, -M_PI/4, -M_PI/2;
+  elbow_up_angles << 0, -PI/4, -PI/2;
 
   Eigen::MatrixXd joint_targets(group->size(), xyz_targets.cols() + 1);
   Eigen::VectorXd ik_res_angles;
