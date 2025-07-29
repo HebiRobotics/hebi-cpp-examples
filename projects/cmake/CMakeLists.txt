@@ -76,7 +76,7 @@ function(hebi_copy_target_resources TARGET_NAME SOURCE_DIR DEST_DIR)
   # Copy over resource files potentially used by the examples
   add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
                      COMMAND ${CMAKE_COMMAND} -E copy_directory
-                     ${ROOT_DIR}/${SOURCE_DIR} $<TARGET_FILE_DIR:${EX_NAME}>/${DEST_DIR})
+                     ${ROOT_DIR}/${SOURCE_DIR} $<TARGET_FILE_DIR:${TARGET_NAME}>/${DEST_DIR})
 endfunction()
 
 function(hebi_make_target_log_directory TARGET_NAME DIR_NAME)
@@ -233,5 +233,7 @@ hebi_add_target(rosie_demo ${ROSIE_SOURCES})
 # Add post-build stuff once for rosie_demo
 hebi_copy_target_resources(rosie_demo "kits/rosie/config" "config")
 hebi_copy_target_resources(rosie_demo "kits/rosie/gains" "gains")
+
+# Note -- need the arm config files here, too!
 hebi_copy_target_resources(rosie_demo "kits/arms/config" "../arms/config")
 hebi_make_target_log_directory(rosie_demo "logs")
