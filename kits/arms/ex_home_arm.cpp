@@ -46,8 +46,16 @@ int main(int argc, char* argv[])
   //////////////////////////
 
   Eigen::VectorXd home_position(6);
-  home_position << 0.0, 2.09, 2.09, 0.0, 1.57, 0.0;
-  double home_duration = 4.0; // seconds
+  if (example_config->getUserData().hasFloatList("home_position")) {
+    home_position = Eigen::Map<Eigen::VectorXd>(example_config->getUserData().getFloatList("home_position").data(),
+                                                example_config->getUserData().getFloatList("home_position").size());
+  }
+  else {
+    std::cout << "Home Position not found in config file. Aborting!" << std::endl;
+    return 0;
+  }
+
+  double home_duration = 5.0; // seconds
   arm::Goal goal = arm::Goal::createFromPosition(home_duration, home_position);
   arm->update();
   arm->setGoal(goal);
