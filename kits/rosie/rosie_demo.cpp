@@ -102,8 +102,8 @@ std::function<bool(ArmControlState, ChassisVelocity&, ArmMobileIOInputs&)> setup
     const int side_joy = 1;  // Left Pad Left/Right
     const int forward_joy = 2; // Left Pad Up/Down
     const int ar_xyz_scale_slider = 4;
-    const int turn_joy = 7;  // Right Pad Left/Right
-	const int rotate_joy = 8; // Right Pad Up/Down
+    const int rotate_joy = 7; // Right Pad Left/Right
+    const int turn_joy = 8;  // Right Pad Up/Down
 
     mio.resetUI();
 
@@ -143,7 +143,7 @@ std::function<bool(ArmControlState, ChassisVelocity&, ArmMobileIOInputs&)> setup
 
         chassis_velocity_out = ChassisVelocity{
             pow(mio.getAxis(forward_joy), 3),
-            pow(mio.getAxis(side_joy), 3),
+            pow(-mio.getAxis(side_joy), 3),
             pow(-mio.getAxis(rotate_joy), 3)};
 
         auto wxyz = mio.getArOrientation();
