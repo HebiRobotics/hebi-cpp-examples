@@ -1,3 +1,5 @@
+// test commit
+
 // HEBI C++ API files:
 #include "arm/arm.hpp"
 #include "group_command.hpp"
@@ -76,6 +78,7 @@ struct OmniBase {
     // Rebuild trajectory
     Eigen::Vector3d chassis_desired_vel;
     chassis_desired_vel << base_max_lin_speed_ * x_vel, -base_max_lin_speed_ * y_vel, base_max_rot_speed_ * rot_vel;
+	std::cout << "2. chassis_desired_vel: " << chassis_desired_vel.transpose() << std::endl;
       
     Eigen::MatrixXd velocities(base_num_wheels_, 2);
     velocities.col(0) = chassis_cmd_vel;
@@ -407,6 +410,8 @@ int main(int argc, char** argv) {
       x_vel = mobile_io->getAxis(8);
       y_vel = mobile_io->getAxis(7);
       rot_vel = mobile_io->getAxis(1);
+
+	  std::cout << "1. x_vel: " << x_vel << ", y_vel: " << y_vel << ", rot_vel: " << rot_vel << std::endl;
     }
 
     if (ar_mode) {
