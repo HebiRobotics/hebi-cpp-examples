@@ -99,11 +99,11 @@ std::function<bool(ArmControlState, ChassisVelocity&, ArmMobileIOInputs&)> setup
     const int gripper_close = 4;
     const int quit_demo_btn = 8;
     
-    const int side_joy = 7;  // Left Pad Left/Right
-    const int forward_joy = 8; // Left Pad Up/Down
+    const int side_joy = 1;  // Left Pad Left/Right
+    const int forward_joy = 2; // Left Pad Up/Down
     const int ar_xyz_scale_slider = 4;
-    const int turn_joy = 1;  // Right Pad Left/Right
-	const int rotate_joy = 2; // Right Pad Up/Down
+    const int turn_joy = 7;  // Right Pad Left/Right
+	const int rotate_joy = 8; // Right Pad Up/Down
 
     mio.resetUI();
 
