@@ -224,7 +224,7 @@ SET(ROSIE_SOURCES
   ${ROOT_DIR}/kits/rosie/rosie_demo.cpp
   ${ROOT_DIR}/kits/rosie/rosie_demo_utils.cpp
   ${ROOT_DIR}/kits/arms/ar_control_sm.cpp
-  ${ROOT_DIR}/kits/bases/omni_base_final.cpp)
+  ${ROOT_DIR}/kits/bases/omni_base.cpp)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY kits/rosie)
 # Only create one target, 'rosie_demo', with multiple .cpp files

@@ -9,7 +9,7 @@
 #include "util/vector_utils.h"
 #include "rosie_demo_utils.hpp"
 #include "kits/arms/ar_control_sm.hpp"
-#include "kits/bases/omni_base_final.cpp"
+#include "kits/bases/omni_base.hpp"
 #include <Eigen/Dense>
 #include <thread>
 #include <chrono>
@@ -102,8 +102,8 @@ std::function<bool(ArmControlState, ChassisVelocity&, ArmMobileIOInputs&)> setup
     const int side_joy = 1;  // Left Pad Left/Right
     const int forward_joy = 2; // Left Pad Up/Down
     const int ar_xyz_scale_slider = 4;
-    const int turn_joy = 7;  // Right Pad Left/Right
-	const int rotate_joy = 8; // Right Pad Up/Down
+    const int rotate_joy = 7; // Right Pad Left/Right
+    const int turn_joy = 8;  // Right Pad Up/Down
 
     mio.resetUI();
 
@@ -143,8 +143,8 @@ std::function<bool(ArmControlState, ChassisVelocity&, ArmMobileIOInputs&)> setup
 
         chassis_velocity_out = ChassisVelocity{
             pow(mio.getAxis(forward_joy), 3),
-            pow(-mio.getAxis(side_joy), 3),
-            pow(-mio.getAxis(turn_joy), 3) * 2 };
+            pow(mio.getAxis(side_joy), 3),
+            pow(-mio.getAxis(rotate_joy), 3)};
 
         auto wxyz = mio.getArOrientation();
         Eigen::Quaterniond q(wxyz.getW(), wxyz.getX(), wxyz.getY(), wxyz.getZ());
