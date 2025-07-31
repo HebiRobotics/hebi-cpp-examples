@@ -409,7 +409,7 @@ int main(int argc, char** argv) {
       // Omnibase
       x_vel = mobile_io->getAxis(8);
       y_vel = mobile_io->getAxis(7);
-      rot_vel = -mobile_io->getAxis(1);
+      rot_vel = -mobile_io->getAxis(2);
 
 	  std::cout << "1. x_vel: " << x_vel << ", y_vel: " << y_vel << ", rot_vel: " << rot_vel << std::endl;
     }
