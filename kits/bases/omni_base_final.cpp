@@ -56,7 +56,8 @@ struct OmniBase {
 		last_time_ = t;
 
 		Eigen::VectorXd cmd_vel(base_num_wheels_), cmd_acc(base_num_wheels_), cmd_jerk(base_num_wheels_);
-		trajectory_->getState(t - traj_start_time_, &cmd_vel, &cmd_acc, &cmd_jerk);
+		double traj_time = std::min(trajectory_->getDuration(), t - traj_start_time_);
+		trajectory_->getState(traj_time, &cmd_vel, &cmd_acc, &cmd_jerk);
 
 		// Build commands from trajectory
 		base_command_.setVelocity(base_wheel_velocity_matrix_ * cmd_vel);
