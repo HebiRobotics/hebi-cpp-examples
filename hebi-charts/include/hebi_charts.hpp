@@ -4,6 +4,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <stdexcept>
 #include <iostream>
 #include <optional>
 #include <string>
@@ -17,6 +18,18 @@
 
 namespace hebi {
 namespace charts {
+
+class Exception : public std::exception {
+public:
+  Exception(const char* message) : msg_(message) {}
+  Exception(const std::string& message) : msg_(message) {}
+  virtual ~Exception() noexcept {}
+  const char* what() const noexcept override {
+    return msg_.c_str();
+  }
+protected:
+  std::string msg_;
+};
 
 enum class Color : int32_t {
   Default = 0,
@@ -73,192 +86,260 @@ using Triad3dPtr = struct Triad3d_*;
 // ==== Class Wrappers ====
 class Object3d {
 public:
+  // May throw exception if passed an invalid quaternion
   virtual void setOrientation(double qw, double qx, double qy, double qz) = 0;
-  virtual void setTranslation(double x, double y, double z) = 0;
+  virtual void setTranslation(double x, double y, double z) noexcept = 0;
+  // May throw an exception if matrix is not 16 elements or not a valid transform matrix
   virtual void setTransform4x4(const std::vector<double>& matrix) = 0;
+  // May throw an exception if matrix is not a valid transform matrix
   virtual void setTransform4x4(const double* matrix) = 0;
-  virtual void setVisible(bool visible) = 0;
-  virtual ~Object3d() = default;
+  virtual void setVisible(bool visible) noexcept = 0;
+  virtual ~Object3d() noexcept = default;
 };
 
 class Axis {
   friend class LineChart;
 public:
-  void setName(const std::string& name);
-  void setName(const char* name);
-  void setUnit(const std::string& unit);
-  void setUnit(const char* unit);
-  void setAutoUnitScaling(bool autoUnitScaling);
-  void setLimits(double min, double max);
+  void setName(const std::string& name) noexcept;
+  void setName(const char* name) noexcept;
+  void setUnit(const std::string& unit) noexcept;
+  void setUnit(const char* unit) noexcept;
+  void setAutoUnitScaling(bool autoUnitScaling) noexcept;
+  void setLimits(double min, double max) noexcept;
   Axis(Axis&& from) noexcept;
   Axis& operator=(Axis&& from) noexcept;
-  ~Axis();
+  ~Axis() noexcept;
 private:
-  void cleanup();
-  explicit Axis(internal::AxisPtr cPointer) : ptr_(cPointer) {}
+  void cleanup() noexcept;
+  explicit Axis(internal::AxisPtr cPointer) noexcept : ptr_(cPointer) {}
   internal::AxisPtr ptr_{};
 };
 
 class Chart3d {
   friend class GridWindow;
 public:
-  std::optional<Robot3d> addHrdf(const std::string& filePath);
-  std::optional<Robot3d> addHrdf(const char* filePath);
-  std::optional<Mesh3d> addMesh(const std::string& pathOrUrl);
-  std::optional<Mesh3d> addMesh(const char* pathOrUrl);
-  std::optional<Triad3d> addTriad(double length);
-  std::optional<Line3d> addLine();
+  // Throws exception if the file could not be found, or resource could not be created
+  Robot3d addHrdf(const std::string& filePath);
+  // Throws exception if the file could not be found, or resource could not be created
+  Robot3d addHrdf(const char* filePath);
+  std::optional<Robot3d> tryAddHrdf(const std::string& filePath) noexcept;
+  std::optional<Robot3d> tryAddHrdf(const char* filePath) noexcept;
+  // May throw exception if resource could not be created.  Loads mesh asyncronously, so lack of exception does not mean object will display correctly (or at all)
+  Mesh3d addMesh(const std::string& pathOrUrl);
+  // May throw exception if resource could not be created.  Loads mesh asyncronously, so lack of exception does not mean object will display correctly (or at all)
+  Mesh3d addMesh(const char* pathOrUrl);
+  std::optional<Mesh3d> tryAddMesh(const std::string& pathOrUrl) noexcept;
+  std::optional<Mesh3d> tryAddMesh(const char* pathOrUrl) noexcept;
+  // Throws exception for invalid arguments (length), or if the resource could not be created
+  Triad3d addTriad(double length);
+  // Throws exception if the resource could not be created
+  Line3d addLine();
   Chart3d(Chart3d&& from) noexcept;
   Chart3d& operator=(Chart3d&& from) noexcept;
-  ~Chart3d();
+  ~Chart3d() noexcept;
 private:
-  void cleanup();
-  explicit Chart3d(internal::Chart3dPtr cPointer) : ptr_(cPointer) {}
+  void cleanup() noexcept;
+  // Throws exception if we try to create with null pointer (indicating the resource could not be created)
+  explicit Chart3d(internal::Chart3dPtr cPointer) : ptr_(cPointer) {
+    if (!ptr_) {
+      throw Exception("Could not create Chart3d");
+    }
+  }
   internal::Chart3dPtr ptr_{};
 };
 
 class GridWindow {
 public:
-  void setSize(int width, int height);
-  void setLocation(int xOffset, int yOffset);
-  void setTitle(const std::string& title);
-  void setTitle(const char* title);
-  void show();
-  void hide();
-  bool isShowing();
-  void keepOpen(bool keepOpen);
-  void waitUntilClosed();
-  static std::optional<GridWindow> create();
-  static std::optional<GridWindow> create(int rows, int cols);
-  std::optional<LineChart> addLineChart();
-  std::optional<LineChart> addLineChart(int row, int col);
-  std::optional<LineChart> addLineChart(int row, int col, int rowSpan, int colSpan);
-  std::optional<Chart3d> add3dChart();
-  std::optional<Chart3d> add3dChart(int row, int col);
-  std::optional<Chart3d> add3dChart(int row, int col, int rowSpan, int colSpan);
+  // Throws exception for invalid arguments (rows/cols), or if the resource could not be created
+  GridWindow(int rows = 1, int cols = 1);
+  void setSize(int width, int height) noexcept;
+  void setLocation(int xOffset, int yOffset) noexcept;
+  void setTitle(const std::string& title) noexcept;
+  void setTitle(const char* title) noexcept;
+  void show() noexcept;
+  void hide() noexcept;
+  bool isShowing() noexcept;
+  void keepOpen(bool keepOpen) noexcept;
+  void waitUntilClosed() noexcept;
+  // Throws exception if the resource could not be created
+  LineChart addLineChart();
+  // Throws exception for invalid arguments (rows/cols), or if the resource could not be created
+  LineChart addLineChart(int row, int col);
+  // Throws exception for invalid arguments (rows/cols), or if the resource could not be created
+  LineChart addLineChart(int row, int col, int rowSpan, int colSpan);
+  // Throws exception if the resource could not be created
+  Chart3d add3dChart();
+  // Throws exception for invalid arguments (rows/cols), or if the resource could not be created
+  Chart3d add3dChart(int row, int col);
+  // Throws exception for invalid arguments (rows/cols), or if the resource could not be created
+  Chart3d add3dChart(int row, int col, int rowSpan, int colSpan);
   GridWindow(GridWindow&& from) noexcept;
   GridWindow& operator=(GridWindow&& from) noexcept;
-  ~GridWindow();
+  ~GridWindow() noexcept;
 private:
-  void cleanup();
-  explicit GridWindow(internal::GridWindowPtr cPointer) : ptr_(cPointer) {}
+  void cleanup() noexcept;
   internal::GridWindowPtr ptr_{};
 };
 
 class Line {
   friend class LineChart;
 public:
-  void setData(const std::vector<double>& x, const std::vector<double>& y);
-  void setData(const double* x, const double* y, size_t length);
-  void setMaxPointCount(int count);
-  void addPoint(double x, double y);
-  void setName(const std::string& name);
-  void setName(const char* name);
-  void setColor(Color color);
-  void setLineStyle(LineStyle lineStyle);
+  void setData(const std::vector<double>& x, const std::vector<double>& y) noexcept;
+  void setData(const double* x, const double* y, size_t length) noexcept;
+  void setMaxPointCount(int count) noexcept;
+  void addPoint(double x, double y) noexcept;
+  void setName(const std::string& name) noexcept;
+  void setName(const char* name) noexcept;
+  void setColor(Color color) noexcept;
+  void setLineStyle(LineStyle lineStyle) noexcept;
   Line(Line&& from) noexcept;
   Line& operator=(Line&& from) noexcept;
-  ~Line();
+  ~Line() noexcept;
 private:
-  void cleanup();
-  explicit Line(internal::LinePtr cPointer) : ptr_(cPointer) {}
+  void cleanup() noexcept;
+  // Throws exception if we try to create with null pointer (indicating the resource could not be created)
+  explicit Line(internal::LinePtr cPointer) : ptr_(cPointer) {
+    if (!ptr_) {
+      throw Exception("Could not create Line");
+    }
+  }
   internal::LinePtr ptr_{};
 };
 
 class Line3d : public Object3d {
   friend class Chart3d;
 public:
+  // May throw exception if passed an invalid quaternion
   void setOrientation(double qw, double qx, double qy, double qz) override;
-  void setTranslation(double x, double y, double z) override;
+  void setTranslation(double x, double y, double z) noexcept override;
+  // May throw an exception if matrix is not 16 elements or not a valid transform matrix
   void setTransform4x4(const std::vector<double>& matrix) override;
+  // May throw an exception if matrix is not a valid transform matrix
   void setTransform4x4(const double* matrix) override;
-  void setVisible(bool visible) override;
-  void setData(const std::vector<double>& x, const std::vector<double>& y, const std::vector<double>& z);
-  void setData(const double* x, const double* y, const double* z, size_t length);
-  void setMaxPointCount(int count);
-  void addPoint(double x, double y, double z);
-  void setColor(Color color);
+  void setVisible(bool visible) noexcept override;
+  void setData(const std::vector<double>& x, const std::vector<double>& y, const std::vector<double>& z) noexcept;
+  void setData(const double* x, const double* y, const double* z, size_t length) noexcept;
+  void setMaxPointCount(int count) noexcept;
+  void addPoint(double x, double y, double z) noexcept;
+  void setColor(Color color) noexcept;
   Line3d(Line3d&& from) noexcept;
   Line3d& operator=(Line3d&& from) noexcept;
-  ~Line3d();
+  ~Line3d() noexcept;
 private:
-  void cleanup();
-  explicit Line3d(internal::Line3dPtr cPointer) : ptr_(cPointer) {}
+  void cleanup() noexcept;
+  // Throws exception if we try to create with null pointer (indicating the resource could not be created)
+  explicit Line3d(internal::Line3dPtr cPointer) : ptr_(cPointer) {
+    if (!ptr_) {
+      throw Exception("Could not create Line3d");
+    }
+  }
   internal::Line3dPtr ptr_{};
 };
 
 class LineChart {
   friend class GridWindow;
 public:
-  void setTitle(const std::string& title);
-  void setTitle(const char* title);
-  std::optional<Axis> getAxisX();
-  std::optional<Axis> getAxisY();
-  std::optional<Line> addLine(const std::string& name);
-  std::optional<Line> addLine(const std::string& name, const std::vector<double>& x, const std::vector<double>& y);
-  std::optional<Line> addLine(const char* name, const double* x, const double* y, size_t length);
+  void setTitle(const std::string& title) noexcept;
+  void setTitle(const char* title) noexcept;
+  Axis getAxisX() noexcept;
+  Axis getAxisY() noexcept;
+  // Throws exception if the resource could not be created
+  Line addLine(const std::string& name);
+  // Throws exception if the resource could not be created
+  Line addLine(const std::string& name, const std::vector<double>& x, const std::vector<double>& y);
+  // Throws exception if the resource could not be created
+  Line addLine(const char* name, const double* x, const double* y, size_t length);
   LineChart(LineChart&& from) noexcept;
   LineChart& operator=(LineChart&& from) noexcept;
-  ~LineChart();
+  ~LineChart() noexcept;
 private:
-  void cleanup();
-  explicit LineChart(internal::LineChartPtr cPointer) : ptr_(cPointer) {}
+  void cleanup() noexcept;
+  // Throws exception if we try to create with null pointer (indicating the resource could not be created)
+  explicit LineChart(internal::LineChartPtr cPointer) : ptr_(cPointer) {
+    if (!ptr_) {
+      throw Exception("Could not create LineChart");
+    }
+  }
   internal::LineChartPtr ptr_{};
 };
 
 class Mesh3d : public Object3d {
   friend class Chart3d;
 public:
+  // May throw exception if passed an invalid quaternion
   void setOrientation(double qw, double qx, double qy, double qz) override;
-  void setTranslation(double x, double y, double z) override;
+  void setTranslation(double x, double y, double z) noexcept override;
+  // May throw an exception if matrix is not 16 elements or not a valid transform matrix
   void setTransform4x4(const std::vector<double>& matrix) override;
+  // May throw an exception if matrix is not a valid transform matrix
   void setTransform4x4(const double* matrix) override;
-  void setVisible(bool visible) override;
-  void setScale(double scaleUnitsToMillimeters);
-  void setCentered(bool centered);
+  void setVisible(bool visible) noexcept override;
+  void setScale(double scaleUnitsToMillimeters) noexcept;
+  void setCentered(bool centered) noexcept;
   Mesh3d(Mesh3d&& from) noexcept;
   Mesh3d& operator=(Mesh3d&& from) noexcept;
-  ~Mesh3d();
+  ~Mesh3d() noexcept;
 private:
-  void cleanup();
-  explicit Mesh3d(internal::Mesh3dPtr cPointer) : ptr_(cPointer) {}
+  void cleanup() noexcept;
+  explicit Mesh3d(internal::Mesh3dPtr cPointer) : ptr_(cPointer) {
+    if (!ptr_) {
+      throw Exception("Could not create Mesh3d");
+    }
+  }
   internal::Mesh3dPtr ptr_{};
 };
 
 class Robot3d : public Object3d {
   friend class Chart3d;
 public:
+  // May throw exception if passed an invalid quaternion
   void setOrientation(double qw, double qx, double qy, double qz) override;
-  void setTranslation(double x, double y, double z) override;
+  void setTranslation(double x, double y, double z) noexcept override;
+  // May throw an exception if matrix is not 16 elements or not a valid transform matrix
   void setTransform4x4(const std::vector<double>& matrix) override;
+  // May throw an exception if matrix is not a valid transform matrix
   void setTransform4x4(const double* matrix) override;
-  void setVisible(bool visible) override;
-  size_t getNumJoints();
+  void setVisible(bool visible) noexcept override;
+  size_t getNumJoints() noexcept;
+  // May throw exception if passed an invalid number of positions
   void setPositions(const std::vector<double>& positions);
+  // May throw exception if passed an invalid number of positions
   void setPositions(const double* positions, size_t length);
   Robot3d(Robot3d&& from) noexcept;
   Robot3d& operator=(Robot3d&& from) noexcept;
-  ~Robot3d();
+  ~Robot3d() noexcept;
 private:
-  void cleanup();
-  explicit Robot3d(internal::Robot3dPtr cPointer) : ptr_(cPointer) {}
+  void cleanup() noexcept;
+  explicit Robot3d(internal::Robot3dPtr cPointer) : ptr_(cPointer) {
+    if (!ptr_) {
+      throw Exception("Could not create Robot3d");
+    }
+  }
   internal::Robot3dPtr ptr_{};
 };
 
 class Triad3d : public Object3d {
   friend class Chart3d;
 public:
+  // May throw exception if passed an invalid quaternion
   void setOrientation(double qw, double qx, double qy, double qz) override;
-  void setTranslation(double x, double y, double z) override;
+  void setTranslation(double x, double y, double z) noexcept override;
+  // May throw an exception if matrix is not 16 elements or not a valid transform matrix
   void setTransform4x4(const std::vector<double>& matrix) override;
+  // May throw an exception if matrix is not a valid transform matrix
   void setTransform4x4(const double* matrix) override;
-  void setVisible(bool visible) override;
+  void setVisible(bool visible) noexcept override;
   Triad3d(Triad3d&& from) noexcept;
   Triad3d& operator=(Triad3d&& from) noexcept;
-  ~Triad3d();
+  ~Triad3d() noexcept;
 private:
-  void cleanup();
-  explicit Triad3d(internal::Triad3dPtr cPointer) : ptr_(cPointer) {}
+  void cleanup() noexcept;
+  // Throws exception if we try to create with null pointer (indicating the resource could not be created)
+  explicit Triad3d(internal::Triad3dPtr cPointer) : ptr_(cPointer) {
+    if (!ptr_) {
+      throw Exception("Could not create Triad3d");
+    }
+  }
   internal::Triad3dPtr ptr_{};
 };
 
@@ -302,29 +383,29 @@ private:
 
 // ==== C++ Implementations ====
 // Axis
-inline void Axis::setName(const std::string& name) {
+inline void Axis::setName(const std::string& name) noexcept {
   setName(name.c_str());
 }
-inline void Axis::setName(const char* name) {
+inline void Axis::setName(const char* name) noexcept {
   static auto hebi_charts_Axis_setName = DynamicLookup::instance().getFunc<void(*)(internal::AxisPtr, const char*)>("hebi_charts_Axis_setName");
   hebi_charts_Axis_setName(ptr_, name);
 }
-inline void Axis::setUnit(const std::string& unit) {
+inline void Axis::setUnit(const std::string& unit) noexcept {
   setUnit(unit.c_str());
 }
-inline void Axis::setUnit(const char* unit) {
+inline void Axis::setUnit(const char* unit) noexcept {
   static auto hebi_charts_Axis_setUnit = DynamicLookup::instance().getFunc<void(*)(internal::AxisPtr, const char*)>("hebi_charts_Axis_setUnit");
   hebi_charts_Axis_setUnit(ptr_, unit);
 }
-inline void Axis::setAutoUnitScaling(bool autoUnitScaling) {
+inline void Axis::setAutoUnitScaling(bool autoUnitScaling) noexcept {
   static auto hebi_charts_Axis_setAutoUnitScaling = DynamicLookup::instance().getFunc<void(*)(internal::AxisPtr, bool)>("hebi_charts_Axis_setAutoUnitScaling");
   hebi_charts_Axis_setAutoUnitScaling(ptr_, autoUnitScaling);
 }
-inline void Axis::setLimits(double min, double max) {
+inline void Axis::setLimits(double min, double max) noexcept {
   static auto hebi_charts_Axis_setLimits = DynamicLookup::instance().getFunc<void(*)(internal::AxisPtr, double, double)>("hebi_charts_Axis_setLimits");
   hebi_charts_Axis_setLimits(ptr_, min, max);
 }
-inline void Axis::cleanup() {
+inline void Axis::cleanup() noexcept {
   if (ptr_ != nullptr) {
     static auto hebi_charts_Axis_release = DynamicLookup::instance().getFunc<void(*)(internal::AxisPtr)>("hebi_charts_Axis_release");
     hebi_charts_Axis_release(ptr_);
@@ -339,38 +420,50 @@ inline Axis& Axis::operator=(Axis&& from) noexcept {
   from.ptr_ = nullptr;
   return *this;
 };
-inline Axis::~Axis() {
+inline Axis::~Axis() noexcept {
   cleanup();
 }
 
 // Chart3d
-inline std::optional<Robot3d> Chart3d::addHrdf(const std::string& filePath) {
-  return addHrdf(filePath.c_str());
+inline Robot3d Chart3d::addHrdf(const std::string& hrdf) {
+  return addHrdf(hrdf.c_str());
 }
-inline std::optional<Robot3d> Chart3d::addHrdf(const char* filePath) {
+inline Robot3d Chart3d::addHrdf(const char* filePath) {
+  static auto hebi_charts_Chart3d_addHrdf = DynamicLookup::instance().getFunc<internal::Robot3dPtr(*)(internal::Chart3dPtr, const char*)>("hebi_charts_Chart3d_addHrdf");
+  return Robot3d(hebi_charts_Chart3d_addHrdf(ptr_, filePath));
+}
+inline std::optional<Robot3d> Chart3d::tryAddHrdf(const std::string& hrdf) noexcept {
+  return tryAddHrdf(hrdf.c_str());
+}
+inline std::optional<Robot3d> Chart3d::tryAddHrdf(const char* filePath) noexcept {
   static auto hebi_charts_Chart3d_addHrdf = DynamicLookup::instance().getFunc<internal::Robot3dPtr(*)(internal::Chart3dPtr, const char*)>("hebi_charts_Chart3d_addHrdf");
   auto ptr = hebi_charts_Chart3d_addHrdf(ptr_, filePath);
   return !ptr ? std::nullopt : std::make_optional(Robot3d(ptr));
 }
-inline std::optional<Mesh3d> Chart3d::addMesh(const std::string& pathOrUrl) {
+inline Mesh3d Chart3d::addMesh(const std::string& pathOrUrl) {
   return addMesh(pathOrUrl.c_str());
 }
-inline std::optional<Mesh3d> Chart3d::addMesh(const char* pathOrUrl) {
+inline Mesh3d Chart3d::addMesh(const char* pathOrUrl) {
+  static auto hebi_charts_Chart3d_addMesh = DynamicLookup::instance().getFunc<internal::Mesh3dPtr(*)(internal::Chart3dPtr, const char*)>("hebi_charts_Chart3d_addMesh");
+  return Mesh3d(hebi_charts_Chart3d_addMesh(ptr_, pathOrUrl));
+}
+inline std::optional<Mesh3d> Chart3d::tryAddMesh(const std::string& pathOrUrl) noexcept {
+  return tryAddMesh(pathOrUrl.c_str());
+}
+inline std::optional<Mesh3d> Chart3d::tryAddMesh(const char* pathOrUrl) noexcept {
   static auto hebi_charts_Chart3d_addMesh = DynamicLookup::instance().getFunc<internal::Mesh3dPtr(*)(internal::Chart3dPtr, const char*)>("hebi_charts_Chart3d_addMesh");
   auto ptr = hebi_charts_Chart3d_addMesh(ptr_, pathOrUrl);
   return !ptr ? std::nullopt : std::make_optional(Mesh3d(ptr));
 }
-inline std::optional<Triad3d> Chart3d::addTriad(double length) {
+inline Triad3d Chart3d::addTriad(double length) {
   static auto hebi_charts_Chart3d_addTriad = DynamicLookup::instance().getFunc<internal::Triad3dPtr(*)(internal::Chart3dPtr, double)>("hebi_charts_Chart3d_addTriad");
-  auto ptr = hebi_charts_Chart3d_addTriad(ptr_, length);
-  return !ptr ? std::nullopt : std::make_optional(Triad3d(ptr));
+  return Triad3d(hebi_charts_Chart3d_addTriad(ptr_, length));
 }
-inline std::optional<Line3d> Chart3d::addLine() {
+inline Line3d Chart3d::addLine() {
   static auto hebi_charts_Chart3d_addLine = DynamicLookup::instance().getFunc<internal::Line3dPtr(*)(internal::Chart3dPtr)>("hebi_charts_Chart3d_addLine");
-  auto ptr = hebi_charts_Chart3d_addLine(ptr_);
-  return !ptr ? std::nullopt : std::make_optional(Line3d(ptr));
+  return Line3d(hebi_charts_Chart3d_addLine(ptr_));
 }
-inline void Chart3d::cleanup() {
+inline void Chart3d::cleanup() noexcept {
   if (ptr_ != nullptr) {
     static auto hebi_charts_Chart3d_release = DynamicLookup::instance().getFunc<void(*)(internal::Chart3dPtr)>("hebi_charts_Chart3d_release");
     hebi_charts_Chart3d_release(ptr_);
@@ -385,77 +478,74 @@ inline Chart3d& Chart3d::operator=(Chart3d&& from) noexcept {
   from.ptr_ = nullptr;
   return *this;
 };
-inline Chart3d::~Chart3d() {
+inline Chart3d::~Chart3d() noexcept {
   cleanup();
 }
 
 // GridWindow
-inline void GridWindow::setSize(int width, int height) {
+inline void GridWindow::setSize(int width, int height) noexcept {
   static auto hebi_charts_GridWindow_setSize = DynamicLookup::instance().getFunc<void(*)(internal::GridWindowPtr, int, int)>("hebi_charts_GridWindow_setSize");
   hebi_charts_GridWindow_setSize(ptr_, width, height);
 }
-inline void GridWindow::setLocation(int xOffset, int yOffset) {
+inline void GridWindow::setLocation(int xOffset, int yOffset) noexcept {
   static auto hebi_charts_GridWindow_setLocation = DynamicLookup::instance().getFunc<void(*)(internal::GridWindowPtr, int, int)>("hebi_charts_GridWindow_setLocation");
   hebi_charts_GridWindow_setLocation(ptr_, xOffset, yOffset);
 }
-inline void GridWindow::setTitle(const std::string& title) {
+inline void GridWindow::setTitle(const std::string& title) noexcept {
   setTitle(title.c_str());
 }
-inline void GridWindow::setTitle(const char* title) {
+inline void GridWindow::setTitle(const char* title) noexcept {
   static auto hebi_charts_GridWindow_setTitle = DynamicLookup::instance().getFunc<void(*)(internal::GridWindowPtr, const char*)>("hebi_charts_GridWindow_setTitle");
   hebi_charts_GridWindow_setTitle(ptr_, title);
 }
-inline void GridWindow::show() {
+inline void GridWindow::show() noexcept {
   static auto hebi_charts_GridWindow_show = DynamicLookup::instance().getFunc<void(*)(internal::GridWindowPtr)>("hebi_charts_GridWindow_show");
   hebi_charts_GridWindow_show(ptr_);
 }
-inline void GridWindow::hide() {
+inline void GridWindow::hide() noexcept {
   static auto hebi_charts_GridWindow_hide = DynamicLookup::instance().getFunc<void(*)(internal::GridWindowPtr)>("hebi_charts_GridWindow_hide");
   hebi_charts_GridWindow_hide(ptr_);
 }
-inline bool GridWindow::isShowing() {
+inline bool GridWindow::isShowing() noexcept {
   static auto hebi_charts_GridWindow_isShowing = DynamicLookup::instance().getFunc<bool(*)(internal::GridWindowPtr)>("hebi_charts_GridWindow_isShowing");
   return hebi_charts_GridWindow_isShowing(ptr_);
 }
-inline void GridWindow::keepOpen(bool keepOpen) {
+inline void GridWindow::keepOpen(bool keepOpen) noexcept {
   static auto hebi_charts_GridWindow_keepOpen = DynamicLookup::instance().getFunc<void(*)(internal::GridWindowPtr, bool)>("hebi_charts_GridWindow_keepOpen");
   hebi_charts_GridWindow_keepOpen(ptr_, keepOpen);
 }
-inline void GridWindow::waitUntilClosed() {
+inline void GridWindow::waitUntilClosed() noexcept {
   static auto hebi_charts_GridWindow_waitUntilClosed = DynamicLookup::instance().getFunc<void(*)(internal::GridWindowPtr)>("hebi_charts_GridWindow_waitUntilClosed");
   hebi_charts_GridWindow_waitUntilClosed(ptr_);
 }
-inline std::optional<GridWindow> GridWindow::create() {
-  return create(1, 1);
-}
-inline std::optional<GridWindow> GridWindow::create(int rows, int cols) {
+inline GridWindow::GridWindow(int rows, int cols) {
   static auto hebi_charts_GridWindow_create = DynamicLookup::instance().getFunc<internal::GridWindowPtr(*)(int, int)>("hebi_charts_GridWindow_create");
-  auto ptr = hebi_charts_GridWindow_create(rows, cols);
-  return !ptr ? std::nullopt : std::make_optional(GridWindow(ptr));
+  ptr_ = hebi_charts_GridWindow_create(rows, cols);
+  if (!ptr_) {
+    throw Exception("Could not create GridWindow");
+  }
 }
-inline std::optional<LineChart> GridWindow::addLineChart() {
+inline LineChart GridWindow::addLineChart() {
   return addLineChart(0, 0);
 }
-inline std::optional<LineChart> GridWindow::addLineChart(int row, int col) {
+inline LineChart GridWindow::addLineChart(int row, int col) {
   return addLineChart(row, col, 1, 1);
 }
-inline std::optional<LineChart> GridWindow::addLineChart(int row, int col, int rowSpan, int colSpan) {
+inline LineChart GridWindow::addLineChart(int row, int col, int rowSpan, int colSpan) {
   static auto hebi_charts_GridWindow_addLineChart = DynamicLookup::instance().getFunc<internal::LineChartPtr(*)(internal::GridWindowPtr, int, int, int, int)>("hebi_charts_GridWindow_addLineChart");
-  auto ptr = hebi_charts_GridWindow_addLineChart(ptr_, row, col, rowSpan, colSpan);
-  return !ptr ? std::nullopt : std::make_optional(LineChart(ptr));
+  return LineChart(hebi_charts_GridWindow_addLineChart(ptr_, row, col, rowSpan, colSpan));
 }
-inline std::optional<Chart3d> GridWindow::add3dChart() {
+inline Chart3d GridWindow::add3dChart() {
   return add3dChart(0, 0);
 }
-inline std::optional<Chart3d> GridWindow::add3dChart(int row, int col) {
+inline Chart3d GridWindow::add3dChart(int row, int col) {
   return add3dChart(row, col, 1, 1);
 }
-inline std::optional<Chart3d> GridWindow::add3dChart(int row, int col, int rowSpan, int colSpan) {
+inline Chart3d GridWindow::add3dChart(int row, int col, int rowSpan, int colSpan) {
   static auto hebi_charts_GridWindow_add3dChart = DynamicLookup::instance().getFunc<internal::Chart3dPtr(*)(internal::GridWindowPtr, int, int, int, int)>("hebi_charts_GridWindow_add3dChart");
-  auto ptr = hebi_charts_GridWindow_add3dChart(ptr_, row, col, rowSpan, colSpan);
-  return !ptr ? std::nullopt : std::make_optional(Chart3d(ptr));
+  return Chart3d(hebi_charts_GridWindow_add3dChart(ptr_, row, col, rowSpan, colSpan));
 }
-inline void GridWindow::cleanup() {
+inline void GridWindow::cleanup() noexcept {
   if (ptr_ != nullptr) {
     static auto hebi_charts_GridWindow_release = DynamicLookup::instance().getFunc<void(*)(internal::GridWindowPtr)>("hebi_charts_GridWindow_release");
     hebi_charts_GridWindow_release(ptr_);
@@ -470,42 +560,42 @@ inline GridWindow& GridWindow::operator=(GridWindow&& from) noexcept {
   from.ptr_ = nullptr;
   return *this;
 };
-inline GridWindow::~GridWindow() {
+inline GridWindow::~GridWindow() noexcept {
   cleanup();
 }
 
 // Line
-inline void Line::setData(const std::vector<double>& x, const std::vector<double>& y) {
+inline void Line::setData(const std::vector<double>& x, const std::vector<double>& y) noexcept {
   setData(x.data(), y.data(), (std::min)(x.size(), y.size()));
 }
-inline void Line::setData(const double* x, const double* y, size_t length) {
+inline void Line::setData(const double* x, const double* y, size_t length) noexcept {
   static auto hebi_charts_Line_setData = DynamicLookup::instance().getFunc<void(*)(internal::LinePtr, const double*, const double*, size_t)>("hebi_charts_Line_setData");
   hebi_charts_Line_setData(ptr_, x, y, length);
 }
-inline void Line::setMaxPointCount(int count) {
+inline void Line::setMaxPointCount(int count) noexcept {
   static auto hebi_charts_Line_setMaxPointCount = DynamicLookup::instance().getFunc<void(*)(internal::LinePtr, int)>("hebi_charts_Line_setMaxPointCount");
   hebi_charts_Line_setMaxPointCount(ptr_, count);
 }
-inline void Line::addPoint(double x, double y) {
+inline void Line::addPoint(double x, double y) noexcept {
   static auto hebi_charts_Line_addPoint = DynamicLookup::instance().getFunc<void(*)(internal::LinePtr, double, double)>("hebi_charts_Line_addPoint");
   hebi_charts_Line_addPoint(ptr_, x, y);
 }
-inline void Line::setName(const std::string& name) {
+inline void Line::setName(const std::string& name) noexcept {
   setName(name.c_str());
 }
-inline void Line::setName(const char* name) {
+inline void Line::setName(const char* name) noexcept {
   static auto hebi_charts_Line_setName = DynamicLookup::instance().getFunc<void(*)(internal::LinePtr, const char*)>("hebi_charts_Line_setName");
   hebi_charts_Line_setName(ptr_, name);
 }
-inline void Line::setColor(Color color) {
+inline void Line::setColor(Color color) noexcept {
   static auto hebi_charts_Line_setColor = DynamicLookup::instance().getFunc<void(*)(internal::LinePtr, Color)>("hebi_charts_Line_setColor");
   hebi_charts_Line_setColor(ptr_, color);
 }
-inline void Line::setLineStyle(LineStyle lineStyle) {
+inline void Line::setLineStyle(LineStyle lineStyle) noexcept {
   static auto hebi_charts_Line_setLineStyle = DynamicLookup::instance().getFunc<void(*)(internal::LinePtr, LineStyle)>("hebi_charts_Line_setLineStyle");
   hebi_charts_Line_setLineStyle(ptr_, lineStyle);
 }
-inline void Line::cleanup() {
+inline void Line::cleanup() noexcept {
   if (ptr_ != nullptr) {
     static auto hebi_charts_Line_release = DynamicLookup::instance().getFunc<void(*)(internal::LinePtr)>("hebi_charts_Line_release");
     hebi_charts_Line_release(ptr_);
@@ -520,7 +610,7 @@ inline Line& Line::operator=(Line&& from) noexcept {
   from.ptr_ = nullptr;
   return *this;
 };
-inline Line::~Line() {
+inline Line::~Line() noexcept {
   cleanup();
 }
 
@@ -529,41 +619,43 @@ inline void Line3d::setOrientation(double qw, double qx, double qy, double qz) {
   static auto hebi_charts_Line3d_setOrientation = DynamicLookup::instance().getFunc<void(*)(internal::Line3dPtr, double, double, double, double)>("hebi_charts_Line3d_setOrientation");
   hebi_charts_Line3d_setOrientation(ptr_, qw, qx, qy, qz);
 }
-inline void Line3d::setTranslation(double x, double y, double z) {
+inline void Line3d::setTranslation(double x, double y, double z) noexcept {
   static auto hebi_charts_Line3d_setTranslation = DynamicLookup::instance().getFunc<void(*)(internal::Line3dPtr, double, double, double)>("hebi_charts_Line3d_setTranslation");
   hebi_charts_Line3d_setTranslation(ptr_, x, y, z);
 }
 inline void Line3d::setTransform4x4(const std::vector<double>& matrix) {
+  if (matrix.size() != 16)
+      throw Exception("Transform matrix incorrect size");
   setTransform4x4(matrix.data());
 }
 inline void Line3d::setTransform4x4(const double* matrix) {
   static auto hebi_charts_Line3d_setTransform4x4 = DynamicLookup::instance().getFunc<void(*)(internal::Line3dPtr, const double*)>("hebi_charts_Line3d_setTransform4x4");
   hebi_charts_Line3d_setTransform4x4(ptr_, matrix);
 }
-inline void Line3d::setVisible(bool visible) {
+inline void Line3d::setVisible(bool visible) noexcept {
   static auto hebi_charts_Line3d_setVisible = DynamicLookup::instance().getFunc<void(*)(internal::Line3dPtr, bool)>("hebi_charts_Line3d_setVisible");
   hebi_charts_Line3d_setVisible(ptr_, visible);
 }
-inline void Line3d::setData(const std::vector<double>& x, const std::vector<double>& y, const std::vector<double>& z) {
+inline void Line3d::setData(const std::vector<double>& x, const std::vector<double>& y, const std::vector<double>& z) noexcept {
   setData(x.data(), y.data(), z.data(), (std::min)({x.size(), y.size(), z.size()}));
 }
-inline void Line3d::setData(const double* x, const double* y, const double* z, size_t length) {
+inline void Line3d::setData(const double* x, const double* y, const double* z, size_t length) noexcept {
   static auto hebi_charts_Line3d_setData = DynamicLookup::instance().getFunc<void(*)(internal::Line3dPtr, const double*, const double*, const double*, size_t)>("hebi_charts_Line3d_setData");
   hebi_charts_Line3d_setData(ptr_, x, y, z, length);
 }
-inline void Line3d::setMaxPointCount(int count) {
+inline void Line3d::setMaxPointCount(int count) noexcept {
   static auto hebi_charts_Line3d_setMaxPointCount = DynamicLookup::instance().getFunc<void(*)(internal::Line3dPtr, int)>("hebi_charts_Line3d_setMaxPointCount");
   hebi_charts_Line3d_setMaxPointCount(ptr_, count);
 }
-inline void Line3d::addPoint(double x, double y, double z) {
+inline void Line3d::addPoint(double x, double y, double z) noexcept {
   static auto hebi_charts_Line3d_addPoint = DynamicLookup::instance().getFunc<void(*)(internal::Line3dPtr, double, double, double)>("hebi_charts_Line3d_addPoint");
   hebi_charts_Line3d_addPoint(ptr_, x, y, z);
 }
-inline void Line3d::setColor(Color color) {
+inline void Line3d::setColor(Color color) noexcept {
   static auto hebi_charts_Line3d_setColor = DynamicLookup::instance().getFunc<void(*)(internal::Line3dPtr, Color)>("hebi_charts_Line3d_setColor");
   hebi_charts_Line3d_setColor(ptr_, color);
 }
-inline void Line3d::cleanup() {
+inline void Line3d::cleanup() noexcept {
   if (ptr_ != nullptr) {
     static auto hebi_charts_Line3d_release = DynamicLookup::instance().getFunc<void(*)(internal::Line3dPtr)>("hebi_charts_Line3d_release");
     hebi_charts_Line3d_release(ptr_);
@@ -578,40 +670,37 @@ inline Line3d& Line3d::operator=(Line3d&& from) noexcept {
   from.ptr_ = nullptr;
   return *this;
 };
-inline Line3d::~Line3d() {
+inline Line3d::~Line3d() noexcept {
   cleanup();
 }
 
 // LineChart
-inline void LineChart::setTitle(const std::string& title) {
+inline void LineChart::setTitle(const std::string& title) noexcept {
   setTitle(title.c_str());
 }
-inline void LineChart::setTitle(const char* title) {
+inline void LineChart::setTitle(const char* title) noexcept {
   static auto hebi_charts_LineChart_setTitle = DynamicLookup::instance().getFunc<void(*)(internal::LineChartPtr, const char*)>("hebi_charts_LineChart_setTitle");
   hebi_charts_LineChart_setTitle(ptr_, title);
 }
-inline std::optional<Axis> LineChart::getAxisX() {
+inline Axis LineChart::getAxisX() noexcept {
   static auto hebi_charts_LineChart_getAxisX = DynamicLookup::instance().getFunc<internal::AxisPtr(*)(internal::LineChartPtr)>("hebi_charts_LineChart_getAxisX");
-  auto ptr = hebi_charts_LineChart_getAxisX(ptr_);
-  return !ptr ? std::nullopt : std::make_optional(Axis(ptr));
+  return Axis(hebi_charts_LineChart_getAxisX(ptr_));
 }
-inline std::optional<Axis> LineChart::getAxisY() {
+inline Axis LineChart::getAxisY() noexcept {
   static auto hebi_charts_LineChart_getAxisY = DynamicLookup::instance().getFunc<internal::AxisPtr(*)(internal::LineChartPtr)>("hebi_charts_LineChart_getAxisY");
-  auto ptr = hebi_charts_LineChart_getAxisY(ptr_);
-  return !ptr ? std::nullopt : std::make_optional(Axis(ptr));
+  return Axis(hebi_charts_LineChart_getAxisY(ptr_));
 }
-inline std::optional<Line> LineChart::addLine(const std::string& name) {
+inline Line LineChart::addLine(const std::string& name) {
   return addLine(name.c_str(), nullptr, nullptr, 0);
 }
-inline std::optional<Line> LineChart::addLine(const std::string& name, const std::vector<double>& x, const std::vector<double>& y) {
+inline Line LineChart::addLine(const std::string& name, const std::vector<double>& x, const std::vector<double>& y) {
   return addLine(name.c_str(), x.data(), y.data(), (std::min)(x.size(), y.size()));
 }
-inline std::optional<Line> LineChart::addLine(const char* name, const double* x, const double* y, size_t length) {
+inline Line LineChart::addLine(const char* name, const double* x, const double* y, size_t length) {
   static auto hebi_charts_LineChart_addLine = DynamicLookup::instance().getFunc<internal::LinePtr(*)(internal::LineChartPtr, const char*, const double*, const double*, size_t)>("hebi_charts_LineChart_addLine");
-  auto ptr = hebi_charts_LineChart_addLine(ptr_, name, x, y, length);
-  return !ptr ? std::nullopt : std::make_optional(Line(ptr));
+  return Line(hebi_charts_LineChart_addLine(ptr_, name, x, y, length));
 }
-inline void LineChart::cleanup() {
+inline void LineChart::cleanup() noexcept {
   if (ptr_ != nullptr) {
     static auto hebi_charts_LineChart_release = DynamicLookup::instance().getFunc<void(*)(internal::LineChartPtr)>("hebi_charts_LineChart_release");
     hebi_charts_LineChart_release(ptr_);
@@ -626,7 +715,7 @@ inline LineChart& LineChart::operator=(LineChart&& from) noexcept {
   from.ptr_ = nullptr;
   return *this;
 };
-inline LineChart::~LineChart() {
+inline LineChart::~LineChart() noexcept {
   cleanup();
 }
 
@@ -635,30 +724,32 @@ inline void Mesh3d::setOrientation(double qw, double qx, double qy, double qz) {
   static auto hebi_charts_Mesh3d_setOrientation = DynamicLookup::instance().getFunc<void(*)(internal::Mesh3dPtr, double, double, double, double)>("hebi_charts_Mesh3d_setOrientation");
   hebi_charts_Mesh3d_setOrientation(ptr_, qw, qx, qy, qz);
 }
-inline void Mesh3d::setTranslation(double x, double y, double z) {
+inline void Mesh3d::setTranslation(double x, double y, double z) noexcept {
   static auto hebi_charts_Mesh3d_setTranslation = DynamicLookup::instance().getFunc<void(*)(internal::Mesh3dPtr, double, double, double)>("hebi_charts_Mesh3d_setTranslation");
   hebi_charts_Mesh3d_setTranslation(ptr_, x, y, z);
 }
 inline void Mesh3d::setTransform4x4(const std::vector<double>& matrix) {
+  if (matrix.size() != 16)
+      throw Exception("Transform matrix incorrect size");
   setTransform4x4(matrix.data());
 }
 inline void Mesh3d::setTransform4x4(const double* matrix) {
   static auto hebi_charts_Mesh3d_setTransform4x4 = DynamicLookup::instance().getFunc<void(*)(internal::Mesh3dPtr, const double*)>("hebi_charts_Mesh3d_setTransform4x4");
   hebi_charts_Mesh3d_setTransform4x4(ptr_, matrix);
 }
-inline void Mesh3d::setVisible(bool visible) {
+inline void Mesh3d::setVisible(bool visible) noexcept {
   static auto hebi_charts_Mesh3d_setVisible = DynamicLookup::instance().getFunc<void(*)(internal::Mesh3dPtr, bool)>("hebi_charts_Mesh3d_setVisible");
   hebi_charts_Mesh3d_setVisible(ptr_, visible);
 }
-inline void Mesh3d::setScale(double scaleUnitsToMillimeters) {
+inline void Mesh3d::setScale(double scaleUnitsToMillimeters) noexcept {
   static auto hebi_charts_Mesh3d_setScale = DynamicLookup::instance().getFunc<void(*)(internal::Mesh3dPtr, double)>("hebi_charts_Mesh3d_setScale");
   hebi_charts_Mesh3d_setScale(ptr_, scaleUnitsToMillimeters);
 }
-inline void Mesh3d::setCentered(bool centered) {
+inline void Mesh3d::setCentered(bool centered) noexcept {
   static auto hebi_charts_Mesh3d_setCentered = DynamicLookup::instance().getFunc<void(*)(internal::Mesh3dPtr, bool)>("hebi_charts_Mesh3d_setCentered");
   hebi_charts_Mesh3d_setCentered(ptr_, centered);
 }
-inline void Mesh3d::cleanup() {
+inline void Mesh3d::cleanup() noexcept {
   if (ptr_ != nullptr) {
     static auto hebi_charts_Mesh3d_release = DynamicLookup::instance().getFunc<void(*)(internal::Mesh3dPtr)>("hebi_charts_Mesh3d_release");
     hebi_charts_Mesh3d_release(ptr_);
@@ -673,7 +764,7 @@ inline Mesh3d& Mesh3d::operator=(Mesh3d&& from) noexcept {
   from.ptr_ = nullptr;
   return *this;
 };
-inline Mesh3d::~Mesh3d() {
+inline Mesh3d::~Mesh3d() noexcept {
   cleanup();
 }
 
@@ -682,22 +773,24 @@ inline void Robot3d::setOrientation(double qw, double qx, double qy, double qz) 
   static auto hebi_charts_Robot3d_setOrientation = DynamicLookup::instance().getFunc<void(*)(internal::Robot3dPtr, double, double, double, double)>("hebi_charts_Robot3d_setOrientation");
   hebi_charts_Robot3d_setOrientation(ptr_, qw, qx, qy, qz);
 }
-inline void Robot3d::setTranslation(double x, double y, double z) {
+inline void Robot3d::setTranslation(double x, double y, double z) noexcept {
   static auto hebi_charts_Robot3d_setTranslation = DynamicLookup::instance().getFunc<void(*)(internal::Robot3dPtr, double, double, double)>("hebi_charts_Robot3d_setTranslation");
   hebi_charts_Robot3d_setTranslation(ptr_, x, y, z);
 }
 inline void Robot3d::setTransform4x4(const std::vector<double>& matrix) {
+  if (matrix.size() != 16)
+      throw Exception("Transform matrix incorrect size");
   setTransform4x4(matrix.data());
 }
 inline void Robot3d::setTransform4x4(const double* matrix) {
   static auto hebi_charts_Robot3d_setTransform4x4 = DynamicLookup::instance().getFunc<void(*)(internal::Robot3dPtr, const double*)>("hebi_charts_Robot3d_setTransform4x4");
   hebi_charts_Robot3d_setTransform4x4(ptr_, matrix);
 }
-inline void Robot3d::setVisible(bool visible) {
+inline void Robot3d::setVisible(bool visible) noexcept {
   static auto hebi_charts_Robot3d_setVisible = DynamicLookup::instance().getFunc<void(*)(internal::Robot3dPtr, bool)>("hebi_charts_Robot3d_setVisible");
   hebi_charts_Robot3d_setVisible(ptr_, visible);
 }
-inline size_t Robot3d::getNumJoints() {
+inline size_t Robot3d::getNumJoints() noexcept {
   static auto hebi_charts_Robot3d_getNumJoints = DynamicLookup::instance().getFunc<size_t(*)(internal::Robot3dPtr)>("hebi_charts_Robot3d_getNumJoints");
   return hebi_charts_Robot3d_getNumJoints(ptr_);
 }
@@ -705,10 +798,12 @@ inline void Robot3d::setPositions(const std::vector<double>& positions) {
   setPositions(positions.data(), positions.size());
 }
 inline void Robot3d::setPositions(const double* positions, size_t length) {
+  if (length != getNumJoints())
+      throw Exception("Position vector does not match number of joints");
   static auto hebi_charts_Robot3d_setPositions = DynamicLookup::instance().getFunc<void(*)(internal::Robot3dPtr, const double*, size_t)>("hebi_charts_Robot3d_setPositions");
   hebi_charts_Robot3d_setPositions(ptr_, positions, length);
 }
-inline void Robot3d::cleanup() {
+inline void Robot3d::cleanup() noexcept {
   if (ptr_ != nullptr) {
     static auto hebi_charts_Robot3d_release = DynamicLookup::instance().getFunc<void(*)(internal::Robot3dPtr)>("hebi_charts_Robot3d_release");
     hebi_charts_Robot3d_release(ptr_);
@@ -723,7 +818,7 @@ inline Robot3d& Robot3d::operator=(Robot3d&& from) noexcept {
   from.ptr_ = nullptr;
   return *this;
 };
-inline Robot3d::~Robot3d() {
+inline Robot3d::~Robot3d() noexcept {
   cleanup();
 }
 
@@ -732,22 +827,24 @@ inline void Triad3d::setOrientation(double qw, double qx, double qy, double qz) 
   static auto hebi_charts_Triad3d_setOrientation = DynamicLookup::instance().getFunc<void(*)(internal::Triad3dPtr, double, double, double, double)>("hebi_charts_Triad3d_setOrientation");
   hebi_charts_Triad3d_setOrientation(ptr_, qw, qx, qy, qz);
 }
-inline void Triad3d::setTranslation(double x, double y, double z) {
+inline void Triad3d::setTranslation(double x, double y, double z) noexcept {
   static auto hebi_charts_Triad3d_setTranslation = DynamicLookup::instance().getFunc<void(*)(internal::Triad3dPtr, double, double, double)>("hebi_charts_Triad3d_setTranslation");
   hebi_charts_Triad3d_setTranslation(ptr_, x, y, z);
 }
 inline void Triad3d::setTransform4x4(const std::vector<double>& matrix) {
+  if (matrix.size() != 16)
+      throw Exception("Transform matrix incorrect size");
   setTransform4x4(matrix.data());
 }
 inline void Triad3d::setTransform4x4(const double* matrix) {
   static auto hebi_charts_Triad3d_setTransform4x4 = DynamicLookup::instance().getFunc<void(*)(internal::Triad3dPtr, const double*)>("hebi_charts_Triad3d_setTransform4x4");
   hebi_charts_Triad3d_setTransform4x4(ptr_, matrix);
 }
-inline void Triad3d::setVisible(bool visible) {
+inline void Triad3d::setVisible(bool visible) noexcept {
   static auto hebi_charts_Triad3d_setVisible = DynamicLookup::instance().getFunc<void(*)(internal::Triad3dPtr, bool)>("hebi_charts_Triad3d_setVisible");
   hebi_charts_Triad3d_setVisible(ptr_, visible);
 }
-inline void Triad3d::cleanup() {
+inline void Triad3d::cleanup() noexcept {
   if (ptr_ != nullptr) {
     static auto hebi_charts_Triad3d_release = DynamicLookup::instance().getFunc<void(*)(internal::Triad3dPtr)>("hebi_charts_Triad3d_release");
     hebi_charts_Triad3d_release(ptr_);
@@ -762,7 +859,7 @@ inline Triad3d& Triad3d::operator=(Triad3d&& from) noexcept {
   from.ptr_ = nullptr;
   return *this;
 };
-inline Triad3d::~Triad3d() {
+inline Triad3d::~Triad3d() noexcept {
   cleanup();
 }
 
