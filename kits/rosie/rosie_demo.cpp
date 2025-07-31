@@ -1,5 +1,3 @@
-// test commit
-
 // HEBI C++ API files:
 #include "arm/arm.hpp"
 #include "group_command.hpp"
