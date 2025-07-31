@@ -77,7 +77,7 @@ struct OmniBase {
 
 		// Rebuild trajectory
 		Eigen::Vector3d chassis_desired_vel;
-		chassis_desired_vel << base_max_lin_speed_ * x_vel, -base_max_lin_speed_ * y_vel, base_max_rot_speed_* rot_vel * 10;
+		chassis_desired_vel << base_max_lin_speed_ * x_vel, -base_max_lin_speed_ * y_vel, base_max_rot_speed_* rot_vel;
 
 		velocities_.col(0) = chassis_cmd_vel;
 		velocities_.col(1) = chassis_desired_vel;
