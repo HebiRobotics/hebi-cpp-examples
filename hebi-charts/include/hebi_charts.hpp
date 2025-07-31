@@ -79,6 +79,7 @@ using LinePtr = struct Line_*;
 using Line3dPtr = struct Line3d_*;
 using LineChartPtr = struct LineChart_*;
 using Mesh3dPtr = struct Mesh3d_*;
+using Object3dPtr = struct Object3d_*;
 using Robot3dPtr = struct Robot3d_*;
 using Triad3dPtr = struct Triad3d_*;
 }
@@ -87,14 +88,26 @@ using Triad3dPtr = struct Triad3d_*;
 class Object3d {
 public:
   // May throw exception if passed an invalid quaternion
-  virtual void setOrientation(double qw, double qx, double qy, double qz) = 0;
-  virtual void setTranslation(double x, double y, double z) noexcept = 0;
+  void setOrientation(double qw, double qx, double qy, double qz);
+  void setTranslation(double x, double y, double z) noexcept;
   // May throw an exception if matrix is not 16 elements or not a valid transform matrix
-  virtual void setTransform4x4(const std::vector<double>& matrix) = 0;
+  void setTransform4x4(const std::vector<double>& matrix);
   // May throw an exception if matrix is not a valid transform matrix
-  virtual void setTransform4x4(const double* matrix) = 0;
-  virtual void setVisible(bool visible) noexcept = 0;
+  void setTransform4x4(const double* matrix);
+  void setVisible(bool visible) noexcept;
   virtual ~Object3d() noexcept = default;
+protected:
+  explicit Object3d(internal::Object3dPtr weak_ref) noexcept : weak_ref_(weak_ref) {}
+  Object3d(Object3d&& from) noexcept : weak_ref_(from.weak_ref_) {
+    from.weak_ref_ = nullptr;
+  };
+  Object3d& operator=(Object3d&& from) noexcept {
+    weak_ref_ = from.weak_ref_;
+    from.weak_ref_ = nullptr;
+    return *this;
+  }
+private:
+  internal::Object3dPtr weak_ref_{}; // Non-owning reference
 };
 
 class Axis {
@@ -209,14 +222,6 @@ private:
 class Line3d : public Object3d {
   friend class Chart3d;
 public:
-  // May throw exception if passed an invalid quaternion
-  void setOrientation(double qw, double qx, double qy, double qz) override;
-  void setTranslation(double x, double y, double z) noexcept override;
-  // May throw an exception if matrix is not 16 elements or not a valid transform matrix
-  void setTransform4x4(const std::vector<double>& matrix) override;
-  // May throw an exception if matrix is not a valid transform matrix
-  void setTransform4x4(const double* matrix) override;
-  void setVisible(bool visible) noexcept override;
   void setData(const std::vector<double>& x, const std::vector<double>& y, const std::vector<double>& z) noexcept;
   void setData(const double* x, const double* y, const double* z, size_t length) noexcept;
   void setMaxPointCount(int count) noexcept;
@@ -228,11 +233,7 @@ public:
 private:
   void cleanup() noexcept;
   // Throws exception if we try to create with null pointer (indicating the resource could not be created)
-  explicit Line3d(internal::Line3dPtr cPointer) : ptr_(cPointer) {
-    if (!ptr_) {
-      throw Exception("Could not create Line3d");
-    }
-  }
+  explicit Line3d(internal::Line3dPtr cPointer);
   internal::Line3dPtr ptr_{};
 };
 
@@ -266,14 +267,6 @@ private:
 class Mesh3d : public Object3d {
   friend class Chart3d;
 public:
-  // May throw exception if passed an invalid quaternion
-  void setOrientation(double qw, double qx, double qy, double qz) override;
-  void setTranslation(double x, double y, double z) noexcept override;
-  // May throw an exception if matrix is not 16 elements or not a valid transform matrix
-  void setTransform4x4(const std::vector<double>& matrix) override;
-  // May throw an exception if matrix is not a valid transform matrix
-  void setTransform4x4(const double* matrix) override;
-  void setVisible(bool visible) noexcept override;
   void setScale(double scaleUnitsToMillimeters) noexcept;
   void setCentered(bool centered) noexcept;
   Mesh3d(Mesh3d&& from) noexcept;
@@ -281,25 +274,14 @@ public:
   ~Mesh3d() noexcept;
 private:
   void cleanup() noexcept;
-  explicit Mesh3d(internal::Mesh3dPtr cPointer) : ptr_(cPointer) {
-    if (!ptr_) {
-      throw Exception("Could not create Mesh3d");
-    }
-  }
+  // Throws exception if we try to create with null pointer (indicating the resource could not be created)
+  explicit Mesh3d(internal::Mesh3dPtr cPointer);
   internal::Mesh3dPtr ptr_{};
 };
 
 class Robot3d : public Object3d {
   friend class Chart3d;
 public:
-  // May throw exception if passed an invalid quaternion
-  void setOrientation(double qw, double qx, double qy, double qz) override;
-  void setTranslation(double x, double y, double z) noexcept override;
-  // May throw an exception if matrix is not 16 elements or not a valid transform matrix
-  void setTransform4x4(const std::vector<double>& matrix) override;
-  // May throw an exception if matrix is not a valid transform matrix
-  void setTransform4x4(const double* matrix) override;
-  void setVisible(bool visible) noexcept override;
   size_t getNumJoints() noexcept;
   // May throw exception if passed an invalid number of positions
   void setPositions(const std::vector<double>& positions);
@@ -310,36 +292,21 @@ public:
   ~Robot3d() noexcept;
 private:
   void cleanup() noexcept;
-  explicit Robot3d(internal::Robot3dPtr cPointer) : ptr_(cPointer) {
-    if (!ptr_) {
-      throw Exception("Could not create Robot3d");
-    }
-  }
+  // Throws exception if we try to create with null pointer (indicating the resource could not be created)
+  explicit Robot3d(internal::Robot3dPtr cPointer);
   internal::Robot3dPtr ptr_{};
 };
 
 class Triad3d : public Object3d {
   friend class Chart3d;
 public:
-  // May throw exception if passed an invalid quaternion
-  void setOrientation(double qw, double qx, double qy, double qz) override;
-  void setTranslation(double x, double y, double z) noexcept override;
-  // May throw an exception if matrix is not 16 elements or not a valid transform matrix
-  void setTransform4x4(const std::vector<double>& matrix) override;
-  // May throw an exception if matrix is not a valid transform matrix
-  void setTransform4x4(const double* matrix) override;
-  void setVisible(bool visible) noexcept override;
   Triad3d(Triad3d&& from) noexcept;
   Triad3d& operator=(Triad3d&& from) noexcept;
   ~Triad3d() noexcept;
 private:
   void cleanup() noexcept;
   // Throws exception if we try to create with null pointer (indicating the resource could not be created)
-  explicit Triad3d(internal::Triad3dPtr cPointer) : ptr_(cPointer) {
-    if (!ptr_) {
-      throw Exception("Could not create Triad3d");
-    }
-  }
+  explicit Triad3d(internal::Triad3dPtr cPointer);
   internal::Triad3dPtr ptr_{};
 };
 
@@ -615,27 +582,6 @@ inline Line::~Line() noexcept {
 }
 
 // Line3d
-inline void Line3d::setOrientation(double qw, double qx, double qy, double qz) {
-  static auto hebi_charts_Line3d_setOrientation = DynamicLookup::instance().getFunc<void(*)(internal::Line3dPtr, double, double, double, double)>("hebi_charts_Line3d_setOrientation");
-  hebi_charts_Line3d_setOrientation(ptr_, qw, qx, qy, qz);
-}
-inline void Line3d::setTranslation(double x, double y, double z) noexcept {
-  static auto hebi_charts_Line3d_setTranslation = DynamicLookup::instance().getFunc<void(*)(internal::Line3dPtr, double, double, double)>("hebi_charts_Line3d_setTranslation");
-  hebi_charts_Line3d_setTranslation(ptr_, x, y, z);
-}
-inline void Line3d::setTransform4x4(const std::vector<double>& matrix) {
-  if (matrix.size() != 16)
-      throw Exception("Transform matrix incorrect size");
-  setTransform4x4(matrix.data());
-}
-inline void Line3d::setTransform4x4(const double* matrix) {
-  static auto hebi_charts_Line3d_setTransform4x4 = DynamicLookup::instance().getFunc<void(*)(internal::Line3dPtr, const double*)>("hebi_charts_Line3d_setTransform4x4");
-  hebi_charts_Line3d_setTransform4x4(ptr_, matrix);
-}
-inline void Line3d::setVisible(bool visible) noexcept {
-  static auto hebi_charts_Line3d_setVisible = DynamicLookup::instance().getFunc<void(*)(internal::Line3dPtr, bool)>("hebi_charts_Line3d_setVisible");
-  hebi_charts_Line3d_setVisible(ptr_, visible);
-}
 inline void Line3d::setData(const std::vector<double>& x, const std::vector<double>& y, const std::vector<double>& z) noexcept {
   setData(x.data(), y.data(), z.data(), (std::min)({x.size(), y.size(), z.size()}));
 }
@@ -655,19 +601,26 @@ inline void Line3d::setColor(Color color) noexcept {
   static auto hebi_charts_Line3d_setColor = DynamicLookup::instance().getFunc<void(*)(internal::Line3dPtr, Color)>("hebi_charts_Line3d_setColor");
   hebi_charts_Line3d_setColor(ptr_, color);
 }
+inline Line3d::Line3d(internal::Line3dPtr cPointer) :
+    Object3d(DynamicLookup::instance().getFunc<internal::Object3dPtr(*)(internal::Line3dPtr)>("hebi_charts_Line3d_to_Object3d")(cPointer)), ptr_(cPointer) {
+  if (!ptr_) {
+    throw Exception("Could not create Line3d");
+  }
+}
 inline void Line3d::cleanup() noexcept {
   if (ptr_ != nullptr) {
     static auto hebi_charts_Line3d_release = DynamicLookup::instance().getFunc<void(*)(internal::Line3dPtr)>("hebi_charts_Line3d_release");
     hebi_charts_Line3d_release(ptr_);
   }
 }
-inline Line3d::Line3d(Line3d&& from) noexcept : ptr_(from.ptr_) {
+inline Line3d::Line3d(Line3d&& from) noexcept : Object3d(std::move(from)), ptr_(from.ptr_) {
   from.ptr_ = nullptr;
 };
 inline Line3d& Line3d::operator=(Line3d&& from) noexcept {
   cleanup();
   ptr_ = from.ptr_;
   from.ptr_ = nullptr;
+  Object3d::operator=(std::move(from));
   return *this;
 };
 inline Line3d::~Line3d() noexcept {
@@ -720,27 +673,6 @@ inline LineChart::~LineChart() noexcept {
 }
 
 // Mesh3d
-inline void Mesh3d::setOrientation(double qw, double qx, double qy, double qz) {
-  static auto hebi_charts_Mesh3d_setOrientation = DynamicLookup::instance().getFunc<void(*)(internal::Mesh3dPtr, double, double, double, double)>("hebi_charts_Mesh3d_setOrientation");
-  hebi_charts_Mesh3d_setOrientation(ptr_, qw, qx, qy, qz);
-}
-inline void Mesh3d::setTranslation(double x, double y, double z) noexcept {
-  static auto hebi_charts_Mesh3d_setTranslation = DynamicLookup::instance().getFunc<void(*)(internal::Mesh3dPtr, double, double, double)>("hebi_charts_Mesh3d_setTranslation");
-  hebi_charts_Mesh3d_setTranslation(ptr_, x, y, z);
-}
-inline void Mesh3d::setTransform4x4(const std::vector<double>& matrix) {
-  if (matrix.size() != 16)
-      throw Exception("Transform matrix incorrect size");
-  setTransform4x4(matrix.data());
-}
-inline void Mesh3d::setTransform4x4(const double* matrix) {
-  static auto hebi_charts_Mesh3d_setTransform4x4 = DynamicLookup::instance().getFunc<void(*)(internal::Mesh3dPtr, const double*)>("hebi_charts_Mesh3d_setTransform4x4");
-  hebi_charts_Mesh3d_setTransform4x4(ptr_, matrix);
-}
-inline void Mesh3d::setVisible(bool visible) noexcept {
-  static auto hebi_charts_Mesh3d_setVisible = DynamicLookup::instance().getFunc<void(*)(internal::Mesh3dPtr, bool)>("hebi_charts_Mesh3d_setVisible");
-  hebi_charts_Mesh3d_setVisible(ptr_, visible);
-}
 inline void Mesh3d::setScale(double scaleUnitsToMillimeters) noexcept {
   static auto hebi_charts_Mesh3d_setScale = DynamicLookup::instance().getFunc<void(*)(internal::Mesh3dPtr, double)>("hebi_charts_Mesh3d_setScale");
   hebi_charts_Mesh3d_setScale(ptr_, scaleUnitsToMillimeters);
@@ -749,47 +681,56 @@ inline void Mesh3d::setCentered(bool centered) noexcept {
   static auto hebi_charts_Mesh3d_setCentered = DynamicLookup::instance().getFunc<void(*)(internal::Mesh3dPtr, bool)>("hebi_charts_Mesh3d_setCentered");
   hebi_charts_Mesh3d_setCentered(ptr_, centered);
 }
+inline Mesh3d::Mesh3d(internal::Mesh3dPtr cPointer) :
+    Object3d(DynamicLookup::instance().getFunc<Object3d(*)(internal::Mesh3dPtr)>("hebi_charts_Mesh3d_to_Object3d")(cPointer)), ptr_(cPointer) {
+  if (!ptr_) {
+    throw Exception("Could not create Mesh3d");
+  }
+}
 inline void Mesh3d::cleanup() noexcept {
   if (ptr_ != nullptr) {
     static auto hebi_charts_Mesh3d_release = DynamicLookup::instance().getFunc<void(*)(internal::Mesh3dPtr)>("hebi_charts_Mesh3d_release");
     hebi_charts_Mesh3d_release(ptr_);
   }
 }
-inline Mesh3d::Mesh3d(Mesh3d&& from) noexcept : ptr_(from.ptr_) {
+inline Mesh3d::Mesh3d(Mesh3d&& from) noexcept : Object3d(std::move(from)), ptr_(from.ptr_) {
   from.ptr_ = nullptr;
 };
 inline Mesh3d& Mesh3d::operator=(Mesh3d&& from) noexcept {
   cleanup();
   ptr_ = from.ptr_;
   from.ptr_ = nullptr;
+  Object3d::operator=(std::move(from));
   return *this;
 };
 inline Mesh3d::~Mesh3d() noexcept {
   cleanup();
 }
 
-// Robot3d
-inline void Robot3d::setOrientation(double qw, double qx, double qy, double qz) {
-  static auto hebi_charts_Robot3d_setOrientation = DynamicLookup::instance().getFunc<void(*)(internal::Robot3dPtr, double, double, double, double)>("hebi_charts_Robot3d_setOrientation");
-  hebi_charts_Robot3d_setOrientation(ptr_, qw, qx, qy, qz);
+// Object3d
+inline void Object3d::setOrientation(double qw, double qx, double qy, double qz) {
+  static auto hebi_charts_Object3d_setOrientation = DynamicLookup::instance().getFunc<void(*)(internal::Object3dPtr, double, double, double, double)>("hebi_charts_Object3d_setOrientation");
+  hebi_charts_Object3d_setOrientation(weak_ref_, qw, qx, qy, qz);
 }
-inline void Robot3d::setTranslation(double x, double y, double z) noexcept {
-  static auto hebi_charts_Robot3d_setTranslation = DynamicLookup::instance().getFunc<void(*)(internal::Robot3dPtr, double, double, double)>("hebi_charts_Robot3d_setTranslation");
-  hebi_charts_Robot3d_setTranslation(ptr_, x, y, z);
+inline void Object3d::setTranslation(double x, double y, double z) noexcept {
+  static auto hebi_charts_Object3d_setTranslation = DynamicLookup::instance().getFunc<void(*)(internal::Object3dPtr, double, double, double)>("hebi_charts_Object3d_setTranslation");
+  hebi_charts_Object3d_setTranslation(weak_ref_, x, y, z);
 }
-inline void Robot3d::setTransform4x4(const std::vector<double>& matrix) {
+inline void Object3d::setTransform4x4(const std::vector<double>& matrix) {
   if (matrix.size() != 16)
       throw Exception("Transform matrix incorrect size");
   setTransform4x4(matrix.data());
 }
-inline void Robot3d::setTransform4x4(const double* matrix) {
-  static auto hebi_charts_Robot3d_setTransform4x4 = DynamicLookup::instance().getFunc<void(*)(internal::Robot3dPtr, const double*)>("hebi_charts_Robot3d_setTransform4x4");
-  hebi_charts_Robot3d_setTransform4x4(ptr_, matrix);
+inline void Object3d::setTransform4x4(const double* matrix) {
+  static auto hebi_charts_Object3d_setTransform4x4 = DynamicLookup::instance().getFunc<void(*)(internal::Object3dPtr, const double*)>("hebi_charts_Object3d_setTransform4x4");
+  hebi_charts_Object3d_setTransform4x4(weak_ref_, matrix);
 }
-inline void Robot3d::setVisible(bool visible) noexcept {
-  static auto hebi_charts_Robot3d_setVisible = DynamicLookup::instance().getFunc<void(*)(internal::Robot3dPtr, bool)>("hebi_charts_Robot3d_setVisible");
-  hebi_charts_Robot3d_setVisible(ptr_, visible);
+inline void Object3d::setVisible(bool visible) noexcept {
+  static auto hebi_charts_Object3d_setVisible = DynamicLookup::instance().getFunc<void(*)(internal::Object3dPtr, bool)>("hebi_charts_Object3d_setVisible");
+  hebi_charts_Object3d_setVisible(weak_ref_, visible);
 }
+
+// Robot3d
 inline size_t Robot3d::getNumJoints() noexcept {
   static auto hebi_charts_Robot3d_getNumJoints = DynamicLookup::instance().getFunc<size_t(*)(internal::Robot3dPtr)>("hebi_charts_Robot3d_getNumJoints");
   return hebi_charts_Robot3d_getNumJoints(ptr_);
@@ -803,19 +744,26 @@ inline void Robot3d::setPositions(const double* positions, size_t length) {
   static auto hebi_charts_Robot3d_setPositions = DynamicLookup::instance().getFunc<void(*)(internal::Robot3dPtr, const double*, size_t)>("hebi_charts_Robot3d_setPositions");
   hebi_charts_Robot3d_setPositions(ptr_, positions, length);
 }
+inline Robot3d::Robot3d(internal::Robot3dPtr cPointer) :
+    Object3d(DynamicLookup::instance().getFunc<Object3d(*)(internal::Robot3dPtr)>("hebi_charts_Robot3d_to_Object3d")(cPointer)), ptr_(cPointer) {
+  if (!ptr_) {
+    throw Exception("Could not create Robot3d");
+  }
+}
 inline void Robot3d::cleanup() noexcept {
   if (ptr_ != nullptr) {
     static auto hebi_charts_Robot3d_release = DynamicLookup::instance().getFunc<void(*)(internal::Robot3dPtr)>("hebi_charts_Robot3d_release");
     hebi_charts_Robot3d_release(ptr_);
   }
 }
-inline Robot3d::Robot3d(Robot3d&& from) noexcept : ptr_(from.ptr_) {
+inline Robot3d::Robot3d(Robot3d&& from) noexcept : Object3d(std::move(from)), ptr_(from.ptr_) {
   from.ptr_ = nullptr;
 };
 inline Robot3d& Robot3d::operator=(Robot3d&& from) noexcept {
   cleanup();
   ptr_ = from.ptr_;
   from.ptr_ = nullptr;
+  Object3d::operator=(std::move(from));
   return *this;
 };
 inline Robot3d::~Robot3d() noexcept {
@@ -823,26 +771,11 @@ inline Robot3d::~Robot3d() noexcept {
 }
 
 // Triad3d
-inline void Triad3d::setOrientation(double qw, double qx, double qy, double qz) {
-  static auto hebi_charts_Triad3d_setOrientation = DynamicLookup::instance().getFunc<void(*)(internal::Triad3dPtr, double, double, double, double)>("hebi_charts_Triad3d_setOrientation");
-  hebi_charts_Triad3d_setOrientation(ptr_, qw, qx, qy, qz);
-}
-inline void Triad3d::setTranslation(double x, double y, double z) noexcept {
-  static auto hebi_charts_Triad3d_setTranslation = DynamicLookup::instance().getFunc<void(*)(internal::Triad3dPtr, double, double, double)>("hebi_charts_Triad3d_setTranslation");
-  hebi_charts_Triad3d_setTranslation(ptr_, x, y, z);
-}
-inline void Triad3d::setTransform4x4(const std::vector<double>& matrix) {
-  if (matrix.size() != 16)
-      throw Exception("Transform matrix incorrect size");
-  setTransform4x4(matrix.data());
-}
-inline void Triad3d::setTransform4x4(const double* matrix) {
-  static auto hebi_charts_Triad3d_setTransform4x4 = DynamicLookup::instance().getFunc<void(*)(internal::Triad3dPtr, const double*)>("hebi_charts_Triad3d_setTransform4x4");
-  hebi_charts_Triad3d_setTransform4x4(ptr_, matrix);
-}
-inline void Triad3d::setVisible(bool visible) noexcept {
-  static auto hebi_charts_Triad3d_setVisible = DynamicLookup::instance().getFunc<void(*)(internal::Triad3dPtr, bool)>("hebi_charts_Triad3d_setVisible");
-  hebi_charts_Triad3d_setVisible(ptr_, visible);
+inline Triad3d::Triad3d(internal::Triad3dPtr cPointer) :
+    Object3d(DynamicLookup::instance().getFunc<Object3d(*)(internal::Triad3dPtr)>("hebi_charts_Triad3d_to_Object3d")(cPointer)), ptr_(cPointer) {
+  if (!ptr_) {
+    throw Exception("Could not create Triad3d");
+  }
 }
 inline void Triad3d::cleanup() noexcept {
   if (ptr_ != nullptr) {
@@ -850,13 +783,14 @@ inline void Triad3d::cleanup() noexcept {
     hebi_charts_Triad3d_release(ptr_);
   }
 }
-inline Triad3d::Triad3d(Triad3d&& from) noexcept : ptr_(from.ptr_) {
+inline Triad3d::Triad3d(Triad3d&& from) noexcept : Object3d(std::move(from)), ptr_(from.ptr_) {
   from.ptr_ = nullptr;
 };
 inline Triad3d& Triad3d::operator=(Triad3d&& from) noexcept {
   cleanup();
   ptr_ = from.ptr_;
   from.ptr_ = nullptr;
+  Object3d::operator=(std::move(from));
   return *this;
 };
 inline Triad3d::~Triad3d() noexcept {
