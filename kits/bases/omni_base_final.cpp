@@ -126,9 +126,9 @@ private:
 
 	const Eigen::Matrix3d base_wheel_transform_
 	{ (Eigen::MatrixXd(3,3) <<
-	 sin(a1), cos(a1), -BASE_RADIUS,
-	 sin(a2), cos(a2), -BASE_RADIUS,
-	 sin(a3), cos(a3), -BASE_RADIUS).finished() };
+	 sin(a1), -cos(a1), -BASE_RADIUS,
+	 sin(a2), -cos(a2), -BASE_RADIUS,
+	 sin(a3), -cos(a3), -BASE_RADIUS).finished() };
 	const Eigen::Matrix3d base_wheel_velocity_matrix_{ base_wheel_transform_ / WHEEL_RADIUS };
 	const Eigen::Matrix3d base_wheel_effort_matrix_{ base_wheel_transform_ * WHEEL_RADIUS };
 
