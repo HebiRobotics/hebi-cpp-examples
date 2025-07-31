@@ -59,15 +59,15 @@ class Triad3d;
 using UserCallbackFunction = void (*)(void* userData);
 
 namespace internal {
-using NativeAxisPtr = struct Axis_*;
-using NativeChart3dPtr = struct Chart3d_*;
-using NativeGridWindowPtr = struct GridWindow_*;
-using NativeLinePtr = struct Line_*;
-using NativeLine3dPtr = struct Line3d_*;
-using NativeLineChartPtr = struct LineChart_*;
-using NativeMesh3dPtr = struct Mesh3d_*;
-using NativeRobot3dPtr = struct Robot3d_*;
-using NativeTriad3dPtr = struct Triad3d_*;
+using AxisPtr = struct Axis_*;
+using Chart3dPtr = struct Chart3d_*;
+using GridWindowPtr = struct GridWindow_*;
+using LinePtr = struct Line_*;
+using Line3dPtr = struct Line3d_*;
+using LineChartPtr = struct LineChart_*;
+using Mesh3dPtr = struct Mesh3d_*;
+using Robot3dPtr = struct Robot3d_*;
+using Triad3dPtr = struct Triad3d_*;
 }
 
 // ==== Class Wrappers ====
@@ -95,8 +95,8 @@ public:
   ~Axis();
 private:
   void cleanup();
-  explicit Axis(internal::NativeAxisPtr cPointer) : ptr_(cPointer) {}
-  internal::NativeAxisPtr ptr_{};
+  explicit Axis(internal::AxisPtr cPointer) : ptr_(cPointer) {}
+  internal::AxisPtr ptr_{};
 };
 
 class Chart3d {
@@ -113,8 +113,8 @@ public:
   ~Chart3d();
 private:
   void cleanup();
-  explicit Chart3d(internal::NativeChart3dPtr cPointer) : ptr_(cPointer) {}
-  internal::NativeChart3dPtr ptr_{};
+  explicit Chart3d(internal::Chart3dPtr cPointer) : ptr_(cPointer) {}
+  internal::Chart3dPtr ptr_{};
 };
 
 class GridWindow {
@@ -141,8 +141,8 @@ public:
   ~GridWindow();
 private:
   void cleanup();
-  explicit GridWindow(internal::NativeGridWindowPtr cPointer) : ptr_(cPointer) {}
-  internal::NativeGridWindowPtr ptr_{};
+  explicit GridWindow(internal::GridWindowPtr cPointer) : ptr_(cPointer) {}
+  internal::GridWindowPtr ptr_{};
 };
 
 class Line {
@@ -161,18 +161,18 @@ public:
   ~Line();
 private:
   void cleanup();
-  explicit Line(internal::NativeLinePtr cPointer) : ptr_(cPointer) {}
-  internal::NativeLinePtr ptr_{};
+  explicit Line(internal::LinePtr cPointer) : ptr_(cPointer) {}
+  internal::LinePtr ptr_{};
 };
 
-class Line3d : Object3d {
+class Line3d : public Object3d {
   friend class Chart3d;
 public:
-  void setOrientation(double qw, double qx, double qy, double qz);
-  void setTranslation(double x, double y, double z);
+  void setOrientation(double qw, double qx, double qy, double qz) override;
+  void setTranslation(double x, double y, double z) override;
   void setTransform4x4(const std::vector<double>& matrix) override;
-  void setTransform4x4(const double* matrix);
-  void setVisible(bool visible);
+  void setTransform4x4(const double* matrix) override;
+  void setVisible(bool visible) override;
   void setData(const std::vector<double>& x, const std::vector<double>& y, const std::vector<double>& z);
   void setData(const double* x, const double* y, const double* z, size_t length);
   void setMaxPointCount(int count);
@@ -183,8 +183,8 @@ public:
   ~Line3d();
 private:
   void cleanup();
-  explicit Line3d(internal::NativeLine3dPtr cPointer) : ptr_(cPointer) {}
-  internal::NativeLine3dPtr ptr_{};
+  explicit Line3d(internal::Line3dPtr cPointer) : ptr_(cPointer) {}
+  internal::Line3dPtr ptr_{};
 };
 
 class LineChart {
@@ -202,18 +202,18 @@ public:
   ~LineChart();
 private:
   void cleanup();
-  explicit LineChart(internal::NativeLineChartPtr cPointer) : ptr_(cPointer) {}
-  internal::NativeLineChartPtr ptr_{};
+  explicit LineChart(internal::LineChartPtr cPointer) : ptr_(cPointer) {}
+  internal::LineChartPtr ptr_{};
 };
 
-class Mesh3d : Object3d {
+class Mesh3d : public Object3d {
   friend class Chart3d;
 public:
-  void setOrientation(double qw, double qx, double qy, double qz);
-  void setTranslation(double x, double y, double z);
+  void setOrientation(double qw, double qx, double qy, double qz) override;
+  void setTranslation(double x, double y, double z) override;
   void setTransform4x4(const std::vector<double>& matrix) override;
-  void setTransform4x4(const double* matrix);
-  void setVisible(bool visible);
+  void setTransform4x4(const double* matrix) override;
+  void setVisible(bool visible) override;
   void setScale(double scaleUnitsToMillimeters);
   void setCentered(bool centered);
   Mesh3d(Mesh3d&& from) noexcept;
@@ -221,18 +221,18 @@ public:
   ~Mesh3d();
 private:
   void cleanup();
-  explicit Mesh3d(internal::NativeMesh3dPtr cPointer) : ptr_(cPointer) {}
-  internal::NativeMesh3dPtr ptr_{};
+  explicit Mesh3d(internal::Mesh3dPtr cPointer) : ptr_(cPointer) {}
+  internal::Mesh3dPtr ptr_{};
 };
 
-class Robot3d : Object3d {
+class Robot3d : public Object3d {
   friend class Chart3d;
 public:
-  void setOrientation(double qw, double qx, double qy, double qz);
-  void setTranslation(double x, double y, double z);
+  void setOrientation(double qw, double qx, double qy, double qz) override;
+  void setTranslation(double x, double y, double z) override;
   void setTransform4x4(const std::vector<double>& matrix) override;
-  void setTransform4x4(const double* matrix);
-  void setVisible(bool visible);
+  void setTransform4x4(const double* matrix) override;
+  void setVisible(bool visible) override;
   size_t getNumJoints();
   void setPositions(const std::vector<double>& positions);
   void setPositions(const double* positions, size_t length);
@@ -241,25 +241,25 @@ public:
   ~Robot3d();
 private:
   void cleanup();
-  explicit Robot3d(internal::NativeRobot3dPtr cPointer) : ptr_(cPointer) {}
-  internal::NativeRobot3dPtr ptr_{};
+  explicit Robot3d(internal::Robot3dPtr cPointer) : ptr_(cPointer) {}
+  internal::Robot3dPtr ptr_{};
 };
 
-class Triad3d : Object3d {
+class Triad3d : public Object3d {
   friend class Chart3d;
 public:
-  void setOrientation(double qw, double qx, double qy, double qz);
-  void setTranslation(double x, double y, double z);
+  void setOrientation(double qw, double qx, double qy, double qz) override;
+  void setTranslation(double x, double y, double z) override;
   void setTransform4x4(const std::vector<double>& matrix) override;
-  void setTransform4x4(const double* matrix);
-  void setVisible(bool visible);
+  void setTransform4x4(const double* matrix) override;
+  void setVisible(bool visible) override;
   Triad3d(Triad3d&& from) noexcept;
   Triad3d& operator=(Triad3d&& from) noexcept;
   ~Triad3d();
 private:
   void cleanup();
-  explicit Triad3d(internal::NativeTriad3dPtr cPointer) : ptr_(cPointer) {}
-  internal::NativeTriad3dPtr ptr_{};
+  explicit Triad3d(internal::Triad3dPtr cPointer) : ptr_(cPointer) {}
+  internal::Triad3dPtr ptr_{};
 };
 
 namespace framework {
@@ -306,27 +306,27 @@ inline void Axis::setName(const std::string& name) {
   setName(name.c_str());
 }
 inline void Axis::setName(const char* name) {
-  static auto hebi_charts_Axis_setName = DynamicLookup::instance().getFunc<void(*)(internal::NativeAxisPtr, const char*)>("hebi_charts_Axis_setName");
+  static auto hebi_charts_Axis_setName = DynamicLookup::instance().getFunc<void(*)(internal::AxisPtr, const char*)>("hebi_charts_Axis_setName");
   hebi_charts_Axis_setName(ptr_, name);
 }
 inline void Axis::setUnit(const std::string& unit) {
   setUnit(unit.c_str());
 }
 inline void Axis::setUnit(const char* unit) {
-  static auto hebi_charts_Axis_setUnit = DynamicLookup::instance().getFunc<void(*)(internal::NativeAxisPtr, const char*)>("hebi_charts_Axis_setUnit");
+  static auto hebi_charts_Axis_setUnit = DynamicLookup::instance().getFunc<void(*)(internal::AxisPtr, const char*)>("hebi_charts_Axis_setUnit");
   hebi_charts_Axis_setUnit(ptr_, unit);
 }
 inline void Axis::setAutoUnitScaling(bool autoUnitScaling) {
-  static auto hebi_charts_Axis_setAutoUnitScaling = DynamicLookup::instance().getFunc<void(*)(internal::NativeAxisPtr, bool)>("hebi_charts_Axis_setAutoUnitScaling");
+  static auto hebi_charts_Axis_setAutoUnitScaling = DynamicLookup::instance().getFunc<void(*)(internal::AxisPtr, bool)>("hebi_charts_Axis_setAutoUnitScaling");
   hebi_charts_Axis_setAutoUnitScaling(ptr_, autoUnitScaling);
 }
 inline void Axis::setLimits(double min, double max) {
-  static auto hebi_charts_Axis_setLimits = DynamicLookup::instance().getFunc<void(*)(internal::NativeAxisPtr, double, double)>("hebi_charts_Axis_setLimits");
+  static auto hebi_charts_Axis_setLimits = DynamicLookup::instance().getFunc<void(*)(internal::AxisPtr, double, double)>("hebi_charts_Axis_setLimits");
   hebi_charts_Axis_setLimits(ptr_, min, max);
 }
 inline void Axis::cleanup() {
   if (ptr_ != nullptr) {
-    static auto hebi_charts_Axis_release = DynamicLookup::instance().getFunc<void(*)(internal::NativeAxisPtr)>("hebi_charts_Axis_release");
+    static auto hebi_charts_Axis_release = DynamicLookup::instance().getFunc<void(*)(internal::AxisPtr)>("hebi_charts_Axis_release");
     hebi_charts_Axis_release(ptr_);
   }
 }
@@ -348,7 +348,7 @@ inline std::optional<Robot3d> Chart3d::addHrdf(const std::string& filePath) {
   return addHrdf(filePath.c_str());
 }
 inline std::optional<Robot3d> Chart3d::addHrdf(const char* filePath) {
-  static auto hebi_charts_Chart3d_addHrdf = DynamicLookup::instance().getFunc<internal::NativeRobot3dPtr(*)(internal::NativeChart3dPtr, const char*)>("hebi_charts_Chart3d_addHrdf");
+  static auto hebi_charts_Chart3d_addHrdf = DynamicLookup::instance().getFunc<internal::Robot3dPtr(*)(internal::Chart3dPtr, const char*)>("hebi_charts_Chart3d_addHrdf");
   auto ptr = hebi_charts_Chart3d_addHrdf(ptr_, filePath);
   return !ptr ? std::nullopt : std::make_optional(Robot3d(ptr));
 }
@@ -356,23 +356,23 @@ inline std::optional<Mesh3d> Chart3d::addMesh(const std::string& pathOrUrl) {
   return addMesh(pathOrUrl.c_str());
 }
 inline std::optional<Mesh3d> Chart3d::addMesh(const char* pathOrUrl) {
-  static auto hebi_charts_Chart3d_addMesh = DynamicLookup::instance().getFunc<internal::NativeMesh3dPtr(*)(internal::NativeChart3dPtr, const char*)>("hebi_charts_Chart3d_addMesh");
+  static auto hebi_charts_Chart3d_addMesh = DynamicLookup::instance().getFunc<internal::Mesh3dPtr(*)(internal::Chart3dPtr, const char*)>("hebi_charts_Chart3d_addMesh");
   auto ptr = hebi_charts_Chart3d_addMesh(ptr_, pathOrUrl);
   return !ptr ? std::nullopt : std::make_optional(Mesh3d(ptr));
 }
 inline std::optional<Triad3d> Chart3d::addTriad(double length) {
-  static auto hebi_charts_Chart3d_addTriad = DynamicLookup::instance().getFunc<internal::NativeTriad3dPtr(*)(internal::NativeChart3dPtr, double)>("hebi_charts_Chart3d_addTriad");
+  static auto hebi_charts_Chart3d_addTriad = DynamicLookup::instance().getFunc<internal::Triad3dPtr(*)(internal::Chart3dPtr, double)>("hebi_charts_Chart3d_addTriad");
   auto ptr = hebi_charts_Chart3d_addTriad(ptr_, length);
   return !ptr ? std::nullopt : std::make_optional(Triad3d(ptr));
 }
 inline std::optional<Line3d> Chart3d::addLine() {
-  static auto hebi_charts_Chart3d_addLine = DynamicLookup::instance().getFunc<internal::NativeLine3dPtr(*)(internal::NativeChart3dPtr)>("hebi_charts_Chart3d_addLine");
+  static auto hebi_charts_Chart3d_addLine = DynamicLookup::instance().getFunc<internal::Line3dPtr(*)(internal::Chart3dPtr)>("hebi_charts_Chart3d_addLine");
   auto ptr = hebi_charts_Chart3d_addLine(ptr_);
   return !ptr ? std::nullopt : std::make_optional(Line3d(ptr));
 }
 inline void Chart3d::cleanup() {
   if (ptr_ != nullptr) {
-    static auto hebi_charts_Chart3d_release = DynamicLookup::instance().getFunc<void(*)(internal::NativeChart3dPtr)>("hebi_charts_Chart3d_release");
+    static auto hebi_charts_Chart3d_release = DynamicLookup::instance().getFunc<void(*)(internal::Chart3dPtr)>("hebi_charts_Chart3d_release");
     hebi_charts_Chart3d_release(ptr_);
   }
 }
@@ -391,45 +391,45 @@ inline Chart3d::~Chart3d() {
 
 // GridWindow
 inline void GridWindow::setSize(int width, int height) {
-  static auto hebi_charts_GridWindow_setSize = DynamicLookup::instance().getFunc<void(*)(internal::NativeGridWindowPtr, int, int)>("hebi_charts_GridWindow_setSize");
+  static auto hebi_charts_GridWindow_setSize = DynamicLookup::instance().getFunc<void(*)(internal::GridWindowPtr, int, int)>("hebi_charts_GridWindow_setSize");
   hebi_charts_GridWindow_setSize(ptr_, width, height);
 }
 inline void GridWindow::setLocation(int xOffset, int yOffset) {
-  static auto hebi_charts_GridWindow_setLocation = DynamicLookup::instance().getFunc<void(*)(internal::NativeGridWindowPtr, int, int)>("hebi_charts_GridWindow_setLocation");
+  static auto hebi_charts_GridWindow_setLocation = DynamicLookup::instance().getFunc<void(*)(internal::GridWindowPtr, int, int)>("hebi_charts_GridWindow_setLocation");
   hebi_charts_GridWindow_setLocation(ptr_, xOffset, yOffset);
 }
 inline void GridWindow::setTitle(const std::string& title) {
   setTitle(title.c_str());
 }
 inline void GridWindow::setTitle(const char* title) {
-  static auto hebi_charts_GridWindow_setTitle = DynamicLookup::instance().getFunc<void(*)(internal::NativeGridWindowPtr, const char*)>("hebi_charts_GridWindow_setTitle");
+  static auto hebi_charts_GridWindow_setTitle = DynamicLookup::instance().getFunc<void(*)(internal::GridWindowPtr, const char*)>("hebi_charts_GridWindow_setTitle");
   hebi_charts_GridWindow_setTitle(ptr_, title);
 }
 inline void GridWindow::show() {
-  static auto hebi_charts_GridWindow_show = DynamicLookup::instance().getFunc<void(*)(internal::NativeGridWindowPtr)>("hebi_charts_GridWindow_show");
+  static auto hebi_charts_GridWindow_show = DynamicLookup::instance().getFunc<void(*)(internal::GridWindowPtr)>("hebi_charts_GridWindow_show");
   hebi_charts_GridWindow_show(ptr_);
 }
 inline void GridWindow::hide() {
-  static auto hebi_charts_GridWindow_hide = DynamicLookup::instance().getFunc<void(*)(internal::NativeGridWindowPtr)>("hebi_charts_GridWindow_hide");
+  static auto hebi_charts_GridWindow_hide = DynamicLookup::instance().getFunc<void(*)(internal::GridWindowPtr)>("hebi_charts_GridWindow_hide");
   hebi_charts_GridWindow_hide(ptr_);
 }
 inline bool GridWindow::isShowing() {
-  static auto hebi_charts_GridWindow_isShowing = DynamicLookup::instance().getFunc<bool(*)(internal::NativeGridWindowPtr)>("hebi_charts_GridWindow_isShowing");
+  static auto hebi_charts_GridWindow_isShowing = DynamicLookup::instance().getFunc<bool(*)(internal::GridWindowPtr)>("hebi_charts_GridWindow_isShowing");
   return hebi_charts_GridWindow_isShowing(ptr_);
 }
 inline void GridWindow::keepOpen(bool keepOpen) {
-  static auto hebi_charts_GridWindow_keepOpen = DynamicLookup::instance().getFunc<void(*)(internal::NativeGridWindowPtr, bool)>("hebi_charts_GridWindow_keepOpen");
+  static auto hebi_charts_GridWindow_keepOpen = DynamicLookup::instance().getFunc<void(*)(internal::GridWindowPtr, bool)>("hebi_charts_GridWindow_keepOpen");
   hebi_charts_GridWindow_keepOpen(ptr_, keepOpen);
 }
 inline void GridWindow::waitUntilClosed() {
-  static auto hebi_charts_GridWindow_waitUntilClosed = DynamicLookup::instance().getFunc<void(*)(internal::NativeGridWindowPtr)>("hebi_charts_GridWindow_waitUntilClosed");
+  static auto hebi_charts_GridWindow_waitUntilClosed = DynamicLookup::instance().getFunc<void(*)(internal::GridWindowPtr)>("hebi_charts_GridWindow_waitUntilClosed");
   hebi_charts_GridWindow_waitUntilClosed(ptr_);
 }
 inline std::optional<GridWindow> GridWindow::create() {
   return create(1, 1);
 }
 inline std::optional<GridWindow> GridWindow::create(int rows, int cols) {
-  static auto hebi_charts_GridWindow_create = DynamicLookup::instance().getFunc<internal::NativeGridWindowPtr(*)(int, int)>("hebi_charts_GridWindow_create");
+  static auto hebi_charts_GridWindow_create = DynamicLookup::instance().getFunc<internal::GridWindowPtr(*)(int, int)>("hebi_charts_GridWindow_create");
   auto ptr = hebi_charts_GridWindow_create(rows, cols);
   return !ptr ? std::nullopt : std::make_optional(GridWindow(ptr));
 }
@@ -440,7 +440,7 @@ inline std::optional<LineChart> GridWindow::addLineChart(int row, int col) {
   return addLineChart(row, col, 1, 1);
 }
 inline std::optional<LineChart> GridWindow::addLineChart(int row, int col, int rowSpan, int colSpan) {
-  static auto hebi_charts_GridWindow_addLineChart = DynamicLookup::instance().getFunc<internal::NativeLineChartPtr(*)(internal::NativeGridWindowPtr, int, int, int, int)>("hebi_charts_GridWindow_addLineChart");
+  static auto hebi_charts_GridWindow_addLineChart = DynamicLookup::instance().getFunc<internal::LineChartPtr(*)(internal::GridWindowPtr, int, int, int, int)>("hebi_charts_GridWindow_addLineChart");
   auto ptr = hebi_charts_GridWindow_addLineChart(ptr_, row, col, rowSpan, colSpan);
   return !ptr ? std::nullopt : std::make_optional(LineChart(ptr));
 }
@@ -451,13 +451,13 @@ inline std::optional<Chart3d> GridWindow::add3dChart(int row, int col) {
   return add3dChart(row, col, 1, 1);
 }
 inline std::optional<Chart3d> GridWindow::add3dChart(int row, int col, int rowSpan, int colSpan) {
-  static auto hebi_charts_GridWindow_add3dChart = DynamicLookup::instance().getFunc<internal::NativeChart3dPtr(*)(internal::NativeGridWindowPtr, int, int, int, int)>("hebi_charts_GridWindow_add3dChart");
+  static auto hebi_charts_GridWindow_add3dChart = DynamicLookup::instance().getFunc<internal::Chart3dPtr(*)(internal::GridWindowPtr, int, int, int, int)>("hebi_charts_GridWindow_add3dChart");
   auto ptr = hebi_charts_GridWindow_add3dChart(ptr_, row, col, rowSpan, colSpan);
   return !ptr ? std::nullopt : std::make_optional(Chart3d(ptr));
 }
 inline void GridWindow::cleanup() {
   if (ptr_ != nullptr) {
-    static auto hebi_charts_GridWindow_release = DynamicLookup::instance().getFunc<void(*)(internal::NativeGridWindowPtr)>("hebi_charts_GridWindow_release");
+    static auto hebi_charts_GridWindow_release = DynamicLookup::instance().getFunc<void(*)(internal::GridWindowPtr)>("hebi_charts_GridWindow_release");
     hebi_charts_GridWindow_release(ptr_);
   }
 }
@@ -479,35 +479,35 @@ inline void Line::setData(const std::vector<double>& x, const std::vector<double
   setData(x.data(), y.data(), (std::min)(x.size(), y.size()));
 }
 inline void Line::setData(const double* x, const double* y, size_t length) {
-  static auto hebi_charts_Line_setData = DynamicLookup::instance().getFunc<void(*)(internal::NativeLinePtr, const double*, const double*, size_t)>("hebi_charts_Line_setData");
+  static auto hebi_charts_Line_setData = DynamicLookup::instance().getFunc<void(*)(internal::LinePtr, const double*, const double*, size_t)>("hebi_charts_Line_setData");
   hebi_charts_Line_setData(ptr_, x, y, length);
 }
 inline void Line::setMaxPointCount(int count) {
-  static auto hebi_charts_Line_setMaxPointCount = DynamicLookup::instance().getFunc<void(*)(internal::NativeLinePtr, int)>("hebi_charts_Line_setMaxPointCount");
+  static auto hebi_charts_Line_setMaxPointCount = DynamicLookup::instance().getFunc<void(*)(internal::LinePtr, int)>("hebi_charts_Line_setMaxPointCount");
   hebi_charts_Line_setMaxPointCount(ptr_, count);
 }
 inline void Line::addPoint(double x, double y) {
-  static auto hebi_charts_Line_addPoint = DynamicLookup::instance().getFunc<void(*)(internal::NativeLinePtr, double, double)>("hebi_charts_Line_addPoint");
+  static auto hebi_charts_Line_addPoint = DynamicLookup::instance().getFunc<void(*)(internal::LinePtr, double, double)>("hebi_charts_Line_addPoint");
   hebi_charts_Line_addPoint(ptr_, x, y);
 }
 inline void Line::setName(const std::string& name) {
   setName(name.c_str());
 }
 inline void Line::setName(const char* name) {
-  static auto hebi_charts_Line_setName = DynamicLookup::instance().getFunc<void(*)(internal::NativeLinePtr, const char*)>("hebi_charts_Line_setName");
+  static auto hebi_charts_Line_setName = DynamicLookup::instance().getFunc<void(*)(internal::LinePtr, const char*)>("hebi_charts_Line_setName");
   hebi_charts_Line_setName(ptr_, name);
 }
 inline void Line::setColor(Color color) {
-  static auto hebi_charts_Line_setColor = DynamicLookup::instance().getFunc<void(*)(internal::NativeLinePtr, Color)>("hebi_charts_Line_setColor");
+  static auto hebi_charts_Line_setColor = DynamicLookup::instance().getFunc<void(*)(internal::LinePtr, Color)>("hebi_charts_Line_setColor");
   hebi_charts_Line_setColor(ptr_, color);
 }
 inline void Line::setLineStyle(LineStyle lineStyle) {
-  static auto hebi_charts_Line_setLineStyle = DynamicLookup::instance().getFunc<void(*)(internal::NativeLinePtr, LineStyle)>("hebi_charts_Line_setLineStyle");
+  static auto hebi_charts_Line_setLineStyle = DynamicLookup::instance().getFunc<void(*)(internal::LinePtr, LineStyle)>("hebi_charts_Line_setLineStyle");
   hebi_charts_Line_setLineStyle(ptr_, lineStyle);
 }
 inline void Line::cleanup() {
   if (ptr_ != nullptr) {
-    static auto hebi_charts_Line_release = DynamicLookup::instance().getFunc<void(*)(internal::NativeLinePtr)>("hebi_charts_Line_release");
+    static auto hebi_charts_Line_release = DynamicLookup::instance().getFunc<void(*)(internal::LinePtr)>("hebi_charts_Line_release");
     hebi_charts_Line_release(ptr_);
   }
 }
@@ -526,46 +526,46 @@ inline Line::~Line() {
 
 // Line3d
 inline void Line3d::setOrientation(double qw, double qx, double qy, double qz) {
-  static auto hebi_charts_Line3d_setOrientation = DynamicLookup::instance().getFunc<void(*)(internal::NativeLine3dPtr, double, double, double, double)>("hebi_charts_Line3d_setOrientation");
+  static auto hebi_charts_Line3d_setOrientation = DynamicLookup::instance().getFunc<void(*)(internal::Line3dPtr, double, double, double, double)>("hebi_charts_Line3d_setOrientation");
   hebi_charts_Line3d_setOrientation(ptr_, qw, qx, qy, qz);
 }
 inline void Line3d::setTranslation(double x, double y, double z) {
-  static auto hebi_charts_Line3d_setTranslation = DynamicLookup::instance().getFunc<void(*)(internal::NativeLine3dPtr, double, double, double)>("hebi_charts_Line3d_setTranslation");
+  static auto hebi_charts_Line3d_setTranslation = DynamicLookup::instance().getFunc<void(*)(internal::Line3dPtr, double, double, double)>("hebi_charts_Line3d_setTranslation");
   hebi_charts_Line3d_setTranslation(ptr_, x, y, z);
 }
 inline void Line3d::setTransform4x4(const std::vector<double>& matrix) {
   setTransform4x4(matrix.data());
 }
 inline void Line3d::setTransform4x4(const double* matrix) {
-  static auto hebi_charts_Line3d_setTransform4x4 = DynamicLookup::instance().getFunc<void(*)(internal::NativeLine3dPtr, const double*)>("hebi_charts_Line3d_setTransform4x4");
+  static auto hebi_charts_Line3d_setTransform4x4 = DynamicLookup::instance().getFunc<void(*)(internal::Line3dPtr, const double*)>("hebi_charts_Line3d_setTransform4x4");
   hebi_charts_Line3d_setTransform4x4(ptr_, matrix);
 }
 inline void Line3d::setVisible(bool visible) {
-  static auto hebi_charts_Line3d_setVisible = DynamicLookup::instance().getFunc<void(*)(internal::NativeLine3dPtr, bool)>("hebi_charts_Line3d_setVisible");
+  static auto hebi_charts_Line3d_setVisible = DynamicLookup::instance().getFunc<void(*)(internal::Line3dPtr, bool)>("hebi_charts_Line3d_setVisible");
   hebi_charts_Line3d_setVisible(ptr_, visible);
 }
 inline void Line3d::setData(const std::vector<double>& x, const std::vector<double>& y, const std::vector<double>& z) {
   setData(x.data(), y.data(), z.data(), (std::min)({x.size(), y.size(), z.size()}));
 }
 inline void Line3d::setData(const double* x, const double* y, const double* z, size_t length) {
-  static auto hebi_charts_Line3d_setData = DynamicLookup::instance().getFunc<void(*)(internal::NativeLine3dPtr, const double*, const double*, const double*, size_t)>("hebi_charts_Line3d_setData");
+  static auto hebi_charts_Line3d_setData = DynamicLookup::instance().getFunc<void(*)(internal::Line3dPtr, const double*, const double*, const double*, size_t)>("hebi_charts_Line3d_setData");
   hebi_charts_Line3d_setData(ptr_, x, y, z, length);
 }
 inline void Line3d::setMaxPointCount(int count) {
-  static auto hebi_charts_Line3d_setMaxPointCount = DynamicLookup::instance().getFunc<void(*)(internal::NativeLine3dPtr, int)>("hebi_charts_Line3d_setMaxPointCount");
+  static auto hebi_charts_Line3d_setMaxPointCount = DynamicLookup::instance().getFunc<void(*)(internal::Line3dPtr, int)>("hebi_charts_Line3d_setMaxPointCount");
   hebi_charts_Line3d_setMaxPointCount(ptr_, count);
 }
 inline void Line3d::addPoint(double x, double y, double z) {
-  static auto hebi_charts_Line3d_addPoint = DynamicLookup::instance().getFunc<void(*)(internal::NativeLine3dPtr, double, double, double)>("hebi_charts_Line3d_addPoint");
+  static auto hebi_charts_Line3d_addPoint = DynamicLookup::instance().getFunc<void(*)(internal::Line3dPtr, double, double, double)>("hebi_charts_Line3d_addPoint");
   hebi_charts_Line3d_addPoint(ptr_, x, y, z);
 }
 inline void Line3d::setColor(Color color) {
-  static auto hebi_charts_Line3d_setColor = DynamicLookup::instance().getFunc<void(*)(internal::NativeLine3dPtr, Color)>("hebi_charts_Line3d_setColor");
+  static auto hebi_charts_Line3d_setColor = DynamicLookup::instance().getFunc<void(*)(internal::Line3dPtr, Color)>("hebi_charts_Line3d_setColor");
   hebi_charts_Line3d_setColor(ptr_, color);
 }
 inline void Line3d::cleanup() {
   if (ptr_ != nullptr) {
-    static auto hebi_charts_Line3d_release = DynamicLookup::instance().getFunc<void(*)(internal::NativeLine3dPtr)>("hebi_charts_Line3d_release");
+    static auto hebi_charts_Line3d_release = DynamicLookup::instance().getFunc<void(*)(internal::Line3dPtr)>("hebi_charts_Line3d_release");
     hebi_charts_Line3d_release(ptr_);
   }
 }
@@ -587,16 +587,16 @@ inline void LineChart::setTitle(const std::string& title) {
   setTitle(title.c_str());
 }
 inline void LineChart::setTitle(const char* title) {
-  static auto hebi_charts_LineChart_setTitle = DynamicLookup::instance().getFunc<void(*)(internal::NativeLineChartPtr, const char*)>("hebi_charts_LineChart_setTitle");
+  static auto hebi_charts_LineChart_setTitle = DynamicLookup::instance().getFunc<void(*)(internal::LineChartPtr, const char*)>("hebi_charts_LineChart_setTitle");
   hebi_charts_LineChart_setTitle(ptr_, title);
 }
 inline std::optional<Axis> LineChart::getAxisX() {
-  static auto hebi_charts_LineChart_getAxisX = DynamicLookup::instance().getFunc<internal::NativeAxisPtr(*)(internal::NativeLineChartPtr)>("hebi_charts_LineChart_getAxisX");
+  static auto hebi_charts_LineChart_getAxisX = DynamicLookup::instance().getFunc<internal::AxisPtr(*)(internal::LineChartPtr)>("hebi_charts_LineChart_getAxisX");
   auto ptr = hebi_charts_LineChart_getAxisX(ptr_);
   return !ptr ? std::nullopt : std::make_optional(Axis(ptr));
 }
 inline std::optional<Axis> LineChart::getAxisY() {
-  static auto hebi_charts_LineChart_getAxisY = DynamicLookup::instance().getFunc<internal::NativeAxisPtr(*)(internal::NativeLineChartPtr)>("hebi_charts_LineChart_getAxisY");
+  static auto hebi_charts_LineChart_getAxisY = DynamicLookup::instance().getFunc<internal::AxisPtr(*)(internal::LineChartPtr)>("hebi_charts_LineChart_getAxisY");
   auto ptr = hebi_charts_LineChart_getAxisY(ptr_);
   return !ptr ? std::nullopt : std::make_optional(Axis(ptr));
 }
@@ -607,13 +607,13 @@ inline std::optional<Line> LineChart::addLine(const std::string& name, const std
   return addLine(name.c_str(), x.data(), y.data(), (std::min)(x.size(), y.size()));
 }
 inline std::optional<Line> LineChart::addLine(const char* name, const double* x, const double* y, size_t length) {
-  static auto hebi_charts_LineChart_addLine = DynamicLookup::instance().getFunc<internal::NativeLinePtr(*)(internal::NativeLineChartPtr, const char*, const double*, const double*, size_t)>("hebi_charts_LineChart_addLine");
+  static auto hebi_charts_LineChart_addLine = DynamicLookup::instance().getFunc<internal::LinePtr(*)(internal::LineChartPtr, const char*, const double*, const double*, size_t)>("hebi_charts_LineChart_addLine");
   auto ptr = hebi_charts_LineChart_addLine(ptr_, name, x, y, length);
   return !ptr ? std::nullopt : std::make_optional(Line(ptr));
 }
 inline void LineChart::cleanup() {
   if (ptr_ != nullptr) {
-    static auto hebi_charts_LineChart_release = DynamicLookup::instance().getFunc<void(*)(internal::NativeLineChartPtr)>("hebi_charts_LineChart_release");
+    static auto hebi_charts_LineChart_release = DynamicLookup::instance().getFunc<void(*)(internal::LineChartPtr)>("hebi_charts_LineChart_release");
     hebi_charts_LineChart_release(ptr_);
   }
 }
@@ -632,35 +632,35 @@ inline LineChart::~LineChart() {
 
 // Mesh3d
 inline void Mesh3d::setOrientation(double qw, double qx, double qy, double qz) {
-  static auto hebi_charts_Mesh3d_setOrientation = DynamicLookup::instance().getFunc<void(*)(internal::NativeMesh3dPtr, double, double, double, double)>("hebi_charts_Mesh3d_setOrientation");
+  static auto hebi_charts_Mesh3d_setOrientation = DynamicLookup::instance().getFunc<void(*)(internal::Mesh3dPtr, double, double, double, double)>("hebi_charts_Mesh3d_setOrientation");
   hebi_charts_Mesh3d_setOrientation(ptr_, qw, qx, qy, qz);
 }
 inline void Mesh3d::setTranslation(double x, double y, double z) {
-  static auto hebi_charts_Mesh3d_setTranslation = DynamicLookup::instance().getFunc<void(*)(internal::NativeMesh3dPtr, double, double, double)>("hebi_charts_Mesh3d_setTranslation");
+  static auto hebi_charts_Mesh3d_setTranslation = DynamicLookup::instance().getFunc<void(*)(internal::Mesh3dPtr, double, double, double)>("hebi_charts_Mesh3d_setTranslation");
   hebi_charts_Mesh3d_setTranslation(ptr_, x, y, z);
 }
 inline void Mesh3d::setTransform4x4(const std::vector<double>& matrix) {
   setTransform4x4(matrix.data());
 }
 inline void Mesh3d::setTransform4x4(const double* matrix) {
-  static auto hebi_charts_Mesh3d_setTransform4x4 = DynamicLookup::instance().getFunc<void(*)(internal::NativeMesh3dPtr, const double*)>("hebi_charts_Mesh3d_setTransform4x4");
+  static auto hebi_charts_Mesh3d_setTransform4x4 = DynamicLookup::instance().getFunc<void(*)(internal::Mesh3dPtr, const double*)>("hebi_charts_Mesh3d_setTransform4x4");
   hebi_charts_Mesh3d_setTransform4x4(ptr_, matrix);
 }
 inline void Mesh3d::setVisible(bool visible) {
-  static auto hebi_charts_Mesh3d_setVisible = DynamicLookup::instance().getFunc<void(*)(internal::NativeMesh3dPtr, bool)>("hebi_charts_Mesh3d_setVisible");
+  static auto hebi_charts_Mesh3d_setVisible = DynamicLookup::instance().getFunc<void(*)(internal::Mesh3dPtr, bool)>("hebi_charts_Mesh3d_setVisible");
   hebi_charts_Mesh3d_setVisible(ptr_, visible);
 }
 inline void Mesh3d::setScale(double scaleUnitsToMillimeters) {
-  static auto hebi_charts_Mesh3d_setScale = DynamicLookup::instance().getFunc<void(*)(internal::NativeMesh3dPtr, double)>("hebi_charts_Mesh3d_setScale");
+  static auto hebi_charts_Mesh3d_setScale = DynamicLookup::instance().getFunc<void(*)(internal::Mesh3dPtr, double)>("hebi_charts_Mesh3d_setScale");
   hebi_charts_Mesh3d_setScale(ptr_, scaleUnitsToMillimeters);
 }
 inline void Mesh3d::setCentered(bool centered) {
-  static auto hebi_charts_Mesh3d_setCentered = DynamicLookup::instance().getFunc<void(*)(internal::NativeMesh3dPtr, bool)>("hebi_charts_Mesh3d_setCentered");
+  static auto hebi_charts_Mesh3d_setCentered = DynamicLookup::instance().getFunc<void(*)(internal::Mesh3dPtr, bool)>("hebi_charts_Mesh3d_setCentered");
   hebi_charts_Mesh3d_setCentered(ptr_, centered);
 }
 inline void Mesh3d::cleanup() {
   if (ptr_ != nullptr) {
-    static auto hebi_charts_Mesh3d_release = DynamicLookup::instance().getFunc<void(*)(internal::NativeMesh3dPtr)>("hebi_charts_Mesh3d_release");
+    static auto hebi_charts_Mesh3d_release = DynamicLookup::instance().getFunc<void(*)(internal::Mesh3dPtr)>("hebi_charts_Mesh3d_release");
     hebi_charts_Mesh3d_release(ptr_);
   }
 }
@@ -679,38 +679,38 @@ inline Mesh3d::~Mesh3d() {
 
 // Robot3d
 inline void Robot3d::setOrientation(double qw, double qx, double qy, double qz) {
-  static auto hebi_charts_Robot3d_setOrientation = DynamicLookup::instance().getFunc<void(*)(internal::NativeRobot3dPtr, double, double, double, double)>("hebi_charts_Robot3d_setOrientation");
+  static auto hebi_charts_Robot3d_setOrientation = DynamicLookup::instance().getFunc<void(*)(internal::Robot3dPtr, double, double, double, double)>("hebi_charts_Robot3d_setOrientation");
   hebi_charts_Robot3d_setOrientation(ptr_, qw, qx, qy, qz);
 }
 inline void Robot3d::setTranslation(double x, double y, double z) {
-  static auto hebi_charts_Robot3d_setTranslation = DynamicLookup::instance().getFunc<void(*)(internal::NativeRobot3dPtr, double, double, double)>("hebi_charts_Robot3d_setTranslation");
+  static auto hebi_charts_Robot3d_setTranslation = DynamicLookup::instance().getFunc<void(*)(internal::Robot3dPtr, double, double, double)>("hebi_charts_Robot3d_setTranslation");
   hebi_charts_Robot3d_setTranslation(ptr_, x, y, z);
 }
 inline void Robot3d::setTransform4x4(const std::vector<double>& matrix) {
   setTransform4x4(matrix.data());
 }
 inline void Robot3d::setTransform4x4(const double* matrix) {
-  static auto hebi_charts_Robot3d_setTransform4x4 = DynamicLookup::instance().getFunc<void(*)(internal::NativeRobot3dPtr, const double*)>("hebi_charts_Robot3d_setTransform4x4");
+  static auto hebi_charts_Robot3d_setTransform4x4 = DynamicLookup::instance().getFunc<void(*)(internal::Robot3dPtr, const double*)>("hebi_charts_Robot3d_setTransform4x4");
   hebi_charts_Robot3d_setTransform4x4(ptr_, matrix);
 }
 inline void Robot3d::setVisible(bool visible) {
-  static auto hebi_charts_Robot3d_setVisible = DynamicLookup::instance().getFunc<void(*)(internal::NativeRobot3dPtr, bool)>("hebi_charts_Robot3d_setVisible");
+  static auto hebi_charts_Robot3d_setVisible = DynamicLookup::instance().getFunc<void(*)(internal::Robot3dPtr, bool)>("hebi_charts_Robot3d_setVisible");
   hebi_charts_Robot3d_setVisible(ptr_, visible);
 }
 inline size_t Robot3d::getNumJoints() {
-  static auto hebi_charts_Robot3d_getNumJoints = DynamicLookup::instance().getFunc<size_t(*)(internal::NativeRobot3dPtr)>("hebi_charts_Robot3d_getNumJoints");
+  static auto hebi_charts_Robot3d_getNumJoints = DynamicLookup::instance().getFunc<size_t(*)(internal::Robot3dPtr)>("hebi_charts_Robot3d_getNumJoints");
   return hebi_charts_Robot3d_getNumJoints(ptr_);
 }
 inline void Robot3d::setPositions(const std::vector<double>& positions) {
   setPositions(positions.data(), positions.size());
 }
 inline void Robot3d::setPositions(const double* positions, size_t length) {
-  static auto hebi_charts_Robot3d_setPositions = DynamicLookup::instance().getFunc<void(*)(internal::NativeRobot3dPtr, const double*, size_t)>("hebi_charts_Robot3d_setPositions");
+  static auto hebi_charts_Robot3d_setPositions = DynamicLookup::instance().getFunc<void(*)(internal::Robot3dPtr, const double*, size_t)>("hebi_charts_Robot3d_setPositions");
   hebi_charts_Robot3d_setPositions(ptr_, positions, length);
 }
 inline void Robot3d::cleanup() {
   if (ptr_ != nullptr) {
-    static auto hebi_charts_Robot3d_release = DynamicLookup::instance().getFunc<void(*)(internal::NativeRobot3dPtr)>("hebi_charts_Robot3d_release");
+    static auto hebi_charts_Robot3d_release = DynamicLookup::instance().getFunc<void(*)(internal::Robot3dPtr)>("hebi_charts_Robot3d_release");
     hebi_charts_Robot3d_release(ptr_);
   }
 }
@@ -729,27 +729,27 @@ inline Robot3d::~Robot3d() {
 
 // Triad3d
 inline void Triad3d::setOrientation(double qw, double qx, double qy, double qz) {
-  static auto hebi_charts_Triad3d_setOrientation = DynamicLookup::instance().getFunc<void(*)(internal::NativeTriad3dPtr, double, double, double, double)>("hebi_charts_Triad3d_setOrientation");
+  static auto hebi_charts_Triad3d_setOrientation = DynamicLookup::instance().getFunc<void(*)(internal::Triad3dPtr, double, double, double, double)>("hebi_charts_Triad3d_setOrientation");
   hebi_charts_Triad3d_setOrientation(ptr_, qw, qx, qy, qz);
 }
 inline void Triad3d::setTranslation(double x, double y, double z) {
-  static auto hebi_charts_Triad3d_setTranslation = DynamicLookup::instance().getFunc<void(*)(internal::NativeTriad3dPtr, double, double, double)>("hebi_charts_Triad3d_setTranslation");
+  static auto hebi_charts_Triad3d_setTranslation = DynamicLookup::instance().getFunc<void(*)(internal::Triad3dPtr, double, double, double)>("hebi_charts_Triad3d_setTranslation");
   hebi_charts_Triad3d_setTranslation(ptr_, x, y, z);
 }
 inline void Triad3d::setTransform4x4(const std::vector<double>& matrix) {
   setTransform4x4(matrix.data());
 }
 inline void Triad3d::setTransform4x4(const double* matrix) {
-  static auto hebi_charts_Triad3d_setTransform4x4 = DynamicLookup::instance().getFunc<void(*)(internal::NativeTriad3dPtr, const double*)>("hebi_charts_Triad3d_setTransform4x4");
+  static auto hebi_charts_Triad3d_setTransform4x4 = DynamicLookup::instance().getFunc<void(*)(internal::Triad3dPtr, const double*)>("hebi_charts_Triad3d_setTransform4x4");
   hebi_charts_Triad3d_setTransform4x4(ptr_, matrix);
 }
 inline void Triad3d::setVisible(bool visible) {
-  static auto hebi_charts_Triad3d_setVisible = DynamicLookup::instance().getFunc<void(*)(internal::NativeTriad3dPtr, bool)>("hebi_charts_Triad3d_setVisible");
+  static auto hebi_charts_Triad3d_setVisible = DynamicLookup::instance().getFunc<void(*)(internal::Triad3dPtr, bool)>("hebi_charts_Triad3d_setVisible");
   hebi_charts_Triad3d_setVisible(ptr_, visible);
 }
 inline void Triad3d::cleanup() {
   if (ptr_ != nullptr) {
-    static auto hebi_charts_Triad3d_release = DynamicLookup::instance().getFunc<void(*)(internal::NativeTriad3dPtr)>("hebi_charts_Triad3d_release");
+    static auto hebi_charts_Triad3d_release = DynamicLookup::instance().getFunc<void(*)(internal::Triad3dPtr)>("hebi_charts_Triad3d_release");
     hebi_charts_Triad3d_release(ptr_);
   }
 }
