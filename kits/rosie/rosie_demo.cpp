@@ -144,7 +144,7 @@ std::function<bool(ArmControlState, ChassisVelocity&, ArmMobileIOInputs&)> setup
         chassis_velocity_out = ChassisVelocity{
             pow(mio.getAxis(forward_joy), 3),
             pow(-mio.getAxis(side_joy), 3),
-            pow(-mio.getAxis(turn_joy), 3) * 2 };
+            pow(-mio.getAxis(rotate_joy), 3) * 2 };
 
         auto wxyz = mio.getArOrientation();
         Eigen::Quaterniond q(wxyz.getW(), wxyz.getX(), wxyz.getY(), wxyz.getZ());
