@@ -128,11 +128,13 @@ private:
 	const Eigen::MatrixXd chassis_mass_matrix_
 	{ (Eigen::MatrixXd(3,3) << base_chassis_mass_,0,0, 0,base_chassis_mass_,0, 0,0,base_chassis_inertia_zz_).finished() };
 
+	const double base_wheel_base_ = 0.470;
+
 	const Eigen::Matrix3d base_wheel_transform_
 	{ (Eigen::MatrixXd(3,3) <<
-	 sin(a1), -cos(a1), -BASE_RADIUS,
-	 sin(a2), -cos(a2), -BASE_RADIUS,
-	 sin(a3), -cos(a3), -BASE_RADIUS).finished() };
+	 sin(a1), -cos(a1), 2 / base_wheel_base_,
+	 sin(a2), -cos(a2), 2 / base_wheel_base_ / 2,
+	 sin(a3), -cos(a3), 2 / base_wheel_base_ / 2).finished() };
 	const Eigen::Matrix3d base_wheel_velocity_matrix_{ base_wheel_transform_ / WHEEL_RADIUS };
 	const Eigen::Matrix3d base_wheel_effort_matrix_{ base_wheel_transform_ * WHEEL_RADIUS };
 
