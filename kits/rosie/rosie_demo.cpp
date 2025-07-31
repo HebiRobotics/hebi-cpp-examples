@@ -9,7 +9,7 @@
 #include "util/vector_utils.h"
 #include "rosie_demo_utils.hpp"
 #include "kits/arms/ar_control_sm.hpp"
-#include "kits/bases/omni_base_final.cpp"
+#include "kits/bases/omni_base.hpp"
 #include <Eigen/Dense>
 #include <thread>
 #include <chrono>

@@ -1,88 +1,88 @@
-#include "omni_base.hpp"
+#include "omni_base_final.hpp"
 
 
+// Create omnibase and initialize the command
 OmniBase::OmniBase(std::shared_ptr<Group> group) :
-    group_(group),
-    base_command_(group->size()),
-    base_feedback_(group->size()),
-    color_(0, 0, 0),
-    trajectory_(nullptr),
-    vels_base_to_wheel_(buildJacobian(BASE_RADIUS, WHEEL_RADIUS)) {
+	velocities_(Eigen::MatrixXd::Zero(base_num_wheels_, 2)),
+	accelerations_(Eigen::MatrixXd::Zero(base_num_wheels_, 2)),
+	jerks_(Eigen::MatrixXd::Zero(base_num_wheels_, 2)),
+	group_(group),
+	base_command_(group->size()),
+	color_(0, 0, 0) {
+
+	GroupFeedback wheel_fbk(group_->size());
+		
+	while (!group_->getNextFeedback(wheel_fbk))
+		std::cout << "Couldn't get feedback from the wheels!\n";
+
+	// Initialize forward integration for position command, so we can update it later
+	base_command_.setPosition(wheel_fbk.getPosition());
+	last_time_ = wheel_fbk.getTime();
+	traj_start_time_ = last_time_;
+
+	// Initialize base trajectory
+	const double base_ramp_time = .33;
+	omni_base_traj_time_ << 0, base_ramp_time;
+	trajectory_ = trajectory::Trajectory::createUnconstrainedQp(omni_base_traj_time_, velocities_, &accelerations_, &jerks_);
+}
+
+bool OmniBase::setGains()
+{
+	GroupCommand base_gains_command(group_->size());
+	if (!base_gains_command.readGains("gains/omni-drive-wheel-gains.xml")) {
+		std::cout << "Could not read omni base gains\n";
+		return false;
+	}
+	if (!group_->sendCommandWithAcknowledgement(base_gains_command)) {
+		std::cout << "Could not send omni base gains\n";
+		return false;
+	}
+	return true;
 }
 
 // Evaluate Trajectory State and update commands
-bool OmniBase::update(const double t_now) {
-    if (!group_->getNextFeedback(base_feedback_))
-        return false;
+void OmniBase::update(double t, double x_vel, double y_vel, double rot_vel)
+{
+	double dt = t - last_time_;
+	last_time_ = t;
 
-    if (trajectory_) {
-        Eigen::VectorXd p(group_->size()), v(group_->size()), a(group_->size());
-        trajectory_->getState(t_now, &p, &v, &a);
+	Eigen::VectorXd cmd_vel(base_num_wheels_), cmd_acc(base_num_wheels_), cmd_jerk(base_num_wheels_);
+	trajectory_->getState(t - traj_start_time_, &cmd_vel, &cmd_acc, &cmd_jerk);
 
-        const double theta = p[2];
+	// Build commands from trajectory
+	base_command_.setVelocity(base_wheel_velocity_matrix_ * cmd_vel);
+	base_command_.setPosition(base_command_.getPosition() + base_command_.getVelocity() * dt);
+	base_command_.setEffort(base_wheel_effort_matrix_ * (chassis_mass_matrix_ * cmd_acc));
 
-        Eigen::Matrix3d world_to_local_rot = Eigen::Matrix3d::Zero();
-        world_to_local_rot(0, 0) = std::cos(theta);
-        world_to_local_rot(0, 1) = -std::sin(theta);
-        world_to_local_rot(1, 0) = std::sin(theta);
-        world_to_local_rot(1, 1) = std::cos(theta);
-        world_to_local_rot(2, 2) = 1.0;
+	for (int i = 0; i < base_num_wheels_; ++i)
+		base_command_[i].led().set(color_);
 
-        Eigen::Vector3d v_local = world_to_local_rot * v;
-        base_command_.setVelocity(vels_base_to_wheel_ * v_local);
-
-        for (int i = 0; i < group_->size(); ++i)
-            base_command_[i].led().set(color_);
-    }
-    return true;
+	buildVelocityTrajectory(x_vel, y_vel, rot_vel, t);
 }
 
-void OmniBase::send() const {
-    group_->sendCommand(base_command_);
+void OmniBase::buildVelocityTrajectory(double x_vel, double y_vel, double rot_vel, double t) {
+
+	// Duplicated in update; could cache this.
+	Eigen::VectorXd chassis_cmd_vel(base_num_wheels_), chassis_cmd_acc(base_num_wheels_), chassis_cmd_jerk(base_num_wheels_);
+	trajectory_->getState(t - traj_start_time_, &chassis_cmd_vel, &chassis_cmd_acc, &chassis_cmd_jerk);
+
+	// Rebuild trajectory
+	Eigen::Vector3d chassis_desired_vel;
+	chassis_desired_vel << base_max_lin_speed_ * x_vel, base_max_lin_speed_ * y_vel, base_max_rot_speed_* rot_vel;
+
+	velocities_.col(0) = chassis_cmd_vel;
+	velocities_.col(1) = chassis_desired_vel;
+	accelerations_.col(0) = chassis_cmd_acc;
+	jerks_.col(0) = chassis_cmd_jerk;
+
+	trajectory_ = trajectory::Trajectory::createUnconstrainedQp(omni_base_traj_time_, velocities_, &accelerations_, &jerks_);
+	traj_start_time_ = t;
 }
 
-// Builds a smooth trajectory for the base to move to a target velocity
-void OmniBase::buildSmoothVelocityTrajectory(const double dx, const double dy, const double dtheta, const double t_now) {
-    Eigen::Vector4d times{ 0, 0.15, 0.9, 1.2 };
-
-    Eigen::Vector3d cmd_vels = Eigen::Vector3d::Zero();
-    if (trajectory_) {
-        Eigen::VectorXd pos(group_->size()), vel(group_->size()), acc(group_->size());
-        trajectory_->getState(t_now, &pos, &vel, &acc);
-        cmd_vels = vel;
-    }
-
-    Eigen::Vector3d target_vel(dx, dy, dtheta);
-    Eigen::MatrixXd velocities(3, 4);
-    velocities.col(0) = cmd_vels;
-    velocities.col(1) = target_vel;
-    velocities.col(2) = target_vel;
-    velocities.col(3) = Eigen::Vector3d::Zero();
-
-    buildVelocityTrajectory(times.array() + t_now, velocities);
+void OmniBase::send() {
+	group_->sendCommand(base_command_);
 }
-
-void OmniBase::buildVelocityTrajectory(const Eigen::VectorXd& times, const Eigen::MatrixXd& velocities) {
-    Eigen::MatrixXd p = Eigen::MatrixXd::Constant(3, 4, std::nan(""));
-    p.col(0) = Eigen::Vector3d::Zero();
-
-    Eigen::MatrixXd a = Eigen::MatrixXd::Zero(3, 4);
-    trajectory_ = trajectory::Trajectory::createUnconstrainedQp(times, p, &velocities, &a);
-}
-
-Eigen::Matrix3d OmniBase::buildJacobian(const double base_radius, const double wheel_radius) {
-    Eigen::Matrix3d jacobian = Eigen::Matrix3d::Zero();
-
-    jacobian(0, 0) = -std::sqrt(3.0) / 2.0;
-    jacobian(1, 0) = std::sqrt(3.0) / 2.0;
-    jacobian(2, 0) = 0.0;
-
-    jacobian(0, 1) = -0.5;
-    jacobian(1, 1) = -0.5;
-    jacobian(2, 1) = 1.0;
-
-    jacobian.col(2) = Eigen::Vector3d::Constant(-base_radius);
-    jacobian /= wheel_radius;
-
-    return jacobian;
+	
+void OmniBase::stop() {
+	base_command_.setVelocity(Eigen::Vector3d::Zero());
 }
