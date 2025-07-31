@@ -324,7 +324,7 @@ int main(int argc, char** argv) {
         std::chrono::duration<double> t(std::chrono::system_clock::now() - start);
         bool quit = parse_mobile_feedback(arm_control->state_, base_inputs, arm_inputs);
         //base_control.update(t.count(), &base_inputs);
-        base_control.update(arm->lastFeedback().getTime(), &base_inputs);
+        base_control.update(t.count(), &base_inputs);
 
         if (arm_control)
             arm_control->update(t.count(), &arm_inputs);

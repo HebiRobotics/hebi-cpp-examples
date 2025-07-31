@@ -56,8 +56,7 @@ struct OmniBase {
 		last_time_ = t;
 
 		Eigen::VectorXd cmd_vel(base_num_wheels_), cmd_acc(base_num_wheels_), cmd_jerk(base_num_wheels_);
-		double traj_time = std::min(trajectory_->getDuration(), t - traj_start_time_);
-		trajectory_->getState(traj_time, &cmd_vel, &cmd_acc, &cmd_jerk);
+		trajectory_->getState(t - traj_start_time_, &cmd_vel, &cmd_acc, &cmd_jerk);
 
 		// Build commands from trajectory
 		base_command_.setVelocity(base_wheel_velocity_matrix_ * cmd_vel);
@@ -74,8 +73,7 @@ struct OmniBase {
 
 		// Duplicated in update; could cache this.
 		Eigen::VectorXd chassis_cmd_vel(base_num_wheels_), chassis_cmd_acc(base_num_wheels_), chassis_cmd_jerk(base_num_wheels_);
-		double traj_time = std::min(trajectory_->getDuration(), t - traj_start_time_);
-		trajectory_->getState(traj_time, &chassis_cmd_vel, &chassis_cmd_acc, &chassis_cmd_jerk);
+		trajectory_->getState(t - traj_start_time_, &chassis_cmd_vel, &chassis_cmd_acc, &chassis_cmd_jerk);
 
 		// Rebuild trajectory
 		Eigen::Vector3d chassis_desired_vel;
