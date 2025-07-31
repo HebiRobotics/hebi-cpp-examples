@@ -185,14 +185,14 @@ int main(int argc, char** argv) {
   //////////////////////////
 
   // Create the MobileIO object
-  std::unique_ptr<util::MobileIO> mobile_io = util::MobileIO::create("HEBI", "mobileIO");
+  std::unique_ptr<util::MobileIO> mobile_io = util::MobileIO::create("Rosie", "mobileIO");
 
   int tries = 5;
   while (!mobile_io && tries > 0)
   {
     std::cerr << "Failed to connect to mobile IO device, retrying...\n";
     std::this_thread::sleep_for(std::chrono::seconds(1));
-    mobile_io = util::MobileIO::create("HEBI", "mobileIO");
+    mobile_io = util::MobileIO::create("Rosie", "mobileIO");
     --tries;
   }
 
@@ -409,7 +409,7 @@ int main(int argc, char** argv) {
       // Omnibase
       x_vel = mobile_io->getAxis(8);
       y_vel = mobile_io->getAxis(7);
-      rot_vel = mobile_io->getAxis(1);
+      rot_vel = -mobile_io->getAxis(1);
 
 	  std::cout << "1. x_vel: " << x_vel << ", y_vel: " << y_vel << ", rot_vel: " << rot_vel << std::endl;
     }
