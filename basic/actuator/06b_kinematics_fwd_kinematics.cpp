@@ -41,12 +41,12 @@ int run(int, char**)
   GroupFeedback group_fbk(group->size());
 
   if (hebi::charts::lib::isAvailable()) {
-    hebi::charts::Window window;
-    auto chart = window.addChart3d();
+    hebi::charts::GridWindow window;
+    auto chart = window.add3dChart();
     window.show();
     // Get frame count; add one for base frame added after FK call below)
     auto num_frames = model->getFrameCount(robot_model::FrameType::Output) + 1;
-    std::vector<hebi::charts::Chart3dTriad> triads;
+    std::vector<hebi::charts::Triad3d> triads;
     for (size_t i = 0; i < num_frames; ++i)
       triads.push_back(chart.addTriad(0.075));
     // We set the loop runs at 10Hz; so, this runs for 20 seconds:

@@ -50,8 +50,8 @@ int run(int, char**) {
   GroupFeedback group_fbk(group->size());
 
   if (hebi::charts::lib::isAvailable()) {
-    hebi::charts::Window window;
-    auto chart = window.addChart();
+    hebi::charts::GridWindow window;
+    auto chart = window.addLineChart();
     chart.setTitle("Mobile I/O Gyro Feedback");
     chart.getAxisX().setName("timestep");
     chart.getAxisY().setName("rad/s");

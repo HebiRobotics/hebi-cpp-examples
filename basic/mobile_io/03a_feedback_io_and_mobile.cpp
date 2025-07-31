@@ -52,10 +52,9 @@ int run(int, char**) {
             << std::endl;
 
   if (hebi::charts::lib::isAvailable()) {
-    hebi::charts::Window window;
-    window.setGridSize(1, 2);
-    auto chart_inputs = window.addChart(0, 0, 1, 1);
-    auto chart_gyro = window.addChart(0, 1, 1, 1);
+    hebi::charts::GridWindow window(2, 1);
+    auto chart_inputs = window.addLineChart(0, 0, 1, 1);
+    auto chart_gyro = window.addLineChart(1, 0, 1, 1);
     chart_inputs.setTitle("Mobile I/O Input Feedback");
     chart_gyro.setTitle("Mobile I/O Gyro Feedback");
     chart_inputs.getAxisY().setLimits(-1, 1);
@@ -65,7 +64,7 @@ int run(int, char**) {
     chart_inputs.getAxisY().setName("[-1 to 1]");
     chart_gyro.getAxisY().setName("rad/s");
 
-    std::array<hebi::charts::Dataset, 8> button_chart_data = {
+    std::array<hebi::charts::Line, 8> button_chart_data = {
       chart_inputs.addLine("Button 1", {}, {}),
       chart_inputs.addLine("Button 2", {}, {}),
       chart_inputs.addLine("Button 3", {}, {}),
@@ -75,7 +74,7 @@ int run(int, char**) {
       chart_inputs.addLine("Button 7", {}, {}),
       chart_inputs.addLine("Button 8", {}, {})
     };
-    std::array<hebi::charts::Dataset, 8> slider_chart_data = {
+    std::array<hebi::charts::Line, 8> slider_chart_data = {
       chart_inputs.addLine("Slider 1", {}, {}),
       chart_inputs.addLine("Slider 2", {}, {}),
       chart_inputs.addLine("Slider 3", {}, {}),

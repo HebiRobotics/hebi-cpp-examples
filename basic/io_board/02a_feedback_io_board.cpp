@@ -58,8 +58,8 @@ int run(int, char**) {
   }
 
   if (hebi::charts::lib::isAvailable()) {
-    hebi::charts::Window window;
-    auto chart = window.addChart();
+    hebi::charts::GridWindow window;
+    auto chart = window.addLineChart();
     chart.setTitle("IO Board Gyro Feedback");
     chart.getAxisX().setName("timestep");
     chart.getAxisY().setName("rad/s");

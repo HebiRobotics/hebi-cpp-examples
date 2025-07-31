@@ -27,8 +27,8 @@ int run(int, char**)
   group->setFeedbackFrequencyHz(5);
 
   if (hebi::charts::lib::isAvailable()) {
-    hebi::charts::Window window;
-    auto chart = window.addChart();
+    hebi::charts::GridWindow window;
+    auto chart = window.addLineChart();
     chart.setTitle("Gyro Feedback");
     chart.getAxisX().setName("time (s)");
     chart.getAxisY().setName("rad/s");

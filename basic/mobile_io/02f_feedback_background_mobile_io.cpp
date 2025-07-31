@@ -46,8 +46,8 @@ int run(int, char**) {
   //      void func(const hebi::GroupFeedback& group_fbk);
   std::vector<double> y;
   if (hebi::charts::lib::isAvailable()) {
-    hebi::charts::Window window;
-    auto chart = window.addChart();
+    hebi::charts::GridWindow window;
+    auto chart = window.addLineChart();
     window.show();
     chart.setTitle("Mobile I/O Gyro Feedback");
     chart.getAxisX().setName("time (s)");

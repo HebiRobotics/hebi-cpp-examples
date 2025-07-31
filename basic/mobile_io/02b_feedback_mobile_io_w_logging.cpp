@@ -70,14 +70,14 @@ int run(int, char**) {
     return 1;
   }
 
-  hebi::charts::Window window;
-  auto chart = window.addChart();
+  hebi::charts::GridWindow window;
+  auto chart = window.addLineChart();
   chart.setTitle("Mobile I/O Input Feedback");
   chart.getAxisY().setLimits(-1, 1);
   chart.getAxisX().setName("timestep");
   chart.getAxisY().setName("[-1 to 1]");
 
-  std::array<hebi::charts::Dataset, 8> button_chart_data = {
+  std::array<hebi::charts::Line, 8> button_chart_data = {
     chart.addLine("Button 1", {}, {}),
     chart.addLine("Button 2", {}, {}),
     chart.addLine("Button 3", {}, {}),
@@ -87,7 +87,7 @@ int run(int, char**) {
     chart.addLine("Button 7", {}, {}),
     chart.addLine("Button 8", {}, {})
   };
-  std::array<hebi::charts::Dataset, 8> slider_chart_data = {
+  std::array<hebi::charts::Line, 8> slider_chart_data = {
     chart.addLine("Slider 1", {}, {}),
     chart.addLine("Slider 2", {}, {}),
     chart.addLine("Slider 3", {}, {}),

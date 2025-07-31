@@ -113,8 +113,8 @@ int run(int, char**)
   transforms.emplace(transforms.begin(), Eigen::Matrix<double,4,4>::Identity());
 
   if (hebi::charts::lib::isAvailable()) {
-    hebi::charts::Window window;
-    auto chart = window.addChart3d();
+    hebi::charts::GridWindow window;
+    auto chart = window.add3dChart();
     window.show();
     for(size_t j = 0; j < transforms.size(); ++j) {
       auto triad = chart.addTriad(0.075);

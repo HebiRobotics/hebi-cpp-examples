@@ -65,8 +65,8 @@ int run(int, char**) {
       return 1;
     }
 
-    hebi::charts::Window orient_window;
-    auto orient_chart = orient_window.addChart3d();
+    hebi::charts::GridWindow orient_window;
+    auto orient_chart = orient_window.add3dChart();
     orient_window.show();
     auto triad = orient_chart.addTriad(0.075);
     for (size_t i = 0; i < 50; ++i)
@@ -104,8 +104,8 @@ int run(int, char**) {
     }
 
     // Plot the logged Position data
-    hebi::charts::Window pos_window;
-    auto pos_chart = pos_window.addChart();
+    hebi::charts::GridWindow pos_window;
+    auto pos_chart = pos_window.addLineChart();
     pos_chart.setTitle("Device Position by Axis (x/y/z)");
     pos_chart.getAxisY().setName("Position (m)");
     auto chart_x = pos_chart.addLine("X Position", times, x_pos);

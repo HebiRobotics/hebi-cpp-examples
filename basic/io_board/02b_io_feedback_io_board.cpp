@@ -58,14 +58,14 @@ int run(int, char**) {
   }
 
   if (hebi::charts::lib::isAvailable()) {
-    hebi::charts::Window window;
-    auto chart = window.addChart();
+    hebi::charts::GridWindow window;
+    auto chart = window.addLineChart();
     chart.setTitle("IO Board Feedback from IO pins");
     chart.getAxisY().setLimits(0, 5);
     chart.getAxisX().setName("timestep");
     chart.getAxisY().setName("[0 to 5]");
 
-    std::array<hebi::charts::Dataset, 8> pin_chart_data = {
+    std::array<hebi::charts::Line, 8> pin_chart_data = {
       chart.addLine("Pin 1", {}, {}),
       chart.addLine("Pin 2", {}, {}),
       chart.addLine("Pin 3", {}, {}),

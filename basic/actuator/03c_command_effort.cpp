@@ -103,8 +103,8 @@ int run(int, char**) {
     times.push_back(fbk.getTime() - t0);
   }
   if (hebi::charts::lib::isAvailable()) {
-    hebi::charts::Window window;
-    auto chart = window.addChart();
+    hebi::charts::GridWindow window;
+    auto chart = window.addLineChart();
     for(size_t i = 0; i < group->size(); i++){
       auto title =(std::string("module ") + std::to_string(i));
       chart.addLine(title, times, eff[i]);

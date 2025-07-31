@@ -140,8 +140,8 @@ int run(int, char**)
 
   //plot graph of trajectories
   if (hebi::charts::lib::isAvailable()) {
-    hebi::charts::Window window;
-    auto chart = window.addChart();
+    hebi::charts::GridWindow window;
+    auto chart = window.addLineChart();
     auto x = linspace(0.0,time[2],100.0);
     for (size_t i = 0; i < num_joints; i++) {
       //these are calls to the function f_x which takes a vector of doubles, x, and a lambda, f, and returns a vector f(x)
