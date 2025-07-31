@@ -133,7 +133,8 @@ private:
 	const Eigen::Matrix3d base_wheel_effort_matrix_{ base_wheel_transform_ * WHEEL_RADIUS };
 
 	const double base_max_lin_speed_ = 0.6;
-	const double base_max_rot_speed_ = base_max_lin_speed_ / (BASE_RADIUS);
+	const double base_max_rot_speed_ = base_max_lin_speed_ * (BASE_RADIUS);
+	//const double base_max_rot_speed_ = base_max_lin_speed_ / (BASE_RADIUS);
 };
 
 // This struct represents the velocity of the chassis in 2D space with rotation around the Z-axis
