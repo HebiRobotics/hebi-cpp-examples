@@ -77,7 +77,9 @@ struct OmniBase {
 
 		// Rebuild trajectory
 		Eigen::Vector3d chassis_desired_vel;
+		std::cout << "2. x_vel: " << x_vel << ", y_vel: " << y_vel << ", rot_vel: " << rot_vel << std::endl;
 		chassis_desired_vel << base_max_lin_speed_ * x_vel, -base_max_lin_speed_ * y_vel, base_max_rot_speed_* rot_vel;
+		std::cout << "3. chassis_desired_vel: " << chassis_desired_vel.transpose() << std::endl;
 
 		velocities_.col(0) = chassis_cmd_vel;
 		velocities_.col(1) = chassis_desired_vel;
@@ -134,7 +136,6 @@ private:
 
 	const double base_max_lin_speed_ = 0.6;
 	const double base_max_rot_speed_ = base_max_lin_speed_ * (BASE_RADIUS);
-	//const double base_max_rot_speed_ = base_max_lin_speed_ / (BASE_RADIUS);
 };
 
 // This struct represents the velocity of the chassis in 2D space with rotation around the Z-axis
