@@ -2,12 +2,10 @@
 
 #include "group.hpp"
 #include "group_command.hpp"
-#include "group_feedback.hpp"
 #include "trajectory.hpp"
 #include "color.hpp"
 #include <Eigen/Dense>
 
-#include <algorithm>
 
 using namespace hebi;
 

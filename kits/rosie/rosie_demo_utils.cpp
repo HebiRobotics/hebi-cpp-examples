@@ -1,7 +1,12 @@
 #include "rosie_demo_utils.hpp"
+#include "group_command.hpp"
+#include "group_feedback.hpp"
+#include "group.hpp"
+#include <thread>
+#include <chrono>
+#include <iostream>
 
-
-void setMobileIOInstructions(util::MobileIO& mobile_io, const std::string& message, const Color& color) {
+void setMobileIOInstructions(util::MobileIO& mobile_io, const std::string& message, Color color) {
 
   mobile_io.setLedColor(color.getRed(), color.getGreen(), color.getBlue(), false);
   mobile_io.clearText(false);
@@ -28,9 +33,6 @@ void setupArm(const RobotConfig& example_config, const Lookup& lookup, std::shar
     return;
   }
 
-  std::cout << "Arm connected." << std::endl;
-  arm_out = std::move(arm);
-
   bool has_gripper = false;
   const auto user_data = example_config.getUserData();
 
@@ -38,7 +40,7 @@ void setupArm(const RobotConfig& example_config, const Lookup& lookup, std::shar
     has_gripper = user_data.getBool("has_gripper");
   
 	// Setup gripper parameters if specified in the config
-  if (arm_out && has_gripper)
+  if (arm && has_gripper)
   {
     const std::string family = example_config.getFamilies()[0];
     auto gripper_group = lookup.getGroupFromNames({ family }, { "gripperSpool" });
@@ -74,4 +76,7 @@ void setupArm(const RobotConfig& example_config, const Lookup& lookup, std::shar
 
     gripper_out->open();
   }
+
+  std::cout << "Arm connected." << std::endl;
+  arm_out = std::move(arm);
 }

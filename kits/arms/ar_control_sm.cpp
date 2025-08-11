@@ -1,10 +1,16 @@
 #include "ar_control_sm.hpp"
-
+#include "group.hpp"
+#include "group_command.hpp"
+#include "group_feedback.hpp"
+#include <cmath>
+#include <thread>
+#include <chrono>
+#include <iostream>
 
 ArmMobileIOInputs::ArmMobileIOInputs(
-  const hebi::Vector3f& pos,
-  const Eigen::Matrix3d& rot,
-  const double scaling,
+  hebi::Vector3f pos,
+  Eigen::Matrix3d rot,
+  double scaling,
   bool lockToggle,
   bool isLocked,
   bool gripperClosed,
@@ -18,7 +24,7 @@ ArmMobileIOInputs::ArmMobileIOInputs(
   home(isHome) {}
 
 
-ArmMobileIOControl::ArmMobileIOControl(const std::shared_ptr<arm::Arm> arm, const std::shared_ptr<arm::Gripper> gripper, const double homing_time, const double traj_duration, const Eigen::Vector3d xyz_scale) : arm_(arm), gripper_(gripper), homing_time_(homing_time), traj_duration_(traj_duration), xyz_scale_(xyz_scale) {
+ArmMobileIOControl::ArmMobileIOControl(std::shared_ptr<arm::Arm> arm, std::shared_ptr<arm::Gripper> gripper, double homing_time, double traj_duration, Eigen::Vector3d xyz_scale) : arm_(arm), gripper_(gripper), homing_time_(homing_time), traj_duration_(traj_duration), xyz_scale_(xyz_scale) {
   arm_seed_ik_.resize(6); 
   arm_seed_ik_ << 0.3, 1.2, 2.2, 2.9, -1.57, 0;
   Eigen::AngleAxisd rotZ(M_PI / 2, Eigen::Vector3d::UnitZ());
@@ -41,7 +47,7 @@ void ArmMobileIOControl::send() const {
     gripper_->send();
 }
 
-void ArmMobileIOControl::home(const double duration) const {
+void ArmMobileIOControl::home(double duration) const {
   arm_->setGoal(arm::Goal::createFromPosition(duration, arm_home_));
 }
 
@@ -98,7 +104,7 @@ arm::Goal ArmMobileIOControl::compute_arm_goal(const ArmMobileIOInputs& arm_inpu
   return goal;
 }
 
-void ArmMobileIOControl::update(const double t_now, const ArmMobileIOInputs* arm_input) {
+void ArmMobileIOControl::update(double t_now, const ArmMobileIOInputs* arm_input) {
   arm_->update();
 
   if (state_ == ArmControlState::EXIT)
@@ -184,7 +190,7 @@ void ArmMobileIOControl::update(const double t_now, const ArmMobileIOInputs* arm
   }
 }
   
-void ArmMobileIOControl::setArmLedColor(const Color& color) {
+void ArmMobileIOControl::setArmLedColor(Color color) {
   auto group_size = this->arm_->pendingCommand().size();
   for (int i = 0; i < group_size; i++)
     this->arm_->pendingCommand()[i].led().set(color);

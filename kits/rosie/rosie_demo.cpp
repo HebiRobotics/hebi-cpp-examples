@@ -287,6 +287,11 @@ int main(int argc, char** argv) {
   std::shared_ptr<arm::Gripper> gripper;
   setupArm(*example_config, lookup, arm, gripper);
 
+  if (!arm) {
+    std::cout << "Failed to create arm." << std::endl;
+    return 1;
+  }
+
   while (!arm->update()) {
     std::cout << "Waiting for feedback from arm..." << std::endl;
     std::this_thread::sleep_for(std::chrono::seconds(1));

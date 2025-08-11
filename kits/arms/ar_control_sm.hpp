@@ -2,18 +2,10 @@
 
 // HEBI C++ API files:
 #include "arm/arm.hpp"
-#include "group_command.hpp"
-#include "group_feedback.hpp"
-#include "group.hpp"
 #include "color.hpp"
 #include "util/vector_utils.h"
-#include <cmath>
 #include <Eigen/Dense>
-#include <thread>
-#include <chrono>
 
-// Common includes
-#include <iostream>
 
 using namespace hebi;
 
@@ -31,9 +23,9 @@ struct ArmMobileIOInputs {
 
   // Optional constructor if you want to set values on creation
   ArmMobileIOInputs(
-    const hebi::Vector3f& pos = hebi::Vector3f(0.0f, 0.0f, 0.0f),
-    const Eigen::Matrix3d& rot = Eigen::Matrix3d::Identity(),
-    const double scaling = 1.0f,
+    hebi::Vector3f pos = hebi::Vector3f(0.0f, 0.0f, 0.0f),
+    Eigen::Matrix3d rot = Eigen::Matrix3d::Identity(),
+    double scaling = 1.0f,
     bool lockToggle = false,
     bool isLocked = true,
     bool gripperClosed = false,
@@ -69,22 +61,23 @@ public:
   Eigen::Matrix3d phone_rot_home_;
 
   ArmMobileIOControl(
-    const std::shared_ptr<arm::Arm> arm,
-    const std::shared_ptr<arm::Gripper> gripper,
-    const double homing_time, double traj_duration,
-    const Eigen::Vector3d xyz_scale);
+    std::shared_ptr<arm::Arm> arm,
+    std::shared_ptr<arm::Gripper> gripper,
+    double homing_time,
+    double traj_duration,
+    Eigen::Vector3d xyz_scale);
 
   bool running() const { return state_ != ArmControlState::EXIT; }
   void send() const;
-  void home(const double duration) const;
-  void transition_to(const double t_now, const ArmControlState& new_state);
+  void home(double duration) const;
+  void transition_to(double t_now, const ArmControlState& new_state);
 
 	// Computes the arm goal based on the current mobile IO inputs and the last locked position and rotation
   arm::Goal compute_arm_goal(const ArmMobileIOInputs& arm_input);
 
 	// Updates the arm state based on the current time, mobile IO inputs, and sends commands to the arm
-  void update(const double t_now, const ArmMobileIOInputs* arm_input);
+  void update(double t_now, const ArmMobileIOInputs* arm_input);
 
-  void setArmLedColor(const Color& color);
+  void setArmLedColor(Color color);
   void stop();
 };

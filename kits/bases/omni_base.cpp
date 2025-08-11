@@ -1,4 +1,6 @@
 #include "omni_base.hpp"
+#include "group_feedback.hpp"
+#include <algorithm>
 
 
 // Create omnibase and initialize the command
