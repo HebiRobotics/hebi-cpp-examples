@@ -34,7 +34,9 @@ find_package(Python 3.6 COMPONENTS Interpreter Development.Module Development.Em
 set(NUMPY_INCLUDE_DIR ${Python_SITELIB}/numpy/core/include)
 
 # Helper function for adding target with HEBI library/dependency references
-function(hebi_add_target TARGET_NAME TARGET_SOURCES)
+function(hebi_add_target TARGET_NAME)
+  
+  set(TARGET_SOURCES ${ARGN})
 
   if(WIN32)
     add_executable(${TARGET_NAME} ${TARGET_SOURCES} $<TARGET_OBJECTS:_hebic++-obj>)
@@ -74,7 +76,7 @@ function(hebi_copy_target_resources TARGET_NAME SOURCE_DIR DEST_DIR)
   # Copy over resource files potentially used by the examples
   add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
                      COMMAND ${CMAKE_COMMAND} -E copy_directory
-                     ${ROOT_DIR}/${SOURCE_DIR} $<TARGET_FILE_DIR:${EX_NAME}>/${DEST_DIR})
+                     ${ROOT_DIR}/${SOURCE_DIR} $<TARGET_FILE_DIR:${TARGET_NAME}>/${DEST_DIR})
 endfunction()
 
 function(hebi_make_target_log_directory TARGET_NAME DIR_NAME)
@@ -219,18 +221,19 @@ endforeach()
 
 # Rosie kit example
 SET(ROSIE_SOURCES
-  ${ROOT_DIR}/kits/rosie/rosie_demo.cpp)
+  ${ROOT_DIR}/kits/rosie/rosie_demo.cpp
+  ${ROOT_DIR}/kits/rosie/rosie_demo_utils.cpp
+  ${ROOT_DIR}/kits/arms/ar_control_sm.cpp
+  ${ROOT_DIR}/kits/bases/omni_base.cpp)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY kits/rosie)
-foreach(EXAMPLE ${ROSIE_SOURCES})
+# Only create one target, 'rosie_demo', with multiple .cpp files
+hebi_add_target(rosie_demo ${ROSIE_SOURCES})
 
-  # The target for the individual example is based on the filename
-  get_filename_component(EX_NAME ${EXAMPLE} NAME_WE)
-  
-  hebi_add_target(${EX_NAME} ${EXAMPLE})
-  hebi_copy_target_resources(${EX_NAME} "kits/rosie/config" "config")
-  hebi_copy_target_resources(${EX_NAME} "kits/rosie/gains" "gains")
-  # Note -- need the arm config files here, too!
-  hebi_copy_target_resources(${EX_NAME} "kits/arms/config" "../arms/config")
+# Add post-build stuff once for rosie_demo
+hebi_copy_target_resources(rosie_demo "kits/rosie/config" "config")
+hebi_copy_target_resources(rosie_demo "kits/rosie/gains" "gains")
 
-endforeach()
+# Note -- need the arm config files here, too!
+hebi_copy_target_resources(rosie_demo "kits/arms/config" "../arms/config")
+hebi_make_target_log_directory(rosie_demo "logs")
