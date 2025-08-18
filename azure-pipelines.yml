@@ -1,0 +1,62 @@
+# # Starter pipeline
+# # Start with a minimal pipeline that you can customize to build and deploy your code.
+# # Add steps that build, run tests, deploy, and more:
+# # https://aka.ms/yaml
+
+trigger:
+- master
+- hardik/arm_examples_2
+- CI_Test
+
+jobs:
+- job: test_ubuntu16
+
+  pool:
+    vmImage: 'Ubuntu-16.04'
+
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.x'
+      addToPath: true
+      architecture: 'x64'
+
+  - bash: |
+      sudo apt install python-numpy 
+      pip install numpy
+      mkdir build
+      cd build
+      echo $PATH
+      cmake ../projects/cmake/
+      make
+    # displayName: 'Build Linux x86_64'
+
+- job: test_macos_currently_broken
+
+  pool:
+    vmImage: 'macos-10.13'
+
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.x'
+      addToPath: true
+      architecture: 'x64'
+
+  - bash: |
+      pip3 install numpy
+      export CFLAGS="-I /usr/local/lib/python3.7/site-packages/numpy/core/include $CFLAGS"
+      export CFLAGS="-I /usr/local/lib/python2.7/site-packages/numpy/core/include $CFLAGS"      
+      mkdir build
+      cd build
+      echo $PATH
+
+    # something still going wrong so this is commented out for now
+    # TODO: Fix this
+
+    # cmake ../projects/cmake/
+    # make
+    # displayName: 'Build Linux x86_64'
+
+
+  
