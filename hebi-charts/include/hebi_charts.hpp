@@ -410,9 +410,9 @@ public:
    * @details 
    * Sets a 4x4 transform matrix of the form
    * 
-   *     1 0 0 x
-   *     0 1 0 y
-   *     0 0 1 z
+   *     \ | / x
+   *     - R - y
+   *     / | \ z
    *     0 0 0 1
    * 
    * The transform needs to be row-major, of size=16,
@@ -548,7 +548,7 @@ public:
    *
    * @param positions 
    * @param length 
-   * @throw on internal errors
+   * @throw on internal errors, or if position vector length does not match number of joints.
    */
   void setPositions(const double* positions, size_t length);
   void setPositions(const std::vector<double>& positions);
