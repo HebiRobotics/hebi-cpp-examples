@@ -42,7 +42,7 @@ int run(int, char**)
 
   if (hebi::charts::lib::isAvailable()) {
     hebi::charts::GridWindow window;
-    auto chart = window.add3dChart();
+    auto chart = window.addChart3d();
     window.show();
     // Get frame count; add one for base frame added after FK call below)
     auto num_frames = model->getFrameCount(robot_model::FrameType::Output) + 1;

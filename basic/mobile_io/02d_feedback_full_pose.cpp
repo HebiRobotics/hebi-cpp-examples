@@ -53,7 +53,7 @@ int run(int, char**) {
 
   if (hebi::charts::lib::isAvailable()) {
     hebi::charts::GridWindow window;
-    auto chart = window.add3dChart();
+    auto chart = window.addChart3d();
     window.show();
     auto triad = chart.addTriad(0.075);
     for (size_t i = 0; i < 50; ++i)

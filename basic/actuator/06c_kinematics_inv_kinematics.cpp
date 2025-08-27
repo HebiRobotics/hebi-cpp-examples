@@ -114,7 +114,7 @@ int run(int, char**)
 
   if (hebi::charts::lib::isAvailable()) {
     hebi::charts::GridWindow window;
-    auto chart = window.add3dChart();
+    auto chart = window.addChart3d();
     window.show();
     for(size_t j = 0; j < transforms.size(); ++j) {
       auto triad = chart.addTriad(0.075);

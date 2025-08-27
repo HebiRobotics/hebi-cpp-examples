@@ -66,7 +66,7 @@ int run(int, char**) {
     }
 
     hebi::charts::GridWindow orient_window;
-    auto orient_chart = orient_window.add3dChart();
+    auto orient_chart = orient_window.addChart3d();
     orient_window.show();
     auto triad = orient_chart.addTriad(0.075);
     for (size_t i = 0; i < 50; ++i)
