@@ -7,153 +7,208 @@
 #include "trajectory.hpp"
 #include "util/mobile_io.hpp"
 #include "util/vector_utils.h"
-#include <chrono>
+#include "rosie_demo_utils.hpp"
+#include "kits/arms/ar_control_sm.hpp"
+#include "kits/bases/omni_base.hpp"
+#include <Eigen/Dense>
 #include <thread>
+#include <chrono>
+#include <ctime>
+#include <cstdlib>
 
 // Common includes
 #include <iostream>
 
 using namespace hebi;
+double ar_scaling = 1.0;
 
-Eigen::Matrix3d makeRotationMatrix (hebi::Quaternionf phone_orientation) {
-  Eigen::Quaterniond q;
-  q.w() = phone_orientation.getW();
-  q.x() = phone_orientation.getX();
-  q.y() = phone_orientation.getY();
-  q.z() = phone_orientation.getZ();
-  return q.toRotationMatrix();
-}
+// RosieControl controls the base of the robot and builds a trajectory for the base movement
+class RosieControl {
+public:
+  RosieControl(OmniBase& base)
+    : base_(base), running_(true) {}
 
-struct OmniBase {
-  // Create omnibase and initialize the command
-  OmniBase(hebi::Group& group) : group_(group), cmd_(group.size()) {
-    GroupFeedback wheel_fbk(group_.size());
-    while (!group_.getNextFeedback(wheel_fbk))
-      std::cout << "Couldn't get feedback from the wheels!\n";
-    cmd_.setPosition(wheel_fbk.getPosition());
-    last_time_ = wheel_fbk.getTime();
-    traj_start_time_ = last_time_;
-    
-    // Initialize base trajectory
-    omni_base_traj_time_ << 0, base_ramp_time;
-    Eigen::MatrixXd velocities = Eigen::MatrixXd::Zero(3,2); 
-    Eigen::MatrixXd accelerations = Eigen::MatrixXd::Zero(3,2); 
-    Eigen::MatrixXd jerks = Eigen::MatrixXd::Zero(3,2); 
-    traj_ = trajectory::Trajectory::createUnconstrainedQp(omni_base_traj_time_, velocities, &accelerations, &jerks);
+  void update(const double t_now, const ChassisVelocity* base_inputs)
+  {
+    if (!base_inputs)
+      return;
+
+    base_.update(t_now, base_inputs->x_, base_inputs->y_, base_inputs->rz_);
   }
 
-  bool setGains()
-  {
-    GroupCommand base_gains_command(group_.size());
-    if (!base_gains_command.readGains("gains/omni-drive-wheel-gains.xml")) {
-      std::cout << "Could not read omni base gains\n";
-      return false;
-    }
-    if (!group_.sendCommandWithAcknowledgement(base_gains_command)) {
-      std::cout << "Could not send omni base gains\n";
-      return false;
-    }
-    return true;
+  void send() const {
+    base_.send();
   }
 
-  // Evaluate Trajectory State and update commands
-  void update(double t, double x_vel, double y_vel, double rot_vel)
-  {
-    double dt = t - last_time_;
-    last_time_ = t;
+  bool running() const { return running_; }
 
-    double traj_time = std::min(traj_->getDuration(), t - traj_start_time_);
-    Eigen::VectorXd chassis_cmd_vel(base_num_wheels_);
-    Eigen::VectorXd chassis_cmd_acc(base_num_wheels_);
-    Eigen::VectorXd chassis_cmd_jerk(base_num_wheels_);
-    traj_->getState(traj_time, &chassis_cmd_vel, &chassis_cmd_acc, &chassis_cmd_jerk);
-    
-    // Build commands from trajectory
-    cmd_.setVelocity(base_wheel_velocity_matrix_ * chassis_cmd_vel);
-    cmd_.setPosition(cmd_.getPosition() + cmd_.getVelocity() * dt);
-    cmd_.setEffort(base_wheel_effort_matrix_ * (chassis_mass_matrix_ * chassis_cmd_acc));
-
-    // Rebuild trajectory
-    Eigen::Vector3d chassis_desired_vel;
-    chassis_desired_vel << base_max_lin_speed_ * x_vel, -base_max_lin_speed_ * y_vel, base_max_rot_speed_ * rot_vel;
-      
-    Eigen::MatrixXd velocities(base_num_wheels_, 2);
-    velocities.col(0) = chassis_cmd_vel;
-    velocities.col(1) = chassis_desired_vel;
-      
-    Eigen::MatrixXd accelerations(base_num_wheels_, 2);
-    accelerations.col(0) = chassis_cmd_acc;
-    accelerations.col(1) = Eigen::Vector3d::Zero();
-  
-    Eigen::MatrixXd jerks(base_num_wheels_, 2);
-    jerks.col(0) = chassis_cmd_jerk;
-    jerks.col(1) = Eigen::Vector3d::Zero();
-
-    traj_ = hebi::trajectory::Trajectory::createUnconstrainedQp(omni_base_traj_time_, velocities, &accelerations , &jerks);
-    traj_start_time_ = t;
-  }
-
-  void send()
-  {
-    group_.sendCommand(cmd_);
+  void stop() {
+    running_ = false;
+    base_.stop();
   }
 
 private:
-  double last_time_{};
-  double traj_start_time_{};
-  const int base_num_wheels_{3};
-  hebi::Group& group_;
-  hebi::GroupCommand cmd_;
-  std::shared_ptr<trajectory::Trajectory> traj_;
-
-  const double a1 = -60*M_PI/180;
-  const double a2 = 60*M_PI/180;
-  const double a3 = 180*M_PI/180;
-
-  const double base_wheel_base_ = 0.470;
-  const double base_wheel_radius_ = .15/2.0;
-  
-  const double base_chassis_mass_ = 12.0;
-  const double base_chassis_inertia_zz_ = .5*base_chassis_mass_ * base_wheel_base_ * base_wheel_base_ *.25;
-  const Eigen::MatrixXd chassis_mass_matrix_
-    {(Eigen::MatrixXd(3,3) << base_chassis_mass_,0,0, 0,base_chassis_mass_,0, 0,0,base_chassis_inertia_zz_).finished()};
-
-  const Eigen::Matrix3d base_wheel_transform_
-    {(Eigen::MatrixXd(3,3) <<
-     sin(a1), -cos(a1), 2/base_wheel_base_,
-     sin(a2), -cos(a2), 2/base_wheel_base_/2,
-     sin(a3), -cos(a3), 2/base_wheel_base_/2).finished()};
-  const Eigen::Matrix3d base_wheel_velocity_matrix_{base_wheel_transform_ / base_wheel_radius_};
-  const Eigen::Matrix3d base_wheel_effort_matrix_{base_wheel_transform_ * base_wheel_radius_};
-
-  const double base_ramp_time = .33;
-
-  const double base_max_lin_speed_ = 0.6;
-  const double base_max_rot_speed_ = base_max_lin_speed_*(base_wheel_base_/2.0);
-
-  Eigen::Vector2d omni_base_traj_time_;
+  OmniBase& base_;
+  bool running_{ false };
 };
 
+std::function<void(ArmMobileIOControl&, ArmControlState)> updateMobileIO(util::MobileIO& mio) {
+  return [&mio](ArmMobileIOControl& controller, ArmControlState new_state) {
+    if (controller.state_ == new_state)
+      return;
+
+    switch (new_state) {
+
+    case ArmControlState::HOMING:
+      controller.setArmLedColor(Color{ 255, 0, 255 }); //magenta
+      setMobileIOInstructions(mio, "Robot Homing Sequence\nPlease wait...", Color{ 255, 0, 255 }); //magenta
+      break;
+
+    case ArmControlState::TELEOP:
+      controller.setArmLedColor(Color{ 0, 255, 0 }); //green
+      setMobileIOInstructions(mio, "Robot Ready to Control", Color{ 0, 255, 0 }); //green
+      break;
+
+    case ArmControlState::DISCONNECTED:
+      controller.setArmLedColor(Color{ 0, 0, 255 }); //blue
+			setMobileIOInstructions(mio, "Robot Disconnected", Color{ 0, 0, 255 }); //blue
+      break;
+
+    case ArmControlState::EXIT:
+      std::cout << "TRANSITIONING TO EXIT" << std::endl;
+      controller.setArmLedColor(Color{ 255, 0, 0 }); //red
+      mio.resetUI();
+      setMobileIOInstructions(mio, "Demo Stopped.", Color{ 255, 0, 0 }); //red
+      break;
+
+    default:
+      break;
+    }
+  };
+}
+
+// Sets up mobileIO interface.
+//
+//Return a function that parses mobileIO feedback into the format
+//expected by the Demo
+
+std::function<bool(ArmControlState, ChassisVelocity&, ArmMobileIOInputs&)> setupMobileIO(util::MobileIO& mio) {
+
+  const int reset_pose_btn = 1;
+  const int arm_lock = 3;
+  const int gripper_close = 4;
+  const int quit_demo_btn = 8;
+  
+  const int side_joy = 1;  // Left Pad Left/Right
+  const int forward_joy = 2; // Left Pad Up/Down
+  const int ar_xyz_scale_slider = 4;
+  const int rotate_joy = 7; // Right Pad Left/Right
+  const int turn_joy = 8;  // Right Pad Up/Down
+
+  mio.resetUI();
+
+  mio.setButtonLabel(reset_pose_btn, "Home \u27F2", false);
+  mio.setButtonLabel(quit_demo_btn, "Quit \u274C", false);
+
+  mio.setAxisLabel(side_joy, "", false);
+  mio.setAxisLabel(forward_joy, "Translate", false);
+  mio.setAxisLabel(ar_xyz_scale_slider, "XYZ\nScale", false);
+  mio.setAxisLabel(turn_joy, "", false);
+  mio.setAxisLabel(rotate_joy, "Rotate", false);
+
+  for (int i = 0; i < 8; i++)
+    mio.setAxisSnap(i + 1, (i == 3) ? NAN : 0.0);
+
+  mio.setAxisValue(ar_xyz_scale_slider, ar_scaling);
+  mio.setLedColor(255, 255, 0);
+
+  mio.setButtonLabel(arm_lock, "Arm \U0001F512", false);
+  mio.setButtonLabel(gripper_close, "Gripper", false);
+  mio.setButtonMode(arm_lock, util::MobileIO::ButtonMode::Toggle);
+  mio.setButtonMode(gripper_close, util::MobileIO::ButtonMode::Toggle);
+
+	// Lambda function that will be called to parse the mobile IO feedback
+  auto parseMobileIOFeedback = [&](ArmControlState curr_state, ChassisVelocity& chassis_velocity_out, ArmMobileIOInputs& arm_inputs_out) {
+    if (!mio.update(0.0))
+      return false;
+
+    if (mio.getButton(quit_demo_btn))
+      return true;
+
+    if (mio.getButton(reset_pose_btn))
+    {
+      arm_inputs_out.home = true;
+      return false;
+    }
+
+    chassis_velocity_out = ChassisVelocity{
+      pow(mio.getAxis(forward_joy), 3),
+      pow(mio.getAxis(side_joy), 3),
+      pow(-mio.getAxis(rotate_joy), 3)};
+
+    auto wxyz = mio.getArOrientation();
+    Eigen::Quaterniond q(wxyz.getW(), wxyz.getX(), wxyz.getY(), wxyz.getZ());
+    Eigen::Matrix3d rotation = q.toRotationMatrix();
+
+    if (!rotation.allFinite()) {
+      std::cerr << "Error getting orientation as matrix: " << wxyz.getW() << ", " << wxyz.getX() << ", "
+        << wxyz.getY() << ", " << wxyz.getZ() << "\n";
+      rotation = Eigen::Matrix3d::Identity();
+    }
+
+    if (mio.getButtonDiff(arm_lock) != util::MobileIO::ButtonState::Unchanged)
+    {
+      if (!mio.getButton(arm_lock))
+        mio.setButtonLabel(arm_lock, "Arm \U0001F512", false);
+      else
+        mio.setButtonLabel(arm_lock, "Arm \U0001F513", false);
+    }
+
+    bool locked = mio.getButton(arm_lock);
+    if (locked) {
+      mio.setAxisValue(ar_xyz_scale_slider, (2 * ar_scaling) - 1.0);
+    }
+    else {
+      ar_scaling = (mio.getAxis(ar_xyz_scale_slider) + 1.0) / 2.0;
+      if (ar_scaling < 0.1)
+        ar_scaling = 0.0;
+    }
+
+    arm_inputs_out = ArmMobileIOInputs(
+      mio.getArPosition(),
+      rotation,
+      ar_scaling,
+      (mio.getButtonDiff(arm_lock) != util::MobileIO::ButtonState::Unchanged),
+      !locked,
+      mio.getButton(gripper_close)
+    );
+
+    return false;
+  };
+
+  return parseMobileIOFeedback;
+}
+
 int main(int argc, char** argv) {
+
 
   //////////////////////////
   ///// Config Setup ///////
   //////////////////////////
 
   // Config file path
-
   std::string example_config_path;
   if (argc == 1) {
-    // Default to an R-series Rosie
     example_config_path = "config/rosie-r.cfg.yaml";
-  } else if (argc == 2) {
-    // Use argument passed in if given for config
+  }
+  else if (argc == 2) {
     example_config_path = "config/" + std::string(argv[1]);
-  } else {
+  }
+  else {
     std::cout << "Run ./rosie_demo <optional config file name>\n";
     return 1;
   }
-  
+
   // Load the config
   std::vector<std::string> errors;
   const auto example_config = RobotConfig::loadConfig(example_config_path, errors);
@@ -162,35 +217,25 @@ int main(int argc, char** argv) {
   }
   if (!example_config) {
     std::cerr << "Failed to load configuration from: " << example_config_path << std::endl;
-    return -1;
+    return 1;
   }
 
-  //////////////////////////
-  ///// Arm Setup //////////
-  //////////////////////////
+  Lookup lookup;
+  const std::string family = example_config->getFamilies()[0];
 
-  // Create the arm object from the configuration, and keep retrying if arm not found
-  auto arm = arm::Arm::create(*example_config);
-  while (!arm) {
-    std::cerr << "Failed to create arm, retrying..." << std::endl;
-    arm = arm::Arm::create(*example_config);
-  }
-  std::cout << "Arm connected." << std::endl;
 
   //////////////////////////
   //// MobileIO Setup //////
   //////////////////////////
 
-  // Create the MobileIO object
-  std::unique_ptr<util::MobileIO> mobile_io = util::MobileIO::create("HEBI", "mobileIO");
+  std::unique_ptr<util::MobileIO> mobile_io = util::MobileIO::create(family, "mobileIO", lookup);
+  int mobileio_tries = 5;
 
-  int tries = 5;
-  while (!mobile_io && tries > 0)
-  {
-    std::cerr << "Failed to connect to mobile IO device, retrying...\n";
+  while (!mobile_io && mobileio_tries > 0) {
+    std::cout << "Waiting for mobileIO device to come online..." << std::endl;
     std::this_thread::sleep_for(std::chrono::seconds(1));
-    mobile_io = util::MobileIO::create("HEBI", "mobileIO");
-    --tries;
+    mobile_io = util::MobileIO::create(family, "mobileIO", lookup);
+    --mobileio_tries;
   }
 
   if (!mobile_io)
@@ -199,249 +244,108 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  // Clear any garbage on screen
-  mobile_io->resetUI();
+  std::cout << "MobileIO device successfully connected\n";
+  std::shared_ptr<util::MobileIO> mobile_io_shared = std::move(mobile_io);
+  auto parse_mobile_feedback = setupMobileIO(*mobile_io_shared);
 
-  // Setup instructions for display
-  std::string instructions;
-  instructions = ("B1: Home        B2: Track\n"
-                  "B3: Compliant   B8: Quit\n"
-                  "A3: XYZ         A6: Grip  \n");
-
-  // Display instructions on screen
-  mobile_io->appendText(instructions);
-
-  mobile_io->setButtonLabel(1, "Home");
-  mobile_io->setButtonLabel(2, "Track");
-  mobile_io->setButtonLabel(3, "Compliant");
-  mobile_io->setButtonLabel(8, "Quit");
-  mobile_io->setAxisLabel(2, "Base Turn");
-  mobile_io->setAxisLabel(3, "Arm Translate");
-  mobile_io->setAxisLabel(6, "Grip");
-  mobile_io->setAxisLabel(7, "Base X");
-  mobile_io->setAxisLabel(8, "Base Y");
-
-  // Get initial mobile device state (so edge triggers are properly handled
-  // after this)
-  mobile_io->update();
-
-  std::cout << instructions << "\n";
 
   //////////////////////////
-  //// Main Control Loop ///
+  ////// Base Setup ////////
   //////////////////////////
 
-  const auto user_data = example_config->getUserData();
-  const Eigen::VectorXd ik_seed_position = util::stdToEigenXd(user_data.getFloatList("ik_seed_pos"));
-  const double soft_start_time = user_data.getFloat("homing_duration");
-  const Eigen::VectorXd xyz_scale = util::stdToEigenXd(user_data.getFloatList("xyz_scale"));
-  const double delay_time = user_data.getFloat("delay_time");
-  const double gripper_open_effort = user_data.getFloat("gripper_open_effort");
-  const double gripper_close_effort = user_data.getFloat("gripper_close_effort");
+	int base_tries = 5;
+  const std::vector<std::string> wheel_names = { "W1", "W2", "W3" };
+  auto wheel_group = lookup.getGroupFromNames({ family }, wheel_names);
 
-  // Different modes it can be in (when in none, then automatic grav_comp)
-  //bool softstart = true;
-  bool ar_mode = false;
-  
-  // Set up states for the mobile device.  Note -- coupled to ar_mode above, and only used 
-  // when that is "true".
-  Eigen::Vector3d xyz_phone_init;
-  Eigen::Matrix3d rot_phone_init;
- 
-  bool enable_logging = true;
+  if (!wheel_group && base_tries > 0) {
+    std::cout << "Retrying to find wheel modules for the base..." << std::endl;
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    auto wheel_group = lookup.getGroupFromNames({ family }, wheel_names);
+    --base_tries;
+  }
 
-  std::string robot_family = "Rosie";
-  
-  ////////////////////
-  // Get groups and set the Gains
-  ////////////////////
-     
-  Lookup lookup;
-  // Optional step to limit the lookup to a set of interfaces or modules
-  // lookup.setLookupAddresses('10.10.10.255');
-  const std::vector<std::string> base_wheel_module_names = {"W1","W2","W3"};
-  auto wheel_group = lookup.getGroupFromNames({robot_family}, base_wheel_module_names);
-  if (!wheel_group || wheel_group->size() != 3)
+  if (!wheel_group)
   {
-    std::cout << "Could not find wheel modules on network!\n";
+    std::cout << "Couldn't find wheel modules device!\n";
     return 1;
   }
 
-  // Setup for base trajectory
-  OmniBase base(*wheel_group);
+  std::cout << "Base wheel modules connected successfully\n";
+ 
+  OmniBase base = OmniBase(wheel_group);
   if (!base.setGains())
     return 1;
+  auto base_control = RosieControl(base);
 
-  auto gripper = hebi::arm::Gripper::create(robot_family, "gripperSpool", gripper_close_effort, gripper_open_effort);
-  std::string gripper_gains_file = example_config->getGains("gripper");
-  if (!gripper || !gripper->loadGains(gripper_gains_file))
-  {
-    std::cout << "Could not read or send gripper gains\n";
+
+  //////////////////////////
+  ///// Arm Setup //////////
+  //////////////////////////
+
+  // Create the arm and gripper object from the configuration
+  std::shared_ptr<arm::Arm> arm;
+  std::shared_ptr<arm::Gripper> gripper;
+  setupArm(*example_config, lookup, arm, gripper);
+
+  if (!arm) {
+    std::cout << "Failed to create arm." << std::endl;
     return 1;
   }
 
-  // Start background logging
-  if(enable_logging) {
-    arm->group().startLog("logs");
-    wheel_group->startLog("logs");
+  while (!arm->update()) {
+    std::cout << "Waiting for feedback from arm..." << std::endl;
+    std::this_thread::sleep_for(std::chrono::seconds(1));
   }
 
-  ////////////////////
-  // Begin the demo loop
-  ////////////////////
+  const auto user_data = example_config->getUserData();
+  const double soft_start_time = user_data.getFloat("homing_duration");
+  const Eigen::Vector3d xyz_scale = util::stdToEigenXd(user_data.getFloatList("xyz_scale"));
+  const double delay_time = user_data.getFloat("delay_time");
 
-  std::cout << "Starting demo...\n";
-  
-  // Home position
-  Eigen::Vector3d xyz_home;
-  xyz_home << 0.3, 0.0, 0.3;
-  // Gripper down
-  Eigen::Matrix3d rot_home(3,3);
-  rot_home << -1,0,0, 0,1,0, 0,0,-1; 
+  std::unique_ptr<ArmMobileIOControl> arm_control (new ArmMobileIOControl(arm, gripper, soft_start_time, delay_time, xyz_scale));
+  arm_control->transition_handlers_.push_back(updateMobileIO(*mobile_io_shared));
 
-  // Note -- could just hardcode here, too...
-  // Calculate new arm joint angle targets
-  auto target_joints = arm->solveIK(ik_seed_position,
-                                    xyz_home, 
-                                    rot_home);
-  arm->update();
-  arm->setGoal(arm::Goal::createFromPosition(soft_start_time, target_joints));
-  bool soft_start = true;
-  
-  while (!arm->atGoal())
-  {
-    arm->update();
-    arm->send();
+
+  ///////////////////////////
+  //// Main Control Loop ////
+  //////////////////////////
+
+  bool enable_logging = true;
+  if (enable_logging) {
+    base.group_->startLog("./logs");
+    arm->group().startLog("./logs");
   }
 
-  // Omnibase commands:
-  double x_vel{}; 
-  double y_vel{};
-  double rot_vel{};
+  ChassisVelocity base_inputs;
+  ArmMobileIOInputs arm_inputs;
+  auto start = std::chrono::system_clock::now();
 
-  int num_mobile_io_drops = 0;
+  // Constantly update the base and arm controls
+  while (base_control.running() && (!arm_control || arm_control->running())) {
 
-  // Only allow rotation from AR
-  bool rot_only{false};
-  Eigen::Vector3d last_xyz_phone;
+    std::chrono::duration<double> t(std::chrono::system_clock::now() - start);
+    bool quit = parse_mobile_feedback(arm_control->state_, base_inputs, arm_inputs);
+    base_control.update(t.count(), &base_inputs);
 
-  Eigen::Vector3d xyz_target;
+    if (arm_control)
+      arm_control->update(t.count(), &arm_inputs);
 
-  while(true) {
-    arm->update();
-
-    // Get latest mobile_state (use timeout of zero)
-    auto updated_mobile_io = mobile_io->update(0);
-    if (!updated_mobile_io) {
-      ++num_mobile_io_drops;
-      // 10 in a row? ~ 0.1s?  stop commanding velocities...
-      if (num_mobile_io_drops > 10)
-      {
-        x_vel = 0;
-        y_vel = 0;
-        rot_vel = 0;
-      }
-    } else {
-      num_mobile_io_drops = 0;
-      // Button B1 - Return to home position
-      if (mobile_io->getButtonDiff(1) == util::MobileIO::ButtonState::ToOn) {
-        ar_mode = false;
-
-        // Note: could use "home_position" instead...
-        auto target_joints = arm->solveIK(ik_seed_position,
-                                          xyz_home, 
-                                          rot_home);
-        arm->setGoal(arm::Goal::createFromPosition(soft_start_time, target_joints));
-      }
-
-      // Button B2 - Toggle AR Control (enabled only after homing is complete)
-      if (mobile_io->getButtonDiff(2) == util::MobileIO::ButtonState::ToOn) {
-        if (arm->atGoal() && !ar_mode) { // -> AR mode
-          xyz_phone_init << mobile_io->getLastFeedback().mobile().arPosition().get().getX(),
-                            mobile_io->getLastFeedback().mobile().arPosition().get().getY(),
-                            mobile_io->getLastFeedback().mobile().arPosition().get().getZ();
-          rot_phone_init = makeRotationMatrix(mobile_io->getLastFeedback().mobile().arOrientation().get());
-          ar_mode = true;
-        }
-      }
-      // -> grav comp
-      if (mobile_io->getButtonDiff(3) == util::MobileIO::ButtonState::ToOn) {
-        if (ar_mode) {
-          arm->cancelGoal();
-          ar_mode = false;
-        }
-      }
-
-      // Button B8 - End Demo
-      if (mobile_io->getButtonDiff(8) == util::MobileIO::ButtonState::ToOn) {
-        // Clear MobileIO text
-        mobile_io->resetUI();
-        return 1;
-      }
-
-      if (mobile_io->getAxis(3) < 0) {
-        if (!rot_only)
-        {
-          rot_only = true;
-          last_xyz_phone << mobile_io->getLastFeedback().mobile().arPosition().get().getX(),
-                            mobile_io->getLastFeedback().mobile().arPosition().get().getY(),
-                            mobile_io->getLastFeedback().mobile().arPosition().get().getZ();
-        }
-      } else {
-        if (rot_only) // transition out
-        {
-          rot_only = false;
-          Eigen::Vector3d xyz_phone;
-          xyz_phone << mobile_io->getLastFeedback().mobile().arPosition().get().getX(),
-                       mobile_io->getLastFeedback().mobile().arPosition().get().getY(),
-                       mobile_io->getLastFeedback().mobile().arPosition().get().getZ();
-          xyz_phone_init += xyz_phone - last_xyz_phone;
-        }
-      }
-
-      // Gripper Control
-      // (for states, 0 is open, 1 is closed)
-      gripper->setState((mobile_io->getAxis(6) + 1.0 ) / 2.0); 
-
-      // Omnibase
-      x_vel = mobile_io->getAxis(8);
-      y_vel = mobile_io->getAxis(7);
-      rot_vel = mobile_io->getAxis(1);
+    if (quit) {
+      base_control.stop();
+      if (arm_control)
+        arm_control->transition_to(t.count(), ArmControlState::EXIT);
     }
 
-    if (ar_mode) {
-      // Get the latest mobile position and orientation
-      Eigen::Vector3d xyz_phone;
-      xyz_phone << mobile_io->getLastFeedback().mobile().arPosition().get().getX(),
-                  mobile_io->getLastFeedback().mobile().arPosition().get().getY(),
-                  mobile_io->getLastFeedback().mobile().arPosition().get().getZ();
-      auto rot_phone = makeRotationMatrix(mobile_io->getLastFeedback().mobile().arOrientation().get());
-
-      // Calculate new targets
-      if (!rot_only)
-      {
-        xyz_target =
-          xyz_home + xyz_scale.cwiseProduct(rot_phone_init.transpose() * (xyz_phone - xyz_phone_init));
-      }
-      Eigen::Matrix3d rot_target = rot_phone_init.transpose() * rot_phone * rot_home;
-
-      // Force elbow up config
-      auto seed_pos_ik = arm->lastFeedback().getPosition();
-      seed_pos_ik[2] = abs(seed_pos_ik[2]);
-
-      // Calculate new arm joint angle targets
-      target_joints = arm->solveIK(seed_pos_ik, xyz_target, rot_target);
-
-      // Create and send new goal to the arm
-      arm->setGoal(arm::Goal::createFromPosition(delay_time, target_joints));
-    }
-
-    // Send latest commands to the arm
-    arm->send();
-    gripper->send();
-
-    // Base control
-    base.update(arm->lastFeedback().getTime(), x_vel, y_vel, rot_vel);
-    base.send();
+    base_control.send();
+    if (arm_control)
+      arm_control->send();
   }
+
+  if (enable_logging) {
+    base.group_->stopLog();
+    if (arm)
+      arm->group().stopLog();
+  }
+
+  return 0;
 }

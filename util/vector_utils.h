@@ -7,12 +7,12 @@
 namespace hebi {
 namespace util {
 
-Eigen::VectorXd stdToEigenXd(const std::vector<double>& in) {
+inline Eigen::VectorXd stdToEigenXd(const std::vector<double>& in) {
   // Wrap in a Eigen::Map, and then copy on return so we aren't holding onto the memory.
   return Eigen::Map<const Eigen::VectorXd>(in.data(), in.size());
 }
 
-Eigen::Vector3d stdToEigen3d(const std::vector<double>& in) {
+inline Eigen::Vector3d stdToEigen3d(const std::vector<double>& in) {
   if (in.size() != 3) {
     std::cerr << "Error -- vector size mismatch!\n";
     return Eigen::Vector3d::Zero();
