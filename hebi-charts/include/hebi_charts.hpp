@@ -145,7 +145,7 @@ public:
   /**
    * @brief Loads a robot from an HRDF (Hebi Robot Description Format) file
    *
-   * @param hrdf relative or absolute file path
+   * @param filePath relative or absolute file path
    * @throw on internal errors
    */
   Robot3d addHrdf(const char* filePath);
