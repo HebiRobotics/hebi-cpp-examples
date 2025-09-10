@@ -16,14 +16,15 @@
  
 #include "lookup.hpp"
 #include "group_feedback.hpp"
-#include "util/plot_functions.h"
-
-namespace plt = matplotlibcpp;
+#include "hebi_charts.hpp"
 
 using namespace hebi;
 
-int main() {
-
+int run(int, char**);
+int main(int argc, char** argv) {
+  hebi::charts::runApplication(run, argc, argv);
+}
+int run(int, char**) {
   // Find your module on the network 
   // You can also plot feedback from multiple modules by including multiple modules
   // in your group. Look at example 01c on how to do that.
@@ -41,38 +42,38 @@ int main() {
   // Set the feedback frequency. 
   // This is by default "100"; setting this to 5 here allows the console output
   // to be more reasonable.
-  group -> setFeedbackFrequencyHz(5);
+  group->setFeedbackFrequencyHz(5);
 
   // Retrieve feedback with a blocking all to "getNextFeedback". This
   // constrains the loop to run at the feedback frequency above; we run 
   // for about 10 seconds here
   GroupFeedback group_fbk(group->size());
 
-  std::vector<double> gyro_data;
-  std::vector<std::string> x_labels = {"X", "Y", "Z"};
-  std::vector<double> x_ticks = {0.0, 1.0, 2.0};
+  if (hebi::charts::lib::isAvailable()) {
+    hebi::charts::GridWindow window;
+    auto chart = window.addLineChart();
+    chart.setTitle("Mobile I/O Gyro Feedback");
+    chart.getAxisX().setName("timestep");
+    chart.getAxisY().setName("rad/s");
+    chart.getAxisY().setLimits(-3.14, 3.14);
 
-  for (size_t i = 0; i < 50; ++i)
-  {
-    if (group -> getNextFeedback(group_fbk))
+    auto x_data = chart.addLine("X", {}, {});
+    auto y_data = chart.addLine("Y", {}, {});
+    auto z_data = chart.addLine("Z", {}, {});
+    window.show();
+    for (size_t i = 0; i < 50; ++i)
     {
-      // Use the Hebi API to extract gyro data from the module
-      auto gyro = group_fbk.getGyro();
-      gyro_data = {gyro(0,0), gyro(0,1), gyro(0,2)};
-
-      // Plot the collected feedback
-      plt::clf();
-      plt::ylim(-3.14, 3.14);
-      plt::xticks(x_ticks, x_labels);
-      plt::title("Mobile I/O Gyro Feedback");
-      plt::xlabel("Axis");
-      plt::ylabel("Angular Velocity (rad/s)");
-      plt::bar(gyro_data);
-      plt::pause(0.01);
+      if (group->getNextFeedback(group_fbk))
+      {
+        // Use the Hebi API to extract gyro data from the module
+        auto gyro = group_fbk.getGyro();
+        x_data.addPoint(i, gyro(0, 0));
+        y_data.addPoint(i, gyro(0, 1));
+        z_data.addPoint(i, gyro(0, 2));
+      }
     }
+    hebi::charts::framework::waitUntilWindowsClosed();
   }
-
-  group -> clearFeedbackHandlers();
 
   return 0;
 }

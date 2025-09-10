@@ -24,9 +24,7 @@
 #include "util/grav_comp.hpp"
 
 #include "log_file.hpp"
-#include "util/plot_functions.h"
-
-namespace plt = matplotlibcpp;
+#include "hebi_charts.hpp"
 
 using namespace hebi;
 
@@ -34,8 +32,8 @@ using namespace hebi;
 /// gains on the modules in that group.
 std::shared_ptr<Group> getGroup() {
   // Get group
-  std::vector<std::string> families {"6-DoF Arm"};
-  std::vector<std::string> names {"Base","Shoulder","Elbow","Wrist1","Wrist2","Wrist3"};
+  std::vector<std::string> families {"HEBI"};
+  std::vector<std::string> names {"J1_base","J2_shoulder","J3_elbow","J4_wrist1","J5_wrist2","J6_wrist3"};
   Lookup lookup;
   std::shared_ptr<Group> group = lookup.getGroupFromNames(families, names);
   if (!group)
@@ -99,8 +97,12 @@ void executeTrajectory(
   }
 }
 
+int run(int, char**);
+int main(int argc, char** argv) {
+  hebi::charts::runApplication(run, argc, argv);
+}
 /// The main function which actually executes to run the example
-int main() {
+int run(int, char**) {
   constexpr double PI = 3.14159265358979323846;
   // Get group of modules and set gains.
   std::shared_ptr<Group> group = getGroup();
@@ -195,6 +197,8 @@ int main() {
   std::vector<std::vector<double>> pos(group->size());
   std::vector<std::vector<double>> vel(group->size());
   std::vector<std::vector<double>> eff(group->size());
+  double t0{};
+  std::vector<double> times;
   GroupFeedback fbk(group->size());
   while(log_file->getNextFeedback(fbk)) {
     for(size_t i = 0; i < group->size(); i++){
@@ -202,20 +206,35 @@ int main() {
       vel[i].push_back(fbk.getVelocity()[i]);
       eff[i].push_back(fbk.getEffort()[i]);
     }
+    if (t0 == 0)
+      t0 = fbk.getTime();
+    times.push_back(fbk.getTime() - t0);
   }
-  plt::figure(1);
-  for(size_t i = 0; i < group->size(); i++){
-    plt::plot(pos[i]);
+  
+  if (hebi::charts::lib::isAvailable()) {
+    hebi::charts::GridWindow window(3, 1);
+    auto pos_chart = window.addLineChart(0, 0, 1, 1);
+    pos_chart.setTitle("Position");
+    for(size_t i = 0; i < group->size(); i++){
+      auto title = (std::string("module ") + std::to_string(i));
+      pos_chart.addLine(title, times, pos[i]);
+    }
+    auto vel_chart = window.addLineChart(1, 0, 1, 1);
+    vel_chart.setTitle("Velocity");
+    for(size_t i = 0; i < group->size(); i++){
+      auto title = (std::string("module ") + std::to_string(i));
+      vel_chart.addLine(title, times, vel[i]);
+    }
+    auto eff_chart = window.addLineChart(2, 0, 1, 1);
+    eff_chart.setTitle("Effort");
+    for(size_t i = 0; i < group->size(); i++){
+      auto title = (std::string("module ") + std::to_string(i));
+      eff_chart.addLine(title, times, eff[i]);
+    }
+    window.show();
+
+    hebi::charts::framework::waitUntilWindowsClosed();
   }
-  plt::figure(2);
-  for(size_t i = 0; i < group->size(); i++){
-    plt::plot(vel[i]);
-  }
-  plt::figure(3);
-  for(size_t i = 0; i < group->size(); i++){
-    plt::plot(eff[i]);
-  }
-  plt::show();
 
   return 0;
 }

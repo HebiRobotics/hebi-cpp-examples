@@ -14,13 +14,15 @@
  
 #include "lookup.hpp"
 #include "group_feedback.hpp"
-#include "util/plot_functions.h"
-
-namespace plt = matplotlibcpp;
+#include "hebi_charts.hpp"
 
 using namespace hebi;
 
-int main() {
+int run(int, char**);
+int main(int argc, char** argv) {
+  hebi::charts::runApplication(run, argc, argv);
+}
+int run(int, char**) {
   // Find your module on the network 
   // You can also plot feedback from multiple modules by including multiple modules
   // in your group. Look at example 01c on how to do that.
@@ -38,7 +40,7 @@ int main() {
   // Set the feedback frequency. 
   // This is by default "100"; setting this to 5 here allows the console output
   // to be more reasonable.
-  group -> setFeedbackFrequencyHz(5);
+  group->setFeedbackFrequencyHz(5);
 
   // Retrieve feedback with a blocking all to "getNextFeedback". This
   // constrains the loop to run at the feedback frequency above; we run 
@@ -49,42 +51,27 @@ int main() {
             << "\n Move it around to make the feedback interesting..." 
             << std::endl;
 
-  for (size_t i = 0; i < 50; ++i)
-  {
-    if (group -> getNextFeedback(group_fbk))
+  if (hebi::charts::lib::isAvailable()) {
+    hebi::charts::GridWindow window;
+    auto chart = window.addChart3d();
+    window.show();
+    auto triad = chart.addTriad(0.075);
+    for (size_t i = 0; i < 50; ++i)
     {
-      // Obtain feedback for a singular module from the groupFeedback object
-      auto orient = group_fbk[0].mobile().arOrientation().get();
-      auto pos = group_fbk[0].mobile().arPosition().get();
+      if (group->getNextFeedback(group_fbk))
+      {
+        // Obtain feedback for a singular module from the groupFeedback object
+        auto orient = group_fbk[0].mobile().arOrientation().get();
+        auto pos = group_fbk[0].mobile().arPosition().get();
 
-      // Derive a rotation matrix from the orientation quaternion
-      Eigen::Quaterniond q;
-      q.w() = orient.getW();
-      q.x() = orient.getX();
-      q.y() = orient.getY();
-      q.z() = orient.getZ();
-      auto rot_matrix = q.toRotationMatrix();
-
-      // Construct a complete 4x4 Transform
-      Eigen::Matrix4d final_transform;
-      final_transform << rot_matrix(0,0), rot_matrix(0,1), rot_matrix(0,2), pos.getX(),
-                         rot_matrix(1,0), rot_matrix(1,1), rot_matrix(1,2), pos.getY(),
-                         rot_matrix(2,0), rot_matrix(2,1), rot_matrix(2,2), pos.getZ(),
-                         0, 0, 0, 1;
-
-      // Initialize vectors to pass the plot_3dtriad graphing function
-      std::vector<std::vector<double>> lines_x;
-      std::vector<std::vector<double>> lines_y;
-      std::vector<std::vector<double>> lines_z;      
-
-      // Plot the 6-Dof Pose
-      plt::clf();
-      plot_3dtriad(final_transform, &lines_x, &lines_y, &lines_z);
-      plt::pause(0.01);
+        // Plot the 6-Dof Pose
+        triad.setOrientation(orient.getW(), orient.getX(), orient.getY(), orient.getZ());
+        triad.setTranslation(pos.getX(), pos.getY(), pos.getZ());
+      }
     }
+    hebi::charts::framework::waitUntilWindowsClosed();
   }
 
-  group -> clearFeedbackHandlers();
   return 0;
 }
 

@@ -18,11 +18,44 @@
 #include "command.hpp"
 #include <math.h>
 #include <chrono>
-#include "util/plot_functions.h"
+#include "hebi_charts.hpp"
 
-namespace plt = matplotlibcpp;
+template<typename T>
+std::vector<T> arrange(T min, T max, T spacing, T origin=0.0, bool inclusive=true){
+  std::vector<T> ret;
+  for (T i = origin; i < max; i += spacing){
+    ret.push_back(i);
+  }
+  for (T i = origin - spacing; i > min; i -= spacing){
+    ret.push_back(i);
+  }
+  if(inclusive) {
+    ret.push_back(max);
+    ret.emplace(ret.begin(),min);
+  }
+  return ret;
+}
 
-int main()
+template<typename F, typename T>
+std::vector<T> f_x(std::vector<T> x, F f) {
+  std::vector<T> output;
+  for (size_t i = 0; i < x.size(); i++) {
+    output.push_back(f(x[i]));
+  }
+  return output;
+}
+
+template<typename T>
+std::vector<T> linspace(T min, T max, int count){
+  T spacing = (max-min)/static_cast<T>(count);
+  return arrange(min, max, spacing, min);
+}
+
+int run(int, char**);
+int main(int argc, char** argv) {
+  hebi::charts::runApplication(run, argc, argv);
+}
+int run(int, char**)
 {
   constexpr double PI = 3.14159265358979323846;
   // Get group
@@ -97,22 +130,33 @@ int main()
     cmd.setVelocity(vel_cmd);
     group->sendCommand(cmd);
   }
-  //plot graph of trajectories
-  auto x = linspace(0.0,time[2],100.0);
-  for (size_t i = 0; i < num_joints; i++) {
-    //these are calls to the function f_x which takes a vector of doubles, x, and a lambda, f, and returns a vector f(x)
-    std::vector<double> p = f_x(x,[&, i](double t) {Eigen::VectorXd pos(num_joints); trajectory->getState(t,&pos,nullptr,nullptr); return pos[i]; });
-    std::vector<double> v = f_x(x,[&, i](double t) {Eigen::VectorXd vel(num_joints); trajectory->getState(t,nullptr,&vel,nullptr); return vel[i]; });
-    plt::plot(x,p,"-b",x,v,"--r");
-    plt::show();
-  }
-
   // Stop logging
   auto log_file = group->stopLog();
   if (!log_file) {
       std::cout << "~~ERROR~~\n"
                 << "Log file not found!\n";
       return 1;
+  }
+
+  //plot graph of trajectories
+  if (hebi::charts::lib::isAvailable()) {
+    hebi::charts::GridWindow window;
+    auto chart = window.addLineChart();
+    auto x = linspace(0.0,time[2],100.0);
+    for (size_t i = 0; i < num_joints; i++) {
+      //these are calls to the function f_x which takes a vector of doubles, x, and a lambda, f, and returns a vector f(x)
+      std::vector<double> p = f_x(x,[&, i](double t) {Eigen::VectorXd pos(num_joints); trajectory->getState(t,&pos,nullptr,nullptr); return pos[i]; });
+      std::vector<double> v = f_x(x,[&, i](double t) {Eigen::VectorXd vel(num_joints); trajectory->getState(t,nullptr,&vel,nullptr); return vel[i]; });
+      auto line = chart.addLine("position", x, p);
+      line.setColor(hebi::charts::Color::Blue);
+      line.setLineStyle(hebi::charts::LineStyle::Solid);
+      auto line2 = chart.addLine("velocity", x, v);
+      line2.setColor(hebi::charts::Color::Red);
+      line2.setLineStyle(hebi::charts::LineStyle::Dashed);
+    }
+    window.show();
+
+    hebi::charts::framework::waitUntilWindowsClosed();
   }
 
   return 0;

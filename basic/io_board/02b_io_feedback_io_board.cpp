@@ -13,13 +13,15 @@
  
 #include "lookup.hpp"
 #include "group_feedback.hpp"
-#include "util/plot_functions.h"
-
-namespace plt = matplotlibcpp;
+#include "hebi_charts.hpp"
 
 using namespace hebi;
 
-int main() {
+int run(int, char**);
+int main(int argc, char** argv) {
+  hebi::charts::runApplication(run, argc, argv);
+}
+int run(int, char**) {
   // Find your module on the network 
   // You can also plot feedback from multiple modules by including multiple modules
   // in your group. Look at example 01c on how to do that.
@@ -44,10 +46,6 @@ int main() {
   // for about 10 seconds here
   GroupFeedback group_fbk(group->size());
 
-  std::vector<float> pin_values(8); // we know we have 8 pins
-  std::vector<std::string> x_labels = {"1", "2", "3", "4", "5", "6", "7", "8"};
-  std::vector<double> x_ticks = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0};
-
   // Start logging (you can also specify log file name as second parameter)
   std::string log_path = group->startLog("./logs");
 
@@ -59,35 +57,47 @@ int main() {
     return 1;
   }
 
-  for (size_t i = 0; i < 50; ++i)
-  {
-    if (group -> getNextFeedback(group_fbk))
-    {
-     // Obtain I/O feedback from the groupFeedback object 
-     auto& pin_data = group_fbk[0].io();
+  if (hebi::charts::lib::isAvailable()) {
+    hebi::charts::GridWindow window;
+    auto chart = window.addLineChart();
+    chart.setTitle("IO Board Feedback from IO pins");
+    chart.getAxisY().setLimits(0, 5);
+    chart.getAxisX().setName("timestep");
+    chart.getAxisY().setName("[0 to 5]");
 
-      // Analog Feedback
-      // In this case, we gather only the values for A pins
-      for (size_t i = 0; i < 8; ++i)
+    std::array<hebi::charts::Line, 8> pin_chart_data = {
+      chart.addLine("Pin 1", {}, {}),
+      chart.addLine("Pin 2", {}, {}),
+      chart.addLine("Pin 3", {}, {}),
+      chart.addLine("Pin 4", {}, {}),
+      chart.addLine("Pin 5", {}, {}),
+      chart.addLine("Pin 6", {}, {}),
+      chart.addLine("Pin 7", {}, {}),
+      chart.addLine("Pin 8", {}, {}),
+    };
+    window.show();
+    for (size_t i = 0; i < 50; ++i)
+    {
+      if (group -> getNextFeedback(group_fbk))
       {
-        // we check pins i+1 because the pins are numbered 1-8
-        if (pin_data.a().hasFloat(i+1)) {
-          pin_values[i] = pin_data.a().getFloat(i+1);
-        } else {
-          pin_values[i] = (float) pin_data.a().getInt(i+1);
+        // Obtain I/O feedback from the groupFeedback object 
+        auto& pin_data = group_fbk[0].io();
+
+        // Analog Feedback
+        // In this case, we gather only the values for A pins
+        for (size_t pin = 0; pin < 8; ++pin)
+        {
+          // we check pins i+1 because the pins are numbered 1-8
+          if (pin_data.a().hasFloat(pin+1)) {
+            pin_chart_data[pin].addPoint(i, pin_data.a().getFloat(pin+1));
+          } else {
+            pin_chart_data[pin].addPoint(i, static_cast<double>(pin_data.a().getInt(pin+1)));
+          }
         }
       }
-
-      // Now we plot the collected feedback
-      plt::clf();
-      plt::ylim(-1, 1);
-      plt::xticks(x_ticks, x_labels);
-      plt::title("IO Board Feedback from IO pins");
-      plt::xlabel("Pin Number");
-      plt::ylabel("[-1 to 1]");
-      plt::bar(pin_values);
-      plt::pause(0.01);
     }
+
+    hebi::charts::framework::waitUntilWindowsClosed();
   }
 
   // Stop logging
@@ -98,7 +108,6 @@ int main() {
       return 1;
   }
 
-  group -> clearFeedbackHandlers();
   return 0;
 }
 

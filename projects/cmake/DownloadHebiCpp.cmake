@@ -1,5 +1,5 @@
 # Used to download the C++ API - this should not be used directly.
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.12)
 
 set(HEBI_CPP_VERSION "3.13.0")
 set(HEBI_CPP_FILE_NAME "hebi-cpp-${HEBI_CPP_VERSION}.tar.gz")

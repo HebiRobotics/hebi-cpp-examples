@@ -17,13 +17,15 @@
  
 #include "lookup.hpp"
 #include "group_feedback.hpp"
-#include "util/plot_functions.h"
-
-namespace plt = matplotlibcpp;
+#include "hebi_charts.hpp"
 
 using namespace hebi;
 
-int main() {
+int run(int, char**);
+int main(int argc, char** argv) {
+  hebi::charts::runApplication(run, argc, argv);
+}
+int run(int, char**) {
   // Find your mobile device on the network 
   Lookup lookup;
   std::string family_name("HEBI");
@@ -46,73 +48,85 @@ int main() {
   // for about 10 seconds here
   GroupFeedback group_fbk(group->size());
 
-  std::vector<int64_t> buttons;
-  std::vector<float> sliders(8); // we know we have 8 pins
-  std::vector<std::string> x1_labels = {"1", "2", "3", "4", "5", "6", "7", "8"};
-  std::vector<double> x1_ticks = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0};
-
-  std::vector<double> gyro_data;
-  std::vector<std::string> x2_labels = {"X", "Y", "Z"};
-  std::vector<double> x2_ticks = {0.0, 1.0, 2.0};
-
   std::cout << "\n Drag the Sliders, press some buttons, and move the device..." 
             << std::endl;
 
-  for (size_t i = 0; i < 50; ++i)
-  {
-    if (group -> getNextFeedback(group_fbk))
+  if (hebi::charts::lib::isAvailable()) {
+    hebi::charts::GridWindow window(2, 1);
+    auto chart_inputs = window.addLineChart(0, 0, 1, 1);
+    auto chart_gyro = window.addLineChart(1, 0, 1, 1);
+    chart_inputs.setTitle("Mobile I/O Input Feedback");
+    chart_gyro.setTitle("Mobile I/O Gyro Feedback");
+    chart_inputs.getAxisY().setLimits(-1, 1);
+    chart_gyro.getAxisY().setLimits(-3.14, 3.14);
+    chart_inputs.getAxisX().setName("timestep");
+    chart_gyro.getAxisX().setName("timestep");
+    chart_inputs.getAxisY().setName("[-1 to 1]");
+    chart_gyro.getAxisY().setName("rad/s");
+
+    std::array<hebi::charts::Line, 8> button_chart_data = {
+      chart_inputs.addLine("Button 1", {}, {}),
+      chart_inputs.addLine("Button 2", {}, {}),
+      chart_inputs.addLine("Button 3", {}, {}),
+      chart_inputs.addLine("Button 4", {}, {}),
+      chart_inputs.addLine("Button 5", {}, {}),
+      chart_inputs.addLine("Button 6", {}, {}),
+      chart_inputs.addLine("Button 7", {}, {}),
+      chart_inputs.addLine("Button 8", {}, {})
+    };
+    std::array<hebi::charts::Line, 8> slider_chart_data = {
+      chart_inputs.addLine("Slider 1", {}, {}),
+      chart_inputs.addLine("Slider 2", {}, {}),
+      chart_inputs.addLine("Slider 3", {}, {}),
+      chart_inputs.addLine("Slider 4", {}, {}),
+      chart_inputs.addLine("Slider 5", {}, {}),
+      chart_inputs.addLine("Slider 6", {}, {}),
+      chart_inputs.addLine("Slider 7", {}, {}),
+      chart_inputs.addLine("Slider 8", {}, {})
+    };
+
+    auto gyro_x_data = chart_gyro.addLine("X", {}, {});
+    auto gyro_y_data = chart_gyro.addLine("Y", {}, {});
+    auto gyro_z_data = chart_gyro.addLine("Z", {}, {});
+    window.show();
+    for (size_t i = 0; i < 50; ++i)
     {
-      // Obtain feedback for a singular module from the groupFeedback object
-      auto& buttons_data = group_fbk[0].io();
-
-      // Digital Feedback (Buttons) 
-      // We can safely assume that all buttons return an int value
-      buttons = {buttons_data.b().getInt(1),
-                 buttons_data.b().getInt(2),
-                 buttons_data.b().getInt(3),
-                 buttons_data.b().getInt(4),
-                 buttons_data.b().getInt(5),
-                 buttons_data.b().getInt(6),
-                 buttons_data.b().getInt(7),
-                 buttons_data.b().getInt(8)};
-
-      // Analog Feedback (Sliders) 
-      // We expect float values, but may recieve an int in certain cases.
-      // As such, we convert any ints we encounter back to float
-      for (size_t i = 0; i < 8; ++i)
+      if (group->getNextFeedback(group_fbk))
       {
-        // we check pins i+1 because the pins are numbered 1-8
-        if (buttons_data.a().hasFloat(i+1)) {
-          sliders[i] = buttons_data.a().getFloat(i+1);
-        } else {
-          sliders[i] = (float)buttons_data.a().getInt(i+1);
+        // Obtain feedback for a singular module from the groupFeedback object
+        auto& io_data = group_fbk[0].io();
+
+        // Digital Feedback (Buttons) 
+        // We can safely assume that all buttons return an int value
+        // Store as double for interop with the plotting library
+        // Note -- here and below we check pins i+1 because the pins are numbered 1-8, not 0-7
+        for (size_t j = 0; j < 8; ++j)
+          button_chart_data[j].addPoint(i, static_cast<double>(io_data.b().getInt(j + 1)));
+
+        // Analog Feedback (Sliders) 
+        // We expect float values, but may recieve an int in certain cases.
+        // As such, we convert any ints we encounter back to float
+        for (size_t j = 0; j < 8; ++j)
+        {
+          double slider_value = 0;
+          if (io_data.a().hasFloat(j + 1)) {
+            slider_value = io_data.a().getFloat(j + 1);
+          } else {
+            slider_value = static_cast<double>(io_data.a().getInt(j + 1));
+          }
+          slider_chart_data[j].addPoint(i, slider_value);
         }
+
+        // Gyro Feedback
+        auto gyro = group_fbk.getGyro();
+        gyro_x_data.addPoint(i, gyro(0, 0));
+        gyro_y_data.addPoint(i, gyro(0, 1));
+        gyro_z_data.addPoint(i, gyro(0, 2));
       }
-
-      // Gyro Feedback
-      auto gyro = group_fbk.getGyro();
-      gyro_data = {gyro(0,0), gyro(0,1), gyro(0,2)};
-
-      // Now we plot the collected data
-      plt::clf();
-      plt::subplot(2, 1, 1); // io feedback
-        plt::ylim(-1, 1);
-        plt::xticks(x1_ticks, x1_labels);
-        plt::xlabel("Digital Inputs and Analog Inputs");
-        plt::ylabel("[-1 to 1]");
-        plt::bar(sliders);
-        plt::bar(buttons);
-      plt::subplot(2, 1, 2); // gyro feedback
-        plt::ylim(-3.14, 3.14);
-        plt::xticks(x2_ticks, x2_labels);
-        plt::xlabel("Axis");
-        plt::ylabel("Angular Velocity (rad/s)");
-        plt::bar(gyro_data);
-      plt::pause(0.01);
     }
+    hebi::charts::framework::waitUntilWindowsClosed();
   }
 
-  group -> clearFeedbackHandlers();
   return 0;
 }
 

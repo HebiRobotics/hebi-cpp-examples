@@ -8,7 +8,10 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "")
   set(CMAKE_BUILD_TYPE Debug)
 endif()
 
+option(USE_HEBI_CHARTS "Download and use the HEBI charts library?" ON)
+
 set(ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../..)
+set(HEBI_CHARTS_DIR ${ROOT_DIR}/hebi-charts)
 get_filename_component(ROOT_DIR "${ROOT_DIR}" REALPATH)
 
 # `HEBI_CPP_DIR` can be used to point to an already downloaded C++ API.
@@ -21,17 +24,15 @@ else()
   set(HEBI_DIR ${HEBI_CPP_DIR})
 endif()
 
+if (USE_HEBI_CHARTS)
+  include(${HEBI_CHARTS_DIR}/hebi_charts.cmake)
+endif()
+
 set(hebi_cpp_build_dir hebi-cpp-${CMAKE_BUILD_TYPE})
 string(TOLOWER ${hebi_cpp_build_dir} hebi_cpp_build_dir)
 get_filename_component(hebi_cpp_build_dir "${CMAKE_CURRENT_BINARY_DIR}/${hebi_cpp_build_dir}" REALPATH)
 
 add_subdirectory(${HEBI_DIR} ${hebi_cpp_build_dir})
-
-find_package(Python 3.6 COMPONENTS Interpreter Development.Module Development.Embed NumPy)
-
-# Due to an issue in Windows and mac with some versions of numpy/distutils/etc, need
-# to manually add this here:
-set(NUMPY_INCLUDE_DIR ${Python_SITELIB}/numpy/core/include)
 
 # Helper function for adding target with HEBI library/dependency references
 function(hebi_add_target TARGET_NAME)
@@ -48,11 +49,9 @@ function(hebi_add_target TARGET_NAME)
   add_dependencies(examples ${TARGET_NAME})
 
   ## Add include paths, Link and copy libraries
-  target_include_directories(${TARGET_NAME} PRIVATE ${ROOT_DIR})
+  target_include_directories(${TARGET_NAME} PRIVATE ${ROOT_DIR} ${HEBI_CHARTS_DIR}/include)
 
-  target_include_directories(${TARGET_NAME} PRIVATE ${Python_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIR})
-  target_link_libraries(${TARGET_NAME} ${Python_LIBRARIES})
-  if(WIN32)
+  if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_link_libraries(${TARGET_NAME} hebi kernel32)
     target_include_directories(${TARGET_NAME} PRIVATE ${HEBI_DIR}/src ${HEBI_DIR}/include ${HEBI_DIR}/Eigen)
     # For Windows, we copy the .dll file into the binary directory so that we
@@ -69,6 +68,13 @@ function(hebi_add_target TARGET_NAME)
       $<TARGET_FILE_DIR:${TARGET_NAME}>)
   elseif(UNIX)
     target_link_libraries(${TARGET_NAME} hebi hebic++ m pthread)
+  endif()
+
+  if (USE_HEBI_CHARTS)
+    add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "${HEBI_CHARTS_LIB_FILE}"
+      $<TARGET_FILE_DIR:${TARGET_NAME}>)
   endif()
 endfunction()
 

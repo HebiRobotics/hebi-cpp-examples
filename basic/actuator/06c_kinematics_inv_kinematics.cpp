@@ -6,14 +6,15 @@
 #include "group_command.hpp"
 #include "group_feedback.hpp"
 #include "robot_model.hpp"
-#include "util/plot_functions.h"
+#include "hebi_charts.hpp"
 
 using namespace hebi;
-using ActuatorType = robot_model::ActuatorType;
-using BracketType = robot_model::BracketType;
-using LinkType = robot_model::LinkType;
 
-int main()
+int run(int, char**);
+int main(int argc, char** argv) {
+  hebi::charts::runApplication(run, argc, argv);
+}
+int run(int, char**)
 {
   constexpr double PI = 3.14159265358979323846;
   //////////////////////////////////////
@@ -26,7 +27,7 @@ int main()
 
   if (!group)
   {
-    std::cout << "Group not found!";
+    std::cout << "Group not found!\n";
     return -1;
   }
 
@@ -35,7 +36,7 @@ int main()
     robot_model::RobotModel::loadHRDF("hrdf/3-DoF_arm_example.hrdf");
   if (!model)
   {
-    std::cout << "Could not load HRDF!" << std::endl;
+    std::cout << "Could not load HRDF!\n";
     return -1;
   }
 
@@ -55,7 +56,7 @@ int main()
   
   if (!group->getNextFeedback(group_fbk))
   {
-    std::cout << "Couldn't get feedback!";
+    std::cout << "Couldn't get feedback!\n";
     return -1;
   }
 
@@ -109,15 +110,22 @@ int main()
   model->getFK(robot_model::FrameType::Output, ik_result_joint_angles, transforms);
 
   // plot frames on a 3d graph
-  transforms.emplace(transforms.begin(),Eigen::Matrix<double,4,4>::Identity());
-  std::vector<std::vector<double>> lines_x;
-  std::vector<std::vector<double>> lines_y;
-  std::vector<std::vector<double>> lines_z;
+  transforms.emplace(transforms.begin(), Eigen::Matrix<double,4,4>::Identity());
 
-  for(size_t j = 0; j < transforms.size(); ++j) {
-    plot_3dtriad(transforms[j],&lines_x,&lines_y,&lines_z, static_cast<bool>(j));
+  if (hebi::charts::lib::isAvailable()) {
+    hebi::charts::GridWindow window;
+    auto chart = window.addChart3d();
+    window.show();
+    for(size_t j = 0; j < transforms.size(); ++j) {
+      auto triad = chart.addTriad(0.075);
+      Eigen::Quaterniond q(Eigen::Matrix3d(transforms[j].topLeftCorner(3, 3)));
+      triad.setOrientation(q.w(), q.x(), q.y(), q.z());
+      Eigen::Vector3d xyz = transforms[j].topRightCorner(3, 1);
+      triad.setTranslation(xyz.x(), xyz.y(), xyz.z());
+    }
+    
+    hebi::charts::framework::waitUntilWindowsClosed();
   }
-  plt::pause(1);
 
   //////////////////////////////////////
   // Send commands to the physical robot

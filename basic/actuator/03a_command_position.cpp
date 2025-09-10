@@ -16,16 +16,19 @@
 #include "group_command.hpp"
 #include "group_feedback.hpp"
 #include "log_file.hpp"
-#include "util/plot_functions.h"
+#include "hebi_charts.hpp"
 
-namespace plt = matplotlibcpp;
 using namespace hebi;
 
-
-int main() {
+int run(int, char**);
+int main(int argc, char** argv) {
+  hebi::charts::runApplication(run, argc, argv);
+}
+int run(int, char**)
+{
   // Get group
   Lookup lookup;
-  auto group = lookup.getGroupFromNames({"Test Family"}, {"Test Actuator" });
+  auto group = lookup.getGroupFromNames({"Test Family"}, {"Test Actuator"});
 
   if (!group) {
     std::cout
@@ -47,7 +50,7 @@ int main() {
   GroupFeedback group_feedback(group->size());
   
   // Start logging in the background
-  std::string log_path = group->startLog("./logs");
+  std::string log_path = group->startLog("logs");
 
   if (log_path.empty()) {
     std::cout << "~~ERROR~~\n"
@@ -89,15 +92,28 @@ int main() {
   //plot the logged position data
   std::vector<std::vector<double>> pos;
   pos.resize(group->size());
+  double t0{};
+  std::vector<double> times;
   GroupFeedback fbk(group->size());
   while(log_file->getNextFeedback(fbk)) {
     for(size_t i = 0; i < group->size(); i++){
       pos[i].push_back(fbk.getPosition()[i]);
     }
+    if (t0 == 0)
+      t0 = fbk.getTime();
+    times.push_back(fbk.getTime() - t0);
   }
-  for(size_t i = 0; i < group->size(); i++){
-    plt::plot(pos[i]);
+  if (hebi::charts::lib::isAvailable()) {
+    hebi::charts::GridWindow window;
+    auto chart = window.addLineChart();
+    for(size_t i = 0; i < group->size(); i++){
+      auto title = (std::string("module ") + std::to_string(i));
+      chart.addLine(title, times, pos[i]);
+    }
+    window.show();
+
+    hebi::charts::framework::waitUntilWindowsClosed();
   }
-  plt::show();
+
   return 0;
 }
