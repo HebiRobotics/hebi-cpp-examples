@@ -48,7 +48,7 @@ void ArmMobileIOControl::send() const {
 }
 
 void ArmMobileIOControl::home(double duration) const {
-  arm_->setGoal(arm::Goal::createFromPosition(duration, arm_home_));
+  arm_->setGoal({duration, arm_home_});
 }
 
 void ArmMobileIOControl::transition_to(const double t_now, const ArmControlState& new_state) {
@@ -99,9 +99,7 @@ arm::Goal ArmMobileIOControl::compute_arm_goal(const ArmMobileIOInputs& arm_inpu
   if (arm_input.ar_scaling == 0.0)
     phone_xyz_home_ = arm_input.phone_pos;
   auto joint_target = arm_->solveIK(last_locked_seed_, arm_xyz_target, arm_rot_target);
-  arm::Goal goal = arm::Goal::createFromPosition(traj_duration_, joint_target);
-
-  return goal;
+  return arm::Goal(traj_duration_, joint_target);
 }
 
 void ArmMobileIOControl::update(double t_now, const ArmMobileIOInputs* arm_input) {
@@ -165,8 +163,7 @@ void ArmMobileIOControl::update(double t_now, const ArmMobileIOInputs* arm_input
       locked_ = arm_input->locked;
 
     if (!locked_) {
-      const arm::Goal arm_goal = compute_arm_goal(*arm_input);
-      arm_->setGoal(arm_goal);
+      arm_->setGoal(compute_arm_goal(*arm_input));
     }
     else {
       phone_xyz_home_ = arm_input->phone_pos;

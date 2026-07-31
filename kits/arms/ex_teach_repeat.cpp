@@ -46,22 +46,10 @@ void addWaypoint (State& state, const GroupFeedback& feedback, bool stop) {
 }
 
 arm::Goal playWaypoints (State& state, double wp_time) {
-
-  // Set up required variables
-  Eigen::VectorXd times(state.waypoints.size());
-  Eigen::MatrixXd target_pos(state.num_modules, state.waypoints.size());
-  Eigen::MatrixXd target_vels(state.num_modules, state.waypoints.size());
-  Eigen::MatrixXd target_accels(state.num_modules, state.waypoints.size());
-
-  // Fill up matrices appropriately
-  for (int i = 0; i < state.waypoints.size(); i++)
-  {
-    times[i] = (i+1) * wp_time;
-    target_pos.col(i) << state.waypoints[i].positions;
-    target_vels.col(i) << state.waypoints[i].vels;
-    target_accels.col(i) << state.waypoints[i].accels;
-  }
-  return arm::Goal::createFromWaypoints(times, target_pos, target_vels, target_accels);
+  arm::Goal goal(state.num_modules);
+  for (const auto& wp : state.waypoints)
+    goal.addWaypoint(wp_time, wp.positions, wp.vels, wp.accels);
+  return goal;
 }
 
 int main(int argc, char* argv[])

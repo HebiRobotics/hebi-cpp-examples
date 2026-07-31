@@ -145,35 +145,21 @@ struct DemoState {
 
     Eigen::VectorXd times(wp_count + extra_wps);
     auto makeGoal = [&times, wp_count, extra_wps](ArmState& state){
-      // Set up required variables
-      Eigen::MatrixXd target_pos(state.num_modules_, wp_count + extra_wps);
-      Eigen::MatrixXd target_vels(state.num_modules_, wp_count + extra_wps);
-      Eigen::MatrixXd target_accels(state.num_modules_, wp_count + extra_wps);
-      Eigen::MatrixXd aux(1, wp_count + extra_wps);
-
-      // Fill up matrices appropriately
-      auto t = 0;
+      auto goal = arm::Goal(state.num_modules_);
       for (int i = 0; i < wp_count; i++)
       {
         const auto& wp = state.waypoints_[i]; 
-        t += wp.time_from_prev;
-        times[i] = t;
-        target_pos.col(i) << wp.positions;
-        target_vels.col(i) << wp.vels;
-        target_accels.col(i) << wp.accels;
-        aux(0, i) = gripperEffort(wp.gripper_state);
+        auto gripper = Eigen::VectorXd::Constant(1, gripperEffort(wp.gripper_state));
+        goal.addWaypoint(wp.time_from_prev, wp.positions, wp.vels, wp.accels, gripper);
       }
 
       if (extra_wps != 0)
       {
-        times[wp_count] = t + 0.5;
         const auto& wp = *state.waypoints_.rbegin(); 
-        target_pos.col(wp_count) << wp.positions;
-        target_vels.col(wp_count) << wp.vels;
-        target_accels.col(wp_count) << wp.accels;
-        aux(0, wp_count) = gripperEffort(state.waypoints_[0].gripper_state);
+        auto gripper = Eigen::VectorXd::Constant(1, gripperEffort(state.waypoints_[0].gripper_state));
+        goal.addWaypoint(0.5, wp.positions, wp.vels, wp.accels, gripper);
       }
-      return arm::Goal::createFromWaypointsWithAux(times, target_pos, target_vels, target_accels, aux);
+      return goal;
     };
 
     l_arm_.setGoal(makeGoal(left_));
@@ -184,20 +170,11 @@ struct DemoState {
 
   static void stopArm(arm::Arm& arm, arm::Gripper::State gripper_state) {
     auto current_pos = arm.lastFeedback().getPosition();
-    auto current_vel = arm.lastFeedback().getVelocity();
 
-    // Set up required variables
-    Eigen::VectorXd times(1);
-    times[0] = 1.5; // time to stop
-    Eigen::MatrixXd target_pos(arm.robotModel().getDoFCount(), 1);
-    target_pos.col(0) = current_pos;
-    Eigen::MatrixXd target_vels(arm.robotModel().getDoFCount(), 1);
-    target_vels.col(0).setConstant(0);
-    Eigen::MatrixXd target_accels(arm.robotModel().getDoFCount(), 1);
-    target_accels.col(0).setConstant(0);
+    double time_to_stop = 1.5;
     Eigen::MatrixXd aux(1, 1);
-    aux(0, 0) = gripperEffort(gripper_state);
-    arm.setGoal(arm::Goal::createFromWaypointsWithAux(times, target_pos, target_vels, target_accels, aux));
+    aux << gripperEffort(gripper_state);
+    arm.setGoal(arm::Goal(time_to_stop, current_pos, {}, {}, aux));
   }
 
   void reset()
