@@ -112,7 +112,7 @@ int main(int argc, char* argv[])
       for (int button = 1; button <= 3; button++)
       {
         if (mobile_io->getButtonDiff(button) == util::MobileIO::ButtonState::ToOn) {
-          arm->setGoal(arm::Goal::createFromPosition(travel_time, waypoints.at(button-1)));
+          arm->setGoal({travel_time, waypoints.at(button-1)});
         }
       }
 

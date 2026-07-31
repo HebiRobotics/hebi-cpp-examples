@@ -105,7 +105,7 @@ int main(int argc, char* argv[])
 
   // Command the softstart to home position
   arm -> update();
-  arm -> setGoal(arm::Goal::createFromPosition(soft_start_time, home_position)); // move to goal over "soft_start_time" seconds
+  arm -> setGoal({soft_start_time, home_position}); // move to goal over "soft_start_time" seconds
   arm -> send();
 
   // Get the cartesian position and rotation matrix @ home position
@@ -146,7 +146,7 @@ int main(int argc, char* argv[])
       // Button B1 - Return to home position
       if (mobile_io->getButtonDiff(1) == util::MobileIO::ButtonState::ToOn) {
         ar_mode = false;
-        arm -> setGoal(arm::Goal::createFromPosition(soft_start_time, home_position));
+        arm -> setGoal({soft_start_time, home_position});
       }
 
       // Button B3 - Start AR Control
@@ -191,7 +191,7 @@ int main(int argc, char* argv[])
                                               rot_target);
 
       // Create and send new goal to the arm
-      arm -> setGoal(arm::Goal::createFromPosition(delay_time, target_joints));
+      arm -> setGoal({delay_time, target_joints});
     }
 
     // Send latest commands to the arm

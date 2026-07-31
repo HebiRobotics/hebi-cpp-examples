@@ -77,35 +77,20 @@ arm::Goal playWaypoints (State& state) {
     extra_wps = 1;
   }
 
-  // Set up required variables
-  Eigen::VectorXd times(wp_count + extra_wps);
-  Eigen::MatrixXd target_pos(state.num_modules_, wp_count + extra_wps);
-  Eigen::MatrixXd target_vels(state.num_modules_, wp_count + extra_wps);
-  Eigen::MatrixXd target_accels(state.num_modules_, wp_count + extra_wps);
-  Eigen::MatrixXd aux(1, wp_count + extra_wps);
-
-  // Fill up matrices appropriately
-  auto t = 0;
+  arm::Goal goal(state.num_modules_);
   for (int i = 0; i < wp_count; i++)
   {
     const auto& wp = state.waypoints_[i]; 
-    t += wp.time_from_prev;
-    times[i] = t;
-    target_pos.col(i) << wp.positions;
-    target_vels.col(i) << wp.vels;
-    target_accels.col(i) << wp.accels;
-    aux(0, i) = arm::Gripper::StateToDouble(wp.gripper_state);
+    auto aux = Eigen::VectorXd::Constant(1, arm::Gripper::StateToDouble(wp.gripper_state));
+    goal.addWaypoint(wp.time_from_prev, wp.positions, wp.vels, wp.accels, aux);
   }
   if (extra_wps != 0)
   {
-    times[wp_count] = t + 0.5;
     const auto& wp = *state.waypoints_.rbegin(); 
-    target_pos.col(wp_count) << wp.positions;
-    target_vels.col(wp_count) << wp.vels;
-    target_accels.col(wp_count) << wp.accels;
-    aux(0, wp_count) = arm::Gripper::StateToDouble(state.waypoints_[0].gripper_state);
+    auto aux = Eigen::VectorXd::Constant(1, arm::Gripper::StateToDouble(state.waypoints_[0].gripper_state));
+    goal.addWaypoint(0.5, wp.positions, wp.vels, wp.accels, aux);
   }
-  return arm::Goal::createFromWaypointsWithAux(times, target_pos, target_vels, target_accels, aux);
+  return goal;
 }
 
 enum class DemoMode

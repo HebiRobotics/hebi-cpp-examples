@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
   }
 
   double home_duration = 5.0; // seconds
-  arm::Goal goal = arm::Goal::createFromPosition(home_duration, home_position);
+  arm::Goal goal(home_duration, home_position);
   arm->update();
   arm->setGoal(goal);
 
